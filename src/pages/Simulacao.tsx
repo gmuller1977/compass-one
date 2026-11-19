@@ -19,6 +19,8 @@ import { useNavigate } from 'react-router-dom'
 import { mesesQueOPlanoCobre, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import type { PlanoAnoData } from '../context/AppContext'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { FONTE_SITE, NOITE, BORDA_CLARA } from '../components/mobile/estilo'
+import { CabecalhoCartao } from '../components/mobile/ui'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -103,7 +105,8 @@ const labelSt: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 5,
 }
 const card: React.CSSProperties = {
-  background: COR.branco, border: `.5px solid ${COR.borda}`, borderRadius: 12, padding: '20px 22px',
+  background: COR.branco, border: `1px solid ${BORDA_CLARA}`, borderRadius: 18, padding: '20px 22px',
+  boxShadow: '0 10px 28px rgba(11,37,69,.08)',
 }
 
 function SimCard({ sim, onDelete }: { sim: SimRow; onDelete: (id: string) => void }) {
@@ -475,39 +478,44 @@ export default function Simulacao() {
 
   // ── Render ───────────────────────────────────────────────────────────
   const isDivida = aba === 'divida'
-  /**
-   * As abas viraram pílulas, como o seletor de visão do Planejamento.
-   *
-   * A pílula carrega o próprio fundo claro, então o texto dela não é medido
-   * contra o azul do quadro — o que resolve o contraste e devolve a cor por
-   * aba, que no texto direto sobre azul teria de virar tom pastel.
-   *
-   * Uma diferença do Planejamento, de propósito: lá a pílula inativa usa
-   * `COR.textoSuave` sobre `#f1f5f9`, que dá **4,34:1 e reprova**. Aqui é
-   * `#475569`, 6,92:1. Os ativos: azul 5,68:1, vermelho 5,91:1, verde 4,79:1.
-   */
-  const corAba   = aba === 'compra' ? COR.azul : isDivida ? '#b91c1c' : '#15803d'
-  const fundoAba = aba === 'compra' ? '#eff6ff' : isDivida ? '#fef2f2' : '#f0fdf4'
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: FONTE_SITE }}>
       <AppHeader currentPath="/simulacao" />
 
-      {/* Header em largura cheia, como na tela de Lancamentos */}
-      <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
-          <PageHeader
-            icon="ti-calculator"
-            breadcrumb="MEU PLANO"
-            ajuda="simulador"
-            title="Simulador"
-            subtitle={simList.length > 0 ? `${simList.length} simulaç${simList.length === 1 ? 'ão salva' : 'ões salvas'}` : 'Nenhuma simulação salva'}
-            rightContent={
-              <button onClick={() => { setAba('compra'); setSimSalva(false) }} style={PH_BTN_SOLID}>
-                + Nova simulação
-              </button>
-            }
-          />
-      </div>
+      {/* O topo da página do Educador (19/11/2026): escuro de ponta a ponta,
+          com as abas dentro dele, como pílulas. */}
+      <PageHeader
+        site
+        fundo={COR.fundo}
+        mb={0}
+        icon="ti-calculator"
+        rotulo="Meu plano · Simulador"
+        ajuda="simulador"
+        title="Simulador"
+        subtitle="Antes de comprar, veja se cabe no bolso."
+        rightContent={(
+          <button onClick={() => { setAba('compra'); setSimSalva(false) }} style={{ ...PH_BTN_SOLID, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,.6)', padding: '8px 14px' }}>
+            <i aria-hidden className="ti ti-plus" style={{ verticalAlign: '-2px', marginRight: 6 }} />Nova simulação
+          </button>
+        )}
+      >
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+          {([['compra', 'Posso comprar?', 'ti-shopping-cart'], ['divida', 'Quitar dívida', 'ti-credit-card-pay'], ['meta', 'Meta de poupança', 'ti-pig-money']] as const).map(([v, l, icone]) => {
+            const ativo = aba === v
+            return (
+              <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
+                borderRadius: 999, padding: isMobile ? '7px 12px' : '9px 16px',
+                fontSize: isMobile ? 13 : 14, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'inherit', transition: 'all .15s',
+                background: ativo ? '#fff' : 'rgba(255,255,255,.06)',
+                color: ativo ? '#0b2545' : '#fff',
+                border: `1px solid ${ativo ? '#fff' : 'rgba(255,255,255,.45)'}`,
+              }}><i aria-hidden className={`ti ${icone}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{l}</button>
+            )
+          })}
+        </div>
+      </PageHeader>
 
       {/* A página fica clara; quem é AZUL são os cards. Ver `card` em
           SimCompra — os campos dentro dele seguem brancos com texto escuro.
@@ -518,27 +526,10 @@ export default function Simulacao() {
           coluna, e esticar só afastaria o rótulo do campo. */}
       <div style={{
         maxWidth: aba === 'compra' && !isMobile ? 1180 : 720,
-        margin: isMobile ? '12px 12px 80px' : '16px auto 48px',
-        padding: isMobile ? '16px 14px 20px' : '24px 26px 30px',
+        margin: isMobile ? '0 0 80px' : '0 auto 48px',
+        padding: isMobile ? '4px 14px 20px' : '8px 26px 30px',
         transition: 'max-width .2s',
       }}>
-
-        {/* Abas */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 22 }}>
-          {([['compra', 'Posso comprar?', 'ti-shopping-cart'], ['divida', 'Quitar dívida', 'ti-credit-card-pay'], ['meta', 'Meta de poupança', 'ti-pig-money']] as const).map(([v, l, icone]) => {
-            const ativo = aba === v
-            return (
-              <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
-                borderRadius: 8, padding: '6px 14px',
-                fontSize: 13, fontWeight: ativo ? 700 : 500, cursor: 'pointer',
-                fontFamily: 'inherit', transition: 'all .15s',
-                background: ativo ? fundoAba : COR.branco,
-                color: ativo ? corAba : '#475569',
-                border: `1px solid ${ativo ? 'transparent' : COR.borda}`,
-              }}><i aria-hidden className={`ti ${icone}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{l}</button>
-            )
-          })}
-        </div>
 
         {/* O que o Simulador já pôs no plano, com Desfazer — nas três abas. */}
         <NoSeuPlano itens={noPlano} onDesfazer={desfazer} />
@@ -574,7 +565,7 @@ export default function Simulacao() {
         {isDivida && (
           <div role="tablist" aria-label="Como quitar" style={{
             display: 'flex', gap: 4, padding: 4, borderRadius: 12, marginBottom: 16,
-            background: '#e8eefb', border: `1px solid ${COR.borda}`,
+            background: '#eef3fa', border: '1px solid #c9dcf2',
           }}>
             {([['avista', 'Quitar à vista', 'ti-cash'], ['parcelas', 'Pagar em parcelas', 'ti-calendar-repeat']] as const).map(([id, txt, ti]) => {
               const ativo = modoDivida === id
@@ -582,7 +573,7 @@ export default function Simulacao() {
                 <button key={id} role="tab" aria-selected={ativo} onClick={() => setModoDivida(id)} style={{
                   flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer',
                   fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700,
-                  background: ativo ? COR.azulEscuro : 'transparent',
+                  background: ativo ? '#070c18' : 'transparent',
                   color: ativo ? '#fff' : '#334155',
                 }}><i aria-hidden className={`ti ${ti}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{txt}</button>
               )
@@ -595,7 +586,7 @@ export default function Simulacao() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={card}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 16 }}>Dados da dívida</div>
+              <CabecalhoCartao icone="ti-calendar-repeat" rotulo="Pagar em parcelas">Dados da dívida</CabecalhoCartao>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelSt}>Nome da dívida</label>
@@ -622,7 +613,7 @@ export default function Simulacao() {
               </div>
               <button onClick={simDiv} style={{
                 marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 10,
-                background: `linear-gradient(135deg,${COR.vermelho},#b91c1c)`,
+                background: NOITE,
                 color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               }}>Calcular →</button>
             </div>
@@ -704,7 +695,7 @@ export default function Simulacao() {
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button onClick={salvarSimulacao} disabled={simSalva} style={{
                       flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 10,
-                      background: simSalva ? '#f1f5f9' : `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                      background: simSalva ? '#f1f5f9' : NOITE,
                       color: simSalva ? COR.textoMuted : '#fff',
                       fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
                       transition: 'all .15s',
@@ -746,7 +737,7 @@ export default function Simulacao() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={card}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 16 }}>Dados do objetivo</div>
+              <CabecalhoCartao icone="ti-pig-money" rotulo="Meta de poupança">Dados do objetivo</CabecalhoCartao>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelSt}>Nome do objetivo</label>
@@ -766,7 +757,7 @@ export default function Simulacao() {
               </div>
               <button onClick={simMeta} style={{
                 marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 10,
-                background: `linear-gradient(135deg,${COR.verde},#15803d)`,
+                background: NOITE,
                 color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               }}>Calcular →</button>
             </div>
@@ -846,7 +837,7 @@ export default function Simulacao() {
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button onClick={salvarSimulacao} disabled={simSalva} style={{
                       flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 10,
-                      background: simSalva ? '#f1f5f9' : `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                      background: simSalva ? '#f1f5f9' : NOITE,
                       color: simSalva ? COR.textoMuted : '#fff',
                       fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
                       transition: 'all .15s',

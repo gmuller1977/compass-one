@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext'
 import { LogoCompass, NomeCompass } from './LogoCompass'
 import { useMensagensNaoLidas } from './mensagens/useMensagensNaoLidas'
 import { textoDoSelo } from '../utils/mensagens'
+import { urlDoSite } from '../utils/site'
 
 export const SIDEBAR_W = 220
 
@@ -76,6 +77,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         ],
       },
       { icon: 'ti-gift', label: 'Indicar amigos', path: '/indicar', exact: false },
+      // A página fica no site público (18/11/2026): abre em outra aba.
+      { icon: 'ti-school', label: 'Fale com o Educador', path: '/educador', exact: true },
     ],
   },
 ]
@@ -366,6 +369,7 @@ export default function Sidebar() {
                     active={parentActive} hasSub={hasSub} expanded={isExpanded}
                     badge={item.badge} disabled={item.disabled}
                     onClick={() => {
+                      if (item.path === '/educador') { window.open(urlDoSite('/educador'), '_blank', 'noopener'); return }
                       if (!hasSub) return navigate(item.path)
                       if (!item.abreTela) return toggleExpand(item.label)
                       navigate(item.path)
@@ -439,7 +443,7 @@ export default function Sidebar() {
             padding: '9px 10px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
             marginBottom: 8, color: '#fff',
             background: pathname === '/mensagens' ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)',
-            border: '1px solid rgba(34,211,238,.55)', boxShadow: '0 0 10px rgba(34,211,238,.25)',
+            border: '1px solid rgba(255,255,255,.18)',
             transition: 'background .15s',
           }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.13)')}

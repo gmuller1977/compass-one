@@ -10,20 +10,11 @@ import {
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass, NomeCompass } from '../components/LogoCompass'
+import { CabecalhoCartao } from '../components/mobile/ui'
+import { FRASE_ENTRADA, CampoEntrada, TelaEntrada } from '../components/entrada/Entrada'
+import { useTelaBaixa } from '../components/entrada/estiloEntrada'
+import { FONTE_SITE, FONTE_TITULO, TINTA, TINTA2, BORDA_CLARA } from '../components/mobile/estilo'
 
-// Tela baixa (iPhone SE no navegador, com as barras dele): o topo e os
-// espaços encolhem para o formulário inteiro caber.
-// No computador, notebook de 768px com as barras do navegador (~650 úteis).
-function useTelaBaixa(limite: number) {
-  const [v, setV] = useState(() => window.innerHeight < limite)
-  useEffect(() => {
-    const h = () => setV(window.innerHeight < limite)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [limite])
-  return v
-}
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -38,69 +29,6 @@ function traduzirErro(msg: string) {
   if (msg.includes('rate limit'))                 return 'Limite de e-mails atingido. Aguarde uma hora e tente de novo.'
   if (msg.includes('Error sending'))              return 'O servidor não conseguiu enviar o e-mail. Tente de novo mais tarde.'
   return msg
-}
-
-function Campo({
-  label, tipo = 'text', placeholder, valor, onChange, icone, onKeyDown, erroMsg, compacto,
-}: {
-  label: string; tipo?: string; placeholder: string; valor: string
-  onChange: (v: string) => void; icone?: string
-  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; erroMsg?: string
-  compacto?: boolean
-}) {
-  const [focado, setFocado] = useState(false)
-  const [verSenha, setVerSenha] = useState(false)
-  const ehSenha = tipo === 'password'
-  const tipoReal = ehSenha ? (verSenha ? 'text' : 'password') : tipo
-  const temErro = !!erroMsg
-
-  return (
-    <div style={{ marginBottom: compacto ? 10 : 14 }}>
-      <label style={{
-        display: 'block', fontSize: 10, fontWeight: 700, color: '#1a56db',
-        textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5,
-      }}>{label}</label>
-      <div style={{ position: 'relative' }}>
-        {icone && (
-          <span style={{
-            position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 16, pointerEvents: 'none',
-          }}>{icone}</span>
-        )}
-        <input
-          type={tipoReal}
-          placeholder={placeholder}
-          value={valor}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocado(true)}
-          onBlur={() => setFocado(false)}
-          onKeyDown={onKeyDown}
-          autoComplete={ehSenha ? 'current-password' : tipo === 'email' ? 'email' : undefined}
-          style={{
-            width: '100%',
-            padding: `${compacto ? 11 : 13}px ${ehSenha ? '44px' : '14px'} ${compacto ? 11 : 13}px ${icone ? '44px' : '14px'}`,
-            border: `1.5px solid ${temErro ? '#dc2626' : focado ? '#1a56db' : '#e2e8f0'}`,
-            borderRadius: 14, fontSize: 14, color: '#0f172a',
-            background: '#fff', outline: 'none', fontFamily: 'inherit',
-            transition: 'all .15s',
-            boxShadow: focado ? '0 0 0 3px rgba(26,86,219,.08)' : 'none',
-          }}
-        />
-        {ehSenha && (
-          <span
-            onClick={() => setVerSenha(v => !v)}
-            style={{
-              position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 16, cursor: 'pointer', color: '#94a3b8', padding: 4,
-            }}
-          >{verSenha ? '🙈' : '👁️'}</span>
-        )}
-      </div>
-      {temErro && (
-        <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4 }}>{erroMsg}</div>
-      )}
-    </div>
-  )
 }
 
 const GoogleSVG = () => (
@@ -258,85 +186,31 @@ export default function Login() {
   // inteira cabe sem rolar, com digital, e-mail, senha e Google à vista
   // (pedido do Guilherme em 25/10/2026). Ainda rola se faltar altura (teclado
   // aberto, aviso de erro).
-  const hero = (compact: boolean) => compact ? (
-    <div style={{
-      background: 'var(--cx-azul)', boxShadow: 'var(--cx-brilho-topo)',
-      padding: `calc(env(safe-area-inset-top, 0px) + ${baixa ? 12 : 18}px) 24px ${baixa ? 12 : 18}px`, flexShrink: 0,
-      display: 'flex', alignItems: 'center', gap: 14, position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ position:'absolute', width:160, height:160, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-70, right:-40 }}/>
-      <div style={{
-        width: baixa ? 40 : 48, height: baixa ? 40 : 48, borderRadius: 14, flexShrink: 0,
-        background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 6px 16px rgba(0,0,0,.2)', position: 'relative',
-      }}>
-        <LogoCompass size={30}/>
-      </div>
-      <div style={{ position: 'relative' }}>
-        <div style={{ color:'#fff', fontSize: 22, fontWeight:800, letterSpacing:-.5, lineHeight: 1.1 }}>
-          <NomeCompass />
-        </div>
-        <div style={{ color:'rgba(255,255,255,.75)', fontSize:12, fontWeight:500, marginTop:3 }}>
-          Sua bússola financeira
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div style={{
-      background: 'var(--cx-azul)',
-      padding: '60px 48px',
-      flex: 1,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ position:'absolute', width:200, height:200, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-60, right:-60 }}/>
-      <div style={{ position:'absolute', width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.04)', bottom:-40, left:-20 }}/>
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, position:'relative', zIndex:1 }}>
-        <div style={{
-          width: 88, height: 88, borderRadius: 20,
-          background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 24px rgba(0,0,0,.2)',
-        }}>
-          <LogoCompass size={58}/>
-        </div>
-        <div>
-          <div style={{ color:'#fff', fontSize: 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-            <NomeCompass />
-          </div>
-          <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
-            Sua bússola financeira
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   const botaoDigital = (destaque: boolean) => (
     <button onClick={() => handleDigital()} disabled={carregando} style={{
       width:'100%', padding: destaque ? (isMobile ? '13px' : '15px') : (isMobile ? '11px' : '13px'), borderRadius:14, fontFamily:'inherit',
-      border: destaque ? 'none' : '1.5px solid #e2e8f0',
-      background: destaque ? 'linear-gradient(135deg,#1a56db,#2563eb)' : '#fff',
-      color: destaque ? '#fff' : '#0f172a', fontSize: destaque ? 16 : 14, fontWeight: destaque ? 800 : 600,
+      border: destaque ? 'none' : `1.5px solid ${BORDA_CLARA}`,
+      background: destaque ? TINTA : '#fff',
+      color: TINTA, fontSize: destaque ? 16 : 15, fontWeight: destaque ? 700 : 600,
+      ...(destaque ? { color: '#fff' } : {}),
       cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1,
-      boxShadow: destaque ? '0 4px 20px rgba(26,86,219,.35)' : 'none',
+      boxShadow: destaque ? '0 6px 18px rgba(11,37,69,.25)' : 'none',
       display:'flex', alignItems:'center', justifyContent:'center', gap:10,
       marginBottom: destaque ? 12 : 0,
     }}>
-      <DigitalSVG cor={destaque ? '#fff' : '#1a56db'}/> {destaque || !isMobile ? 'Entrar com digital' : 'Digital'}
+      <DigitalSVG cor={destaque ? '#fff' : TINTA}/> {destaque || !isMobile ? 'Entrar com digital' : 'Digital'}
     </button>
   )
 
   const telaOferta = (
-    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif", textAlign:'center',
+    <div style={{ padding: isMobile ? '24px 20px 20px' : '40px 40px', fontFamily: FONTE_SITE, textAlign:'center',
       margin: isMobile ? 'auto 0' : undefined }}>
-      <div style={{ width:64, height:64, borderRadius:'50%', background:'#eff6ff', margin:'0 auto 16px',
+      <div style={{ width:56, height:56, borderRadius:15, background:'#070c18', margin:'0 auto 16px',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <DigitalSVG cor="#1a56db"/>
+        <DigitalSVG cor="#f5b942"/>
       </div>
-      <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:8 }}>Entrar com a digital da próxima vez?</div>
-      <div style={{ fontSize:14, color:'#475569', lineHeight:1.55, marginBottom:20 }}>
+      <div style={{ fontFamily: FONTE_TITULO, fontSize:28, fontWeight:700, lineHeight:1.05, color:TINTA, marginBottom:10 }}>Entrar com a digital da próxima vez?</div>
+      <div style={{ fontSize:15, color:TINTA2, lineHeight:1.55, marginBottom:20 }}>
         Você entra só encostando o dedo (ou olhando para a câmera), sem digitar a senha. A digital
         não sai do aparelho: o Compass One só recebe a confirmação de que é você.
       </div>
@@ -347,31 +221,32 @@ export default function Login() {
       )}
       <button onClick={ativarDigital} disabled={carregando} style={{
         width:'100%', padding:'15px', border:'none', borderRadius:14,
-        background:'linear-gradient(135deg,#1a56db,#2563eb)', color:'#fff', fontSize:16, fontWeight:800,
+        background:TINTA, color:'#fff', fontSize:16, fontWeight:700,
         cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1, fontFamily:'inherit',
         display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:12,
       }}>
         <DigitalSVG cor="#fff"/> {carregando ? 'Aguardando a digital…' : 'Ativar digital'}
       </button>
       <button onClick={agoraNao} disabled={carregando} style={{
-        width:'100%', padding:'13px', border:'none', background:'transparent', color:'#1a56db',
+        width:'100%', padding:'13px', border:'none', background:'transparent', color:TINTA, textDecoration:'underline',
         fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
       }}>Agora não</button>
-      <div style={{ fontSize:12, color:'#64748b', marginTop:8 }}>Dá para ativar depois em Configurações → Perfil.</div>
+      <div style={{ fontSize:13, color:TINTA2, marginTop:8 }}>Dá para ativar depois em Configurações → Perfil.</div>
     </div>
   )
 
   const form = ofertaDigital ? telaOferta : (
-    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : (pcMuitoBaixo ? '20px 44px' : pcBaixo ? '28px 44px' : '48px 44px'), fontFamily:"-apple-system,'Inter',sans-serif",
-      margin: isMobile ? 'auto 0' : undefined, width: '100%' }}>
+    <div style={{ padding: isMobile ? (baixa ? '14px 18px 12px' : '20px 20px 16px') : (pcMuitoBaixo ? '20px 36px' : pcBaixo ? '26px 38px' : '36px 40px'), fontFamily: FONTE_SITE,
+      width: '100%' }}>
       {/* A sequência segue o modelo pedido pelo Guilherme em 26/10/2026:
           título, entrar com Google/digital, "ou", e-mail e senha, esqueci,
           Entrar e o convite para o cadastro. */}
-      <div style={{ fontSize:22, fontWeight:800, color:'#0f172a', textAlign:'center',
-        marginBottom: isMobile ? (baixa ? 12 : 18) : (pcBaixo ? 18 : 24) }}>Acesse sua conta</div>
+      <div style={{ marginBottom: isMobile ? (baixa ? 0 : 4) : (pcBaixo ? 4 : 10) }}>
+        <CabecalhoCartao icone="ti-login-2" rotulo="Bem-vindo de volta">Acesse sua conta</CabecalhoCartao>
+      </div>
 
       {erro && (
-        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16, textAlign:'center' }}>
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#b91c1c', marginBottom:16, textAlign:'center' }}>
           {erro}
         </div>
       )}
@@ -395,8 +270,8 @@ export default function Login() {
         ? { display:'flex', gap:10 }
         : { display:'flex', flexDirection:'column', gap:12 }}>
         <button onClick={handleGoogle} disabled={carregando} style={{
-          width:'100%', padding: isMobile ? '11px' : '13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-          background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
+          width:'100%', padding: isMobile ? '11px' : '13px', border:`1.5px solid ${BORDA_CLARA}`, borderRadius:14,
+          background:'#fff', color:TINTA, fontSize:15, fontWeight:600,
           cursor:'pointer', fontFamily:'inherit',
           display:'flex', alignItems:'center', justifyContent:'center', gap:10,
           transition:'all .15s',
@@ -408,33 +283,33 @@ export default function Login() {
 
       <div style={{ display:'flex', alignItems:'center', gap:12,
         margin: isMobile ? (baixa ? '10px 0' : '14px 0') : (pcBaixo ? '14px 0' : '18px 0') }}>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-        <span style={{ fontSize:12, color:'#64748b', fontWeight:600 }}>ou</span>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
+        <div style={{ flex:1, height:1, background:BORDA_CLARA }}/>
+        <span style={{ fontSize:12, color:TINTA2, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>ou</span>
+        <div style={{ flex:1, height:1, background:BORDA_CLARA }}/>
       </div>
 
-      <Campo label="E-mail" tipo="email" placeholder="seu@email.com"
-        valor={email} onChange={setEmail} icone="✉️" compacto={isMobile || pcBaixo} />
+      <CampoEntrada label="E-mail" tipo="email" placeholder="seu@email.com"
+        valor={email} onChange={setEmail} icone="ti-mail" compacto={isMobile || pcBaixo} />
 
-      <Campo label="Senha" tipo="password" placeholder="Sua senha"
-        valor={senha} onChange={setSenha} icone="🔑"
+      <CampoEntrada label="Senha" tipo="password" placeholder="Sua senha"
+        valor={senha} onChange={setSenha} icone="ti-lock"
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile || pcBaixo} />
 
       <div style={{ marginTop: isMobile ? -6 : -8, marginBottom: isMobile ? (baixa ? 8 : 12) : (pcBaixo ? 14 : 20) }}>
         <button onClick={handleResetSenha} style={{
-          border:'none', background:'transparent', color:'#1a56db', padding:0,
-          fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+          border:'none', background:'transparent', color:TINTA, padding:0, textDecoration:'underline',
+          fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
         }}>Esqueci minha senha</button>
       </div>
 
       <button onClick={handleSubmit} disabled={carregando} style={{
         width:'100%', padding: isMobile ? '13px' : '15px', border:'none', borderRadius:14,
-        background:'linear-gradient(135deg,#1a56db,#2563eb)',
-        color:'#fff', fontSize:16, fontWeight:800,
+        background:TINTA,
+        color:'#fff', fontSize:17, fontWeight:700, letterSpacing:'.02em',
         cursor: carregando ? 'default' : 'pointer',
         opacity: carregando ? .75 : 1,
         fontFamily:'inherit',
-        boxShadow:'0 4px 20px rgba(26,86,219,.35)',
+        boxShadow:'0 6px 18px rgba(11,37,69,.25)',
         transition:'all .15s',
         display:'flex', alignItems:'center', justifyContent:'center', gap:8,
         marginBottom: isMobile ? (baixa ? 10 : 14) : (pcBaixo ? 14 : 20),
@@ -443,45 +318,30 @@ export default function Login() {
       </button>
 
       <div style={{ textAlign:'center' }}>
-        <span style={{ fontSize:13, color:'#475569' }}>Ainda não possui uma conta? </span>
+        <span style={{ fontSize:14, color:TINTA2 }}>Ainda não possui uma conta? </span>
         <button onClick={() => navigate('/cadastro')} style={{
-          border:'none', background:'transparent', color:'#1a56db', padding:0,
-          fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+          border:'none', background:'transparent', color:TINTA, padding:0, textDecoration:'underline',
+          fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
         }}>Faça o cadastro!</button>
       </div>
 
       <div style={{ textAlign:'center', marginTop: isMobile ? (baixa ? 8 : 12) : 20 }}>
-        <span style={{ fontSize:10, color:'#94a3b8', lineHeight:1.5 }}>
+        <span style={{ fontSize:11, color:TINTA2, lineHeight:1.5 }}>
           Ao entrar você concorda com os{' '}
           <a href="/termos" target="_blank" rel="noopener noreferrer"
-            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Termos de Uso</a>
+            style={{ color:TINTA, fontWeight:700 }}>Termos de Uso</a>
           {' '}e{' '}
           <a href="/privacidade" target="_blank" rel="noopener noreferrer"
-            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Privacidade</a>
+            style={{ color:TINTA, fontWeight:700 }}>Privacidade</a>
         </span>
       </div>
     </div>
   )
 
-  if (isMobile) {
-    return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
-        {hero(true)}
-        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', display:'flex', flexDirection:'column' }}>
-          {form}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
-      {hero(false)}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding: pcMuitoBaixo ? '8px 20px' : pcBaixo ? '16px 20px' : '40px 20px' }}>
-        <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>
-          {form}
-        </div>
-      </div>
-    </div>
+    <TelaEntrada frase={FRASE_ENTRADA}
+      apoio="Planeje o mês, veja com quanto ele termina e saiba se cabe no bolso antes de comprar.">
+      {form}
+    </TelaEntrada>
   )
 }

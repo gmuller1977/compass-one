@@ -13,7 +13,7 @@ import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
-import { M } from '../components/mobile/estilo'
+import { M, FONTE_SITE } from '../components/mobile/estilo'
 import {
   COR, NOMES_MESES,
   contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey, type Memoria,
@@ -557,8 +557,10 @@ export default function NovoLancamentoExtrato() {
     const n = parseValor(modalSaldoValor)
     if (modalSaldoValor.trim() && n !== null) {
       updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n), saldoBancoData: hojeStr, saldoBancoInformado: true}))
-    } else {
-      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBancoData: hojeStr}))
+    } else if (!modalSaldoValor.trim()) {
+      // Campo apagado = tirar o saldo informado (18/11/2026, relatado pelo
+      // Guilherme: apagava e o valor antigo ficava). Volta a "não informado".
+      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: '', saldoBancoInformado: undefined, saldoBancoData: undefined}))
     }
     setModalSaldo(null)
   }
@@ -1188,7 +1190,7 @@ export default function NovoLancamentoExtrato() {
     // Celular, no Banco, no Cartão e no Dinheiro: a PÁGINA rola, com o topo azul junto,
     // como na Bússola — antes o topo ficava preso e sobrava meia tela de dias.
     <div style={{height:'100vh',display:'flex',flexDirection:'column',
-      background:M.fundo,fontFamily:"-apple-system,'Inter',sans-serif",
+      background:M.fundo,fontFamily:FONTE_SITE,
       overflow:isMobile&&tabPrincipal!=='consolidado'?'auto':'hidden'}}>
       <style>{`
         @keyframes rowSaved {

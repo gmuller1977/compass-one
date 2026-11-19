@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import BottomNav from '../BottomNav'
 import AjudaTela from '../AjudaTela'
-import { M } from '../mobile/estilo'
+import { M, FONTE_SITE, FONTE_TITULO } from '../mobile/estilo'
+import { OndasTopo, RotuloTopo } from '../mobile/ui'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import CampoMeta from './CampoMeta'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
@@ -40,7 +41,7 @@ import type { Categoria } from '../../context/AppContext'
  * gravação é o mesmo `onSave`.
  */
 
-const AZUL_TOPO = 'var(--cx-azul)'
+const AZUL_TOPO = 'linear-gradient(180deg, #070c18 0%, #111c3f 35%, #1e40af 100%)'
 // As cores do cartão e do gráfico do computador (PlanAnoVisao), no branco.
 
 interface Props {
@@ -93,13 +94,16 @@ export default function PlanMobile(p: Props) {
   const m = meses[mes]
 
   return (
-    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
-      {/* ── Topo: o do computador (título, ano, "?" e a resposta do ano) ── */}
-      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)', padding: '18px 16px 20px' }}>
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: FONTE_SITE, paddingBottom: 110 }}>
+      {/* ── Topo: o do computador (título, ano, "?" e a resposta do ano), no
+          estilo da página do Educador (19/11/2026) ── */}
+      <div style={{ background: AZUL_TOPO, color: '#fff', position: 'relative', overflow: 'hidden', padding: '18px 16px 66px' }}>
+        <OndasTopo />
+        <div style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.5px', color: 'rgba(255,255,255,.75)' }}>TODO ANO</div>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Planejamento</h1>
+            <RotuloTopo icone="ti-target">O seu plano do ano</RotuloTopo>
+            <h1 style={{ margin: '4px 0 0', fontFamily: FONTE_TITULO, fontSize: 32, fontWeight: 700, lineHeight: 1 }}>Planejamento</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button onClick={() => p.setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={BTN_ANO}>‹</button>
@@ -110,6 +114,7 @@ export default function PlanMobile(p: Props) {
         </div>
         <PlanResumoAnual previsto={previsto} anoAtual={anoAtual} mesAtual={mesAtual} fechamentoReal={p.fechamentoReal}
           inicioReal={p.inicioReal} investidoReal={p.investidoReal} objetivos={p.objetivos} compacto />
+        </div>
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>

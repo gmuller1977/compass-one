@@ -55,7 +55,7 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
 
   return (
     <Cartao>
-      <TituloCartao direita={pendentes === 0 && vencidos > 0
+      <TituloCartao icone="ti-repeat" rotulo="A conferir" direita={pendentes === 0 && vencidos > 0
         ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
         : undefined}>
         Débito automático

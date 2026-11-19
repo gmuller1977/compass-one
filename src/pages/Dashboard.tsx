@@ -22,8 +22,8 @@ import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
 import AjudaTela from '../components/AjudaTela'
-import { Cartao, IconeRedondo, Linha, OlhoIcone, Pilula, ResumoDoMes, type ColunaResumo, SeletorCenario, TituloCartao } from '../components/mobile/ui'
-import { M, ROTULO_TOPO, TOPO_AZUL, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
+import { Cartao, IconeRedondo, Linha, OlhoIcone, OndasTopo, Pilula, ResumoDoMes, RotuloTopo, type ColunaResumo, SeletorCenario, TituloCartao } from '../components/mobile/ui'
+import { FONTE_SITE, FONTE_TITULO, M, ROTULO_TOPO, TOPO_AZUL, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
 import { aplicadoNoMes, isoDe } from '../utils/investimentos'
@@ -234,7 +234,7 @@ export default function Dashboard() {
   // cantos de 20 e sombra azulada sobre o fundo azulado, ícone da categoria
   // em círculo. Duas colunas onde o celular tem uma.
   return (
-    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: FONTE_SITE }}>
       <AppHeader currentPath="/dashboard" />
 
       {/* ── Topo azul: a resposta do mês ─────────────────────────────── */}
@@ -242,12 +242,16 @@ export default function Dashboard() {
           esquerda a saudação com o saldo logo embaixo; à direita os controles
           e, embaixo deles, a caixa do saldo previsto na MESMA largura — a
           borda esquerda alinha com a seta do mês. */}
-      <header style={{ background: TOPO_AZUL, color: '#fff', padding: isMobile ? '18px 16px 60px' : '28px 32px 76px', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)' }}>
-        <div style={{ maxWidth: LARGURA - 64, margin: '0 auto' }}>
+      {/* Topo no estilo da página do Educador (19/11/2026): rótulo âmbar, saldo em
+          Barlow Condensed e as duas ondas no pé, no lugar dos cantos redondos. */}
+      <header style={{ position: 'relative', overflow: 'hidden', background: TOPO_AZUL, color: '#fff', padding: isMobile ? '18px 16px 84px' : '28px 32px 112px' }}>
+        <OndasTopo />
+        <div style={{ maxWidth: LARGURA - 64, margin: '0 auto', position: 'relative' }}>
           {isMobile ? (<>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <RotuloTopo icone="ti-compass">Início · {mesNome} {viewAno}</RotuloTopo>
+              <div style={{ fontSize: 20, fontWeight: 600, marginTop: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Olá, {nome} <span aria-hidden>👋</span>
               </div>
             </div>
@@ -273,7 +277,7 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gap: 24, marginTop: 28 }}>
               <div>
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
-                <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
+                <div style={{ fontFamily: FONTE_TITULO, fontSize: isMobile ? 50 : 68, fontWeight: 700, marginTop: 4, lineHeight: 1,
                   color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
                 {linhaDaMeta}
               </div>
@@ -292,7 +296,7 @@ export default function Dashboard() {
                   <>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Saldo final previsto</span>
-                      <span style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontFamily: FONTE_TITULO, fontSize: 32, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                         {v(memoria.fechamento)}
                       </span>
                     </div>
@@ -301,7 +305,7 @@ export default function Dashboard() {
                 ) : memoria ? (
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                     <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Abriu com</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                       {v(memoria.abertura)}
                     </span>
                   </div>
@@ -316,7 +320,8 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', columnGap: 24, alignItems: 'start' }}>
             <div style={{ minWidth: 0 }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <RotuloTopo icone="ti-compass">Início · {mesNome} {viewAno}</RotuloTopo>
+              <div style={{ fontSize: 20, fontWeight: 600, marginTop: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Olá, {nome} <span aria-hidden>👋</span>
               </div>
             </div>
@@ -324,7 +329,7 @@ export default function Dashboard() {
                 <div style={{ marginTop: 22 }}>
               <div>
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
-                <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
+                <div style={{ fontFamily: FONTE_TITULO, fontSize: isMobile ? 50 : 68, fontWeight: 700, marginTop: 4, lineHeight: 1,
                   color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
                 {linhaDaMeta}
               </div>
@@ -365,7 +370,7 @@ export default function Dashboard() {
                   <>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Saldo final previsto</span>
-                      <span style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontFamily: FONTE_TITULO, fontSize: 32, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                         {v(memoria.fechamento)}
                       </span>
                     </div>
@@ -374,7 +379,7 @@ export default function Dashboard() {
                 ) : memoria ? (
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                     <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Abriu com</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                       {v(memoria.abertura)}
                     </span>
                   </div>
@@ -390,7 +395,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div style={{ maxWidth: LARGURA, margin: '-48px auto 0', padding: isMobile ? '0 14px 80px' : '0 32px 48px', display: 'grid', gap: 20 }}>
+      <div style={{ maxWidth: LARGURA, margin: '-72px auto 0', position: 'relative', padding: isMobile ? '0 14px 80px' : '0 32px 48px', display: 'grid', gap: 20 }}>
         {memoriaAberta && (
           <div id="memoria-do-saldo" style={{ scrollMarginTop: 12 }}>
             {ehFuturo && previsao ? (
@@ -464,7 +469,7 @@ export default function Dashboard() {
 
             {ehMesCorrente && (outrosAvisos.length > 0 || fechouTexto) && (
               <Cartao>
-                <TituloCartao>Pede sua atenção</TituloCartao>
+                <TituloCartao icone="ti-alert-triangle" rotulo="Avisos">Pede sua atenção</TituloCartao>
                 {fechouTexto && (
                   <Linha primeira icone={<i className="ti ti-calendar-check" style={{ color: COR.azul }} />} cor={COR.azul}
                     titulo={<span style={{ whiteSpace: 'normal' }}>{fechouTexto.titulo}</span>}
@@ -489,7 +494,7 @@ export default function Dashboard() {
         {/* ── Um gráfico só: a evolução do saldo mês a mês ── */}
         {evolucao.length >= 2 && (
           <Cartao style={{ padding: isMobile ? '16px 12px 10px' : '20px 22px 14px' }}>
-            <TituloCartao>Evolução do saldo mensal</TituloCartao>
+            <TituloCartao icone="ti-chart-line" rotulo="Mês a mês">Evolução do saldo mensal</TituloCartao>
             <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -6, marginBottom: 10 }}>
               Bancos e dinheiro · linha cheia é o que aconteceu, tracejada é a previsão
               {serie && fimPlano ? ` até ${MESES_FULL[fimPlano.mes].toLowerCase()} de ${fimPlano.ano}` : ''}

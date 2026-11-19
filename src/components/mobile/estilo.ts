@@ -55,3 +55,19 @@ export const ROTULO_TOPO = 'rgba(255,255,255,.75)'
 
 /** Fundo das bolinhas de atalho: branco sobre ele 10,4:1 no pior ponto. */
 export const BOLINHA_AZUL = 'var(--cx-azul)'
+
+/**
+ * O estilo da página do Educador (19/11/2026, Guilherme: "o site parece mais
+ * bonito que o app"). Letra Barlow, títulos em Barlow Condensed, rótulo
+ * pequeno em âmbar e ícone em quadrado escuro. Começou pela Início.
+ * Medido no branco: tinta #0b2545 15,6 · tinta2 #3d5170 8,4 · âmbar-escuro
+ * #9a5b00 5,6. Âmbar claro (#f5b942) só no escuro: 10,5 no #070c18.
+ */
+export const FONTE_SITE = "'Barlow', -apple-system, 'Segoe UI', Roboto, sans-serif"
+export const FONTE_TITULO = "'Barlow Condensed', 'Barlow', sans-serif"
+export const NOITE = '#070c18'
+export const TINTA = '#0b2545'
+export const TINTA2 = '#3d5170'
+export const AMBAR = '#f5b942'
+export const AMBAR_ESCURO = '#9a5b00'
+export const BORDA_CLARA = '#c9dcf2'

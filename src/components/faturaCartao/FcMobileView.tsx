@@ -12,7 +12,8 @@ import {
 import { CalendarioMes } from '../CalendarioMes'
 import { lancLabelComGrupo } from './fcRotulo'
 import { IconeRedondo } from '../mobile/ui'
-import { M } from '../mobile/estilo'
+import { M, FONTE_TITULO, FONTE_SITE } from '../mobile/estilo'
+import { OndasTopo } from '../mobile/ui'
 import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
@@ -187,8 +188,9 @@ export default function FcMobileView({
 
       {/* TOPO AZUL — continua o cabeçalho de Lançamentos: cartões em
           pílulas, o mês da fatura e o total dela em destaque. */}
-      <div style={{background:'var(--cx-azul-continua)',borderRadius:'0 0 28px 28px',boxShadow:'var(--cx-brilho-topo)',
-        padding:'12px 16px 20px',flexShrink:0}}>
+      <div style={{background:'var(--cx-azul-continua)',position:'relative',overflow:'hidden',fontFamily:FONTE_SITE,
+        padding:'12px 16px 64px',flexShrink:0}}>
+        <OndasTopo />
         {contasCartao.length > 1 && (
           <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none' as const,marginBottom:12}}>
             {contasCartao.map(c => (
@@ -698,7 +700,7 @@ export default function FcMobileView({
               return (
               <section key={`${g.ac}-${g.mc}-${g.dc}`}>
                 <div style={{display:'flex',alignItems:'center',gap:8,padding:'0 4px 8px'}}>
-                  <span style={{fontSize:M.corpo,fontWeight:800,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
+                  <span style={{fontFamily:FONTE_TITULO,fontSize:21,fontWeight:700,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
                     {String(g.dc).padStart(2,'0')}/{String(g.mc+1).padStart(2,'0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
                   </span>
                   <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1,minWidth:0,
@@ -716,7 +718,7 @@ export default function FcMobileView({
                   <BotaoMais rotulo={`Lançar compra em ${g.dc}/${g.mc+1}`} onClick={() => novaNoDia(g.dc, g.mc, g.ac)} />
                 </div>
               <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px',
-                border:`2px solid ${ehHoje ? '#1d4ed8' : '#93c5fd'}`}}>
+                border: ehHoje ? '2px solid #1d4ed8' : '1px solid var(--cx-borda)'}}>
                 {g.itens.length === 0 && (
                   <div style={{padding:'14px 0',fontSize:M.corpo,color:COR.textoSuave}}>Nenhuma compra hoje ainda.</div>
                 )}

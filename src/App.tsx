@@ -19,6 +19,7 @@ import Simulacao           from './pages/Simulacao'
 import Investimentos      from './pages/Investimentos'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
+import FaleComEducador     from './pages/FaleComEducador'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
 // A prévia da apresentação nova (o voo) só baixa quem abre /v2.
@@ -185,6 +186,7 @@ export default function App() {
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
+          <Route path="/educador"        element={<FaleComEducador />} />
           <Route path="/v2"              element={<Suspense fallback={null}><LandingPageV2 /></Suspense>} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />

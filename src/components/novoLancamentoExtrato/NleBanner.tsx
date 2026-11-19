@@ -1,6 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
+import { OndasTopo } from '../mobile/ui'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
 import { textoConferido } from '../../utils/conferirSaldos'
 import { valorNaMascara } from '../../utils/moeda'
@@ -70,23 +71,24 @@ export default function NleBanner({
   }
 
   return (
-    <div style={{ background: '#f8faff', borderBottom: '1px solid #e2e8f0', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', flexShrink: 0, gap: 8 }}>
+    <div style={{ background: 'linear-gradient(180deg, #070c18 0%, #111c3f 35%, #1e40af 100%)', position: 'relative', overflow: 'hidden', padding: '10px 28px 58px', display: 'flex', alignItems: 'flex-start', flexShrink: 0, gap: 8 }}>
+      <OndasTopo />
 
       {/* Left: 4 stat boxes + bank selectors */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative' }}>
         <div style={{ display: 'flex', gap: 8 }}>
           {/* Número no cartão azul é BRANCO (24/10/2026, Guilherme: "número
               branco nos card azul, e onde for branco usamos o verde e laranja"). */}
           <KpiCard icon="ti-wallet" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
             valueColor="#fff"
-            sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
+            sublabel={`${NOMES_MESES[mes]} ${ano}`} vidro style={{ flex: 1 }} />
           <KpiCard icon="ti-arrow-up" label="Entradas" value={fmt(totalEntradas)}
-            valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+            valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} vidro style={{ flex: 1 }} />
           <KpiCard icon="ti-arrow-down" label="Saídas" value={fmt(totalSaidas)}
-            valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+            valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} vidro style={{ flex: 1 }} />
           <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo no Compass One'} value={fmt(saldoMes)}
             valueColor="#fff"
-            sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
+            sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} vidro style={{ flex: 1 }} />
           {/* O saldo que o banco (ou a carteira) mostra, no MESMO cartão dos
               outros, como a "Fatura do cartão" (22/10/2026, pedido do
               Guilherme: "Conciliação" confundia). A diferença vai em palavras,
@@ -101,7 +103,7 @@ export default function NleBanner({
               label={isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}
               destaque={saldoBancoNum !== null ? 'Manual' : conferidoEm ? 'Conferido' : undefined}
               value={saldoBancoNum !== null ? fmt(saldoBancoNum) : conferidoEm ? fmt(saldoMes) : '—'}
-              style={{ flex: 1 }}>
+              vidro style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
                 color: diferenca === null && !conferidoEm ? 'rgba(255,255,255,.75)' : diferenca === null || conciliado ? '#86efac' : '#fff',
@@ -128,11 +130,10 @@ export default function NleBanner({
               return (
                 <button key={c.id} onClick={() => onContaSelect(c.id)} aria-pressed={ativo} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                  border: '1.5px solid #1e40af',
-                  background: ativo ? '#fff' : 'var(--cx-azul)',
-                  color: ativo ? '#1e40af' : '#fff',
-                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all .15s',
+                  padding: '7px 16px', borderRadius: 999, cursor: 'pointer', border: 'none',
+                  background: ativo ? '#fff' : 'rgba(255,255,255,.14)',
+                  color: ativo ? '#0b2545' : '#fff',
+                  fontSize: 14, fontWeight: 700, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
                   <i aria-hidden className={`ti ${iconeDesenhado(c.icone) ?? 'ti-building-bank'}`} style={{ fontSize: 14, lineHeight: 1 }} /> {c.banco}
                 </button>

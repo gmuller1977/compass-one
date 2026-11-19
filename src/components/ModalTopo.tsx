@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { PH_BTN_WHITE } from './PageHeader'
-import { TOPO_AZUL, ROTULO_TOPO } from './mobile/estilo'
+import { ROTULO_TOPO, AMBAR, FONTE_TITULO } from './mobile/estilo'
 
 /**
  * O cabeçalho das janelas: o mesmo do modal do mês no Planejamento
@@ -55,7 +55,8 @@ export default function ModalTopo({ icone, rotulo, titulo, id, subtitulo, onFech
   }
 
   return (
-    <div style={{ background: TOPO_AZUL, padding: '16px 20px', flexShrink: 0,
+    // O topo escuro da página do Educador (19/11/2026): rótulo âmbar e título em Barlow Condensed.
+    <div style={{ background: 'linear-gradient(180deg, #070c18 0%, #111c3f 45%, #1e40af 100%)', padding: '16px 20px', flexShrink: 0,
       borderRadius: raio ? `${raio}px ${raio}px 0 0` : undefined }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {voltar && (
@@ -70,12 +71,12 @@ export default function ModalTopo({ icone, rotulo, titulo, id, subtitulo, onFech
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <div style={{ minWidth: 0, flex: setas ? undefined : 1, width: setas ? larguraTitulo : undefined, flexShrink: setas ? 0 : 1 }}>
             {rotulo && (
-              <div style={{ fontSize: 11, color: ROTULO_TOPO, letterSpacing: '.3px', textTransform: 'uppercase',
-                fontWeight: 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: 11, color: AMBAR, letterSpacing: '.14em', textTransform: 'uppercase',
+                fontWeight: 700, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {rotulo}
               </div>
             )}
-            <div id={id} role="heading" aria-level={2} style={{ fontSize: 18, fontWeight: 700, color: '#fff', lineHeight: 1.25,
+            <div id={id} role="heading" aria-level={2} style={{ fontFamily: FONTE_TITULO, fontSize: 22, fontWeight: 700, color: '#fff', lineHeight: 1.1,
               overflowWrap: 'anywhere' }}>{titulo}</div>
           </div>
           {setas && <span style={{ display: 'flex', gap: 6, flexShrink: 0 }}>{seta(-1)}{seta(1)}</span>}

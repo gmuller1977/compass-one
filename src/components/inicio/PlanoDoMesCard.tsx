@@ -1,8 +1,8 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { IconeCat } from '../IconeCat'
-import { M, TOPO_AZUL, mostrar } from '../mobile/estilo'
-import { Anel } from '../mobile/ui'
+import { BORDA_CLARA, FONTE_TITULO, M, TINTA, TINTA2, mostrar } from '../mobile/estilo'
+import { Anel, CabecalhoCartao } from '../mobile/ui'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { balancoDoPlano, type GrupoNoBalanco } from '../../utils/balancoDoPlano'
 import type { LinhaDoMes } from '../acompanhamento/evolucaoCalcs'
@@ -17,10 +17,11 @@ import type { LinhaDoMes } from '../acompanhamento/evolucaoCalcs'
  * O mesmo azul-escuro do "Resumo do mês", logo acima: só branco, rótulo a
  * 85%, `#fdba74` e `#86efac` (a paleta de fundo escuro do CLAUDE.md).
  */
-const ROT = 'rgba(255,255,255,.85)'
-// Número no azul é BRANCO (24/10/2026, Guilherme); verde e laranja ficam no branco e nas barras.
-const NEG = '#fff'
-const POS = '#fff'
+// Cartão BRANCO no estilo da página do Educador (19/11/2026): no branco,
+// verde #15803d e vermelho #b91c1c (a paleta de fundo claro).
+const ROT = TINTA2
+const NEG = '#b91c1c'
+const POS = '#15803d'
 
 export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: {
   linhas: LinhaDoMes[]; categorias: Categoria[]; oculto: boolean; onRadar: () => void
@@ -34,10 +35,10 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
     if (!grupos.length) return null
     const estaAberto = aberto === chave
     return (
-      <div style={{ borderTop: '1px solid rgba(255,255,255,.16)' }}>
+      <div style={{ borderTop: '1px solid #e3ecf7' }}>
         <button onClick={() => setAberto(estaAberto ? null : chave)} aria-expanded={estaAberto} style={{
           display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, padding: '6px 0',
-          background: 'none', border: 'none', color: '#fff', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left',
+          background: 'none', border: 'none', color: TINTA, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left',
         }}>
           <span style={{ flex: 1, fontSize: M.corpo, fontWeight: 600 }}>{titulo} · {grupos.length}</span>
           <span aria-hidden style={{ color: ROT, fontSize: 16, transform: estaAberto ? 'rotate(90deg)' : undefined,
@@ -48,9 +49,9 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
             {grupos.map(g => (
               <div key={g.grupo} style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}>
                 <span aria-hidden style={{
-                  width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,.14)', flexShrink: 0,
+                  width: 34, height: 34, borderRadius: 10, background: '#eef4fb', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-                }}><IconeCat icone={iconeCategoria(categorias, g.primeiraCategoria).icone} cor="#fff" /></span>
+                }}><IconeCat icone={iconeCategoria(categorias, g.primeiraCategoria).icone} cor={TINTA} /></span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: M.corpo, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
                 <span style={{ ...num, fontSize: M.corpo, fontWeight: 700, color: cor }}>{oculto ? 'R$ ••••' : `${sinal}${v(g.valor)}`}</span>
               </div>
@@ -68,18 +69,10 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
 
   return (
     <section aria-label="Plano do mês" style={{
-      background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 12px', boxShadow: 'var(--cx-brilho)', color: '#fff',
+      background: '#fff', borderRadius: M.raio, padding: '18px 18px 12px', boxShadow: '0 18px 40px rgba(11,37,69,.10)',
+      border: `2px solid ${TINTA}`, color: TINTA,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <span aria-hidden style={{
-          width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,.14)', flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}><i className="ti ti-target-arrow" style={{ fontSize: 22, color: '#fff' }} /></span>
-        <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: M.titulo, fontWeight: 700 }}>Plano do mês</h2>
-          <div style={{ fontSize: M.legenda, color: ROT, marginTop: 2 }}>Despesas, por grupo, até hoje</div>
-        </div>
-      </div>
+      <CabecalhoCartao icone="ti-target-arrow" rotulo="Despesas por grupo, até hoje">Plano do mês</CabecalhoCartao>
 
       {!b ? (
         <div style={{ fontSize: M.corpo, color: ROT, paddingBottom: 8 }}>Ainda sem despesas planejadas neste mês.</div>
@@ -89,22 +82,22 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
               pedido do Guilherme). O anel é a parte dos grupos com plano que
               está de cada lado; o valor vai embaixo. */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {([['Passaram do plano', b.passaram.length, b.passou, '#2563eb'],
-               ['Abaixo do plano', b.abaixo.length, b.falta, '#0891b2']] as const).map(([rot, n, valor, cor]) => {
+            {([['Passaram do plano', b.passaram.length, b.passou, NEG],
+               ['Abaixo do plano', b.abaixo.length, b.falta, POS]] as const).map(([rot, n, valor, cor]) => {
               const total = b.passaram.length + b.abaixo.length
               return (
                 <div key={rot} style={{ textAlign: 'center', minWidth: 0 }}>
                   <Anel pct={total > 0 ? Math.round((n / total) * 100) : 0} cor={cor} oculto={oculto}
-                    centro={`${n} de ${total}`} rotulo={n === 1 ? 'grupo' : 'grupos'} />
+                    centro={`${n} de ${total}`} rotulo={n === 1 ? 'grupo' : 'grupos'} claro />
                   <div style={{ fontSize: M.legenda, color: ROT, marginTop: 6 }}>{rot}</div>
-                  <div style={{ ...num, fontSize: M.corpo, fontWeight: 800 }}>{v(valor)}</div>
+                  <div style={{ ...num, fontFamily: FONTE_TITULO, fontSize: 22, fontWeight: 700 }}>{v(valor)}</div>
                 </div>
               )
             })}
           </div>
           <div style={{
-            margin: '16px 0 12px', padding: '14px 16px', borderRadius: 18, border: '1.5px solid #22d3ee',
-            boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)',
+            margin: '16px 0 12px', padding: '12px 14px', borderRadius: 12, border: `1px solid ${BORDA_CLARA}`, background: '#f3f8fe',
+            
             fontSize: M.corpo, lineHeight: 1.45, fontWeight: 600,
           }}>{frase}</div>
           {lista('passaram', 'Grupos que passaram', b.passaram, NEG, '+')}
@@ -114,8 +107,8 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
 
       <button onClick={onRadar} style={{
         display: 'block', width: '100%', minHeight: 44, marginTop: 2, padding: '8px 0 4px',
-        borderTop: '1px solid rgba(255,255,255,.16)', borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
-        background: 'none', color: '#fff', fontFamily: 'inherit', fontSize: M.corpo, fontWeight: 700,
+        borderTop: '1px solid #e3ecf7', borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
+        background: 'none', color: TINTA, fontFamily: 'inherit', fontSize: M.corpo, fontWeight: 700,
         cursor: 'pointer', textAlign: 'center',
       }}>Ver o detalhe no Radar ›</button>
     </section>

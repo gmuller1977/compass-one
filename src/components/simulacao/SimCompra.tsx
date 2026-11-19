@@ -7,6 +7,8 @@ import {
 import { useApp } from '../../context/AppContext'
 import type { Conta, DadosMes, PlanoAnoData } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
+import { CabecalhoCartao } from '../mobile/ui'
+import { TINTA, TINTA2, NOITE, BORDA_CLARA, FONTE_TITULO } from '../mobile/estilo'
 import { parseValor } from '../../utils/moeda'
 import {
   simularCompra, fimDoPlanejamento, parcelasQueOPlanoCobre, diagnosticar,
@@ -35,12 +37,12 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 
 
 const inputSt: React.CSSProperties = {
-  width: '100%', padding: '11px 14px', border: `1px solid ${COR.borda}`,
+  width: '100%', padding: '11px 14px', border: `1px solid ${BORDA_CLARA}`,
   borderRadius: 10, fontSize: 15, fontFamily: 'inherit', outline: 'none',
   boxSizing: 'border-box', background: COR.branco, color: COR.texto,
 }
 const labelSt: React.CSSProperties = {
-  display: 'block', fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 7,
+  display: 'block', fontSize: 13, fontWeight: 600, color: TINTA, marginBottom: 7,
 }
 const card: React.CSSProperties = {
   background: COR.branco, border: `.5px solid ${COR.borda}`, borderRadius: 12, padding: '20px 22px',
@@ -60,8 +62,9 @@ const card: React.CSSProperties = {
  * verde cairia para 4,40:1.
  */
 const cardAzul: React.CSSProperties = {
-  background: `var(--cx-azul)`,
-  border: '1px solid rgba(255,255,255,.12)', borderRadius: 12, padding: '20px 22px',
+  background: COR.branco,
+  border: `1px solid ${BORDA_CLARA}`, borderRadius: 18, padding: '20px 22px',
+  boxShadow: '0 10px 28px rgba(11,37,69,.08)',
   // Sem isto, no celular a tabela (460px) alargava o card além da tela.
   minWidth: 0,
 }
@@ -399,7 +402,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         <button onClick={() => navigate('/planejamento')} style={{
           marginTop: 20, padding: '12px 22px', border: 'none', borderRadius: 10,
           background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-          color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+          color: '#ffffff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
           fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(26,86,219,.3)',
         }}>Montar meu planejamento</button>
       </div>
@@ -419,12 +422,16 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
       flexDirection: duasColunas ? undefined : 'column',
       alignItems: duasColunas ? 'start' : 'stretch', gap: 16,
     }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
       <div style={cardAzul}>
-        {/* Pílulas: a ativa é branca com texto azul-escuro (14,8:1); a inativa,
-            texto branco sobre o azul (8,7:1 no #1e40af). */}
+        {/* Três cartões brancos em passos, como a página do Educador
+            (19/11/2026): a compra, as opções e o pagamento. */}
+        <CabecalhoCartao icone={modo === 'mensal' ? 'ti-repeat' : 'ti-shopping-bag'} rotulo="Passo 1 · A compra">
+          {modo === 'mensal' ? 'Qual é o gasto?' : 'O que você quer comprar?'}
+        </CabecalhoCartao>
         <div role="tablist" aria-label="Tipo de gasto" style={{
           display: 'flex', gap: 4, padding: 4, borderRadius: 12, marginBottom: 18,
-          background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)',
+          background: '#eef3fa', border: `1px solid ${BORDA_CLARA}`,
         }}>
           {([['parcelada', 'Compra parcelada', 'ti-shopping-cart'], ['mensal', 'Gasto mensal', 'ti-repeat']] as const).map(([id, txt, ti]) => {
             const ativo = modo === id
@@ -433,7 +440,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                 flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700,
                 background: ativo ? COR.branco : 'transparent',
-                color: ativo ? COR.azulEscuro : '#fff',
+                color: ativo ? TINTA : TINTA2, boxShadow: ativo ? '0 2px 8px rgba(11,37,69,.12)' : 'none',
               }}><i aria-hidden className={`ti ${ti}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{txt}</button>
             )
           })}
@@ -463,7 +470,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                 placeholder="Sem prazo" style={inputSt} inputMode="numeric"
                 onKeyDown={e => e.key === 'Enter' && simular()} />
             </div>
-            <div style={{ gridColumn: '1 / -1', fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: -6, lineHeight: 1.5 }}>
+            <div style={{ gridColumn: '1 / -1', fontSize: 12, color: TINTA2, marginTop: -6, lineHeight: 1.5 }}>
               {fimDoPlano && (!mesesStr.trim()
                 ? <>Sem prazo, a conta vai até o fim do seu planejamento, <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b> ({tetoParcelas} {tetoParcelas === 1 ? 'mês' : 'meses'}).</>
                 : Number(mesesStr) > tetoParcelas
@@ -471,10 +478,10 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                   : <>A conta olha {mesesMensal} {mesesMensal === 1 ? 'mês' : 'meses'} a partir de {MESES[primeiroMesDoParcelamento({ cartaoId: ondeId || undefined, ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), dia: dataCompra.getDate() }, contas).mes].toLowerCase()}.</>)}
             </div>
           </div>
-        ) : (<>
+        ) : (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr 1fr', gap: 16 }}>
           <div>
-            <label style={labelSt}>O que você quer comprar?</label>
+            <label style={labelSt}>O que é</label>
             <input value={nome} onChange={e => setNome(e.target.value)}
               placeholder="Uma bicicleta" style={inputSt} />
           </div>
@@ -490,7 +497,12 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
               onKeyDown={e => e.key === 'Enter' && simular()} />
           </div>
         </div>
+        )}
+      </div>
 
+      {modo !== 'mensal' && (
+        <div style={cardAzul}>
+        <CabecalhoCartao icone="ti-list-numbers" rotulo="Passo 2 · As opções">O que o vendedor ofereceu?</CabecalhoCartao>
         <SimComparativo
           linhas={linhas}
           selecionada={idEscolhida}
@@ -508,9 +520,12 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           onPlanejarMais={() => fimDoPlano && navigate(`/planejamento?ano=${fimDoPlano.ano + 1}`)}
           isMobile={isMobile}
         />
-        </>)}
+        </div>
+      )}
 
-        <div style={{ marginTop: 18 }}>
+      <div style={cardAzul}>
+        <CabecalhoCartao icone="ti-credit-card" rotulo={`Passo ${modo === 'mensal' ? 2 : 3} · O pagamento`}>Como e quando você paga?</CabecalhoCartao>
+        <div>
           <label style={labelSt}>Como você vai pagar?</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {[{ id: '', rotulo: 'Débito ou Pix', ti: 'ti-building-bank' },
@@ -520,9 +535,9 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
               return (
                 <button key={op.id || 'debito'} onClick={() => setOndeId(op.id)} style={{
                   padding: '9px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                  border: `1.5px solid ${ativo ? COR.azul : COR.borda}`,
-                  background: ativo ? '#eff6ff' : COR.branco,
-                  color: ativo ? COR.azul : COR.textoSuave,
+                  border: `1.5px solid ${ativo ? NOITE : BORDA_CLARA}`,
+                  background: ativo ? NOITE : COR.branco,
+                  color: ativo ? '#ffffff' : TINTA,
                   fontSize: 13, fontWeight: ativo ? 700 : 500, transition: 'all .15s',
                 }}>{op.ti && <i aria-hidden className={`ti ${op.ti}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />}{op.rotulo}</button>
               )
@@ -542,7 +557,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
             <input value={guardarStr} onChange={e => setGuardar(e.target.value)}
               placeholder={metaDoInicio > 0 ? fmt(metaDoInicio) : 'R$ 0,00'} style={inputSt} inputMode="decimal"
               onKeyDown={e => e.key === 'Enter' && simular()} />
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 6, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: TINTA2, marginTop: 6, lineHeight: 1.5 }}>
               {metaDoInicio > 0
                 ? (guardarNum > metaDoInicio
                     ? <>Acima da sua meta de {fmt(metaDoInicio)}: a simulação usa {fmt(guardarNum)}.</>
@@ -571,28 +586,29 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
             azul-escuro (14,8:1); o outro, contorno branco. */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginTop: 18 }}>
           <button onClick={salvar} style={{
-            padding: 13, borderRadius: 10, border: '1.5px solid rgba(255,255,255,.75)',
-            background: 'transparent', color: '#fff', fontSize: 14.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+            padding: 13, borderRadius: 10, border: `1.5px solid ${TINTA}`,
+            background: COR.branco, color: TINTA, fontSize: 14.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
           }}><i aria-hidden className="ti ti-bookmark" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
             {aberta && chaveDoItem(aberta.nome) === chaveDoItem(nome.trim() || aberta.nome) && chaveDoItem(aberta.fornecedor) === chaveDoItem(fornecedor) ? 'Salvar alterações' : 'Salvar simulação'}</button>
           <button onClick={() => (pedido ? setIncluindo(true) : simular())} disabled={!!incluidoEm} style={{
             padding: 13, border: 'none', borderRadius: 10,
-            background: COR.branco, color: COR.azulEscuro, opacity: incluidoEm ? .6 : 1,
+            background: NOITE, color: '#ffffff', opacity: incluidoEm ? .6 : 1,
             fontSize: 14.5, fontWeight: 800, cursor: incluidoEm ? 'default' : 'pointer',
             fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(0,0,0,.22)',
           }}><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
             {modo === 'mensal' ? 'Vou pagar' : 'Vou comprar'}</button>
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 8, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12, color: TINTA2, marginTop: 8, lineHeight: 1.5 }}>
           "{modo === 'mensal' ? 'Vou pagar' : 'Vou comprar'}" coloca as parcelas no seu planejamento, dentro de uma categoria.
         </div>
         {(avisoSalvar || incluidoEm) && (
           <div role="status" style={{ marginTop: 10, fontSize: 13, fontWeight: 600, lineHeight: 1.5,
-            color: avisoSalvar && !avisoSalvar.ok ? '#fff' : '#86efac' }}>
+            color: avisoSalvar && !avisoSalvar.ok ? '#b91c1c' : '#15803d' }}>
             {avisoSalvar && <div>{avisoSalvar.ok ? '✓ ' : '⚠ '}{avisoSalvar.texto}</div>}
             {incluidoEm && <div>✓ {incluidoEm}. Para tirar, use “Desfazer” no topo do Simulador.</div>}
           </div>
         )}
+      </div>
       </div>
 
       <div style={duasColunas
@@ -606,8 +622,8 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           />
         ) : duasColunas && (
           <div style={{ ...cardAzul, textAlign: 'center', padding: '40px 24px' }}>
-            <i aria-hidden className="ti ti-chart-bar" style={{ fontSize: 32, color: '#fff' }} />
-            <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,.85)', marginTop: 10, lineHeight: 1.6 }}>
+            <i aria-hidden className="ti ti-chart-bar" style={{ fontSize: 32, color: TINTA }} />
+            <div style={{ fontSize: 13.5, color: TINTA2, marginTop: 10, lineHeight: 1.6 }}>
               Escolha uma opção na tabela para ver o mês a mês.
             </div>
           </div>
@@ -665,18 +681,18 @@ function InfoDoCartao({ cartao, data, hoje, onUsar }: {
       </div>
       <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
         <span>
-          <i aria-hidden className="ti ti-calendar-star" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6, color: '#fde047' }} />
+          <i aria-hidden className="ti ti-calendar-star" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6, color: '#9a5b00' }} />
           Melhor dia para comprar: <b>{ehHoje ? 'hoje' : dm(melhor.data)}</b>
           {' '}— vence em {dm(melhor.fatura.venceEm)}, {melhor.dias} dias para pagar.
         </span>
         {!ehMelhor && mesesEntre <= 1 && (
           <button onClick={() => onUsar(melhor.data)} style={{
             padding: '5px 10px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-            border: '1px solid rgba(255,255,255,.6)', background: 'transparent', color: '#fff',
+            border: `1px solid ${TINTA}`, background: COR.branco, color: TINTA,
             fontSize: 12, fontWeight: 600,
           }}>Simular nesse dia</button>
         )}
-        {ehMelhor && <span style={{ color: '#86efac', fontWeight: 700 }}>✓ é o dia escolhido</span>}
+        {ehMelhor && <span style={{ color: '#15803d', fontWeight: 700 }}>✓ é o dia escolhido</span>}
       </div>
     </div>
   )
@@ -684,8 +700,8 @@ function InfoDoCartao({ cartao, data, hoje, onUsar }: {
 
 const caixaCartao: React.CSSProperties = {
   marginTop: 12, padding: '12px 14px', borderRadius: 10,
-  background: 'rgba(15,23,42,.25)', border: '1px solid rgba(255,255,255,.2)',
-  color: 'rgba(255,255,255,.92)', fontSize: 13, lineHeight: 1.55,
+  background: '#f2f6fc', border: `1px solid ${BORDA_CLARA}`,
+  color: TINTA, fontSize: 13, lineHeight: 1.55,
 }
 
 // ── Resposta ────────────────────────────────────────────────────────────
@@ -698,10 +714,10 @@ const caixaCartao: React.CSSProperties = {
  * companhia) so existem para fundo claro.
  */
 const TOM = {
-  ok:      { texto: '#86efac' },
-  atencao: { texto: '#fde047' },
-  // Laranja no azul não se lê: "não cabe" vai em branco (24/10/2026).
-  nao:     { texto: '#fff' },
+  // No cartão branco (19/11/2026, estilo do site): verde 5,0, âmbar 5,6, vermelho 6,5.
+  ok:      { texto: '#15803d' },
+  atencao: { texto: '#9a5b00' },
+  nao:     { texto: '#b91c1c' },
 } as const
 
 // O ponto e elemento grafico (limite 3:1); o texto vai na paleta escura.
@@ -710,8 +726,9 @@ const TOM = {
 // claro — COR.azul sumia no próprio fundo. Antes eram os tons de fundo claro:
 // rótulos brancos no #f8faff e números marinho no azul, ilegíveis.
 // Número no azul é BRANCO (24/10/2026, Guilherme); o laranja fica na linha do zero.
-const NEG = '#fff'
-const COM_COMPRA = '#93c5fd'
+const NEG = '#b91c1c'
+const COM_COMPRA = TINTA
+const SEM_COMPRA = '#8aa0bd'
 
 export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null, guardaMensal = [] }: {
   nome: string
@@ -786,23 +803,21 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
 
   return (
     <>
-      <div style={{
-        ...cardAzul,
-        borderLeft: `4px solid ${TOM[d.gravidade].texto}`,
-      }}>
-        <div style={{ fontSize: 17, fontWeight: 800, color: TOM[d.gravidade].texto }}>
-          {titulo}
-        </div>
+      <div style={{ ...cardAzul, border: `2px solid ${TINTA}` }}>
+        <CabecalhoCartao icone={d.gravidade === 'ok' ? 'ti-circle-check' : d.gravidade === 'nao' ? 'ti-circle-x' : 'ti-alert-triangle'}
+          rotulo={mensal ? 'A resposta · todo mês' : parcelas > 1 ? `A resposta · em ${parcelas}x` : 'A resposta · à vista'}>
+          <span style={{ color: TOM[d.gravidade].texto }}>{titulo}</span>
+        </CabecalhoCartao>
 
-        <div style={{ fontSize: 14, color: '#fff', marginTop: 10, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 14, color: TINTA, marginTop: 10, lineHeight: 1.6 }}>
           {destaque.rotulo}
         </div>
-        <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-1px', marginTop: 2,
-          color: TOM[d.gravidade].texto }}>
+        <div style={{ fontFamily: FONTE_TITULO, fontSize: 42, fontWeight: 700, lineHeight: 1.05, marginTop: 2,
+          color: d.gravidade === 'nao' ? TOM.nao.texto : TINTA }}>
           {fmt(destaque.valor)}
         </div>
 
-        <div style={{ fontSize: 13, color: '#fff', marginTop: 8, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: TINTA, marginTop: 8, lineHeight: 1.6 }}>
           {explicacao}
         </div>
 
@@ -811,7 +826,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
         {/* O mes ja seria ruim sem a compra. Muda a conversa: o problema nao e
             o que se quer comprar, e o mes. */}
         {d.apertoPreexistente && (
-          <div style={{ fontSize: 13, color: '#fff', marginTop: 8, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: TINTA, marginTop: 8, lineHeight: 1.6 }}>
             Vale notar: <b>{MESES[d.abaixo[0].mes].toLowerCase()}</b> já ficaria
             apertado mesmo sem essa compra.
           </div>
@@ -819,7 +834,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
 
         {d.gravidade !== 'ok' && (r.adiarPara || (!mensal && r.parcelasQueCabem)) && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: TINTA, marginBottom: 8 }}>
               O que dá para fazer:
             </div>
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
@@ -842,7 +857,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
         )}
 
         {d.gravidade === 'nao' && !r.adiarPara && (mensal || !r.parcelasQueCabem) && (
-          <div style={{ fontSize: 14, color: '#fff', marginTop: 16, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, color: TINTA, marginTop: 16, lineHeight: 1.6 }}>
             {r.limitadoPeloPlano
               ? 'Dentro do que você já planejou não há saída — nem esperando, nem dividindo em mais vezes.'
               : mensal
@@ -880,7 +895,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
 
         <button onClick={() => setDetalhes(v => !v)} style={{
           marginTop: 16, background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontFamily: 'inherit', fontSize: 13, color: '#fff', fontWeight: 600,
+          fontFamily: 'inherit', fontSize: 13, color: TINTA, fontWeight: 600,
         }}>
           {detalhes ? '▾ Esconder os números' : '▸ Ver os números em detalhe'}
         </button>
@@ -909,7 +924,7 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
     flex: 1, minWidth: 0, textAlign: 'center', padding: isMobile ? '10px 4px' : '10px 8px',
   }
   const rotulo: React.CSSProperties = {
-    fontSize: 11, color: 'rgba(255,255,255,.85)', marginBottom: 4,
+    fontSize: 11, color: TINTA2, marginBottom: 4,
   }
   const valor: React.CSSProperties = {
     fontSize: isMobile ? 13 : 17, fontWeight: 800,
@@ -917,27 +932,27 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
   }
 
   return (
-    <div style={{ marginTop: 16, border: '1px solid rgba(255,255,255,.18)', borderRadius: 10,
-      background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+    <div style={{ marginTop: 16, border: `1px solid ${BORDA_CLARA}`, borderRadius: 10,
+      background: '#f7f9fd', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={celula}>
           <div style={rotulo}>Sem a compra</div>
-          <div style={{ ...valor, color: '#fff' }}>{fmt(fim.semCompra)}</div>
+          <div style={{ ...valor, color: TINTA }}>{fmt(fim.semCompra)}</div>
         </div>
-        <div style={{ width: 1, background: 'rgba(255,255,255,.18)' }} />
+        <div style={{ width: 1, background: BORDA_CLARA }} />
         <div style={celula}>
           <div style={rotulo}>Comprando</div>
-          <div style={{ ...valor, color: fim.comCompra < 0 ? NEG : '#fff' }}>
+          <div style={{ ...valor, color: fim.comCompra < 0 ? NEG : TINTA }}>
             {fmt(fim.comCompra)}
           </div>
         </div>
-        <div style={{ width: 1, background: 'rgba(255,255,255,.18)' }} />
+        <div style={{ width: 1, background: BORDA_CLARA }} />
         <div style={celula}>
           <div style={rotulo}>Diferença</div>
           <div style={{ ...valor, color: NEG }}>− {fmt(diferenca)}</div>
         </div>
       </div>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.85)', textAlign: 'center',
+      <div style={{ fontSize: 11, color: TINTA2, textAlign: 'center',
         padding: '0 8px 10px' }}>
         onde você chega em {MESES[fim.mes].toLowerCase()} de {fim.ano}
       </div>
@@ -946,9 +961,9 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
 }
 
 
-const ACIMA = '#4ade80'
-const ABAIXO = '#f87171'
-const META = '#fde047'
+const ACIMA = '#16a34a'
+const ABAIXO = '#dc2626'
+const META = '#a16207'
 type QualGrafico = 'saldo' | 'guarda'
 const CHAVE_GRAFICO = 'simulador-grafico'
 
@@ -993,7 +1008,7 @@ export function GraficosDaSimulacao({ meses, guarda, isMobile, mensal, textos }:
       {temGuarda && (
         <div role="tablist" aria-label="Gráfico" style={{
           display: 'inline-flex', gap: 4, padding: 3, borderRadius: 10, marginBottom: 12,
-          background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)',
+          background: '#eef3fa', border: `1px solid ${BORDA_CLARA}`,
         }}>
           {([['saldo', 'Saldo'], ['guarda', 'Quanto guarda']] as const).map(([id, txt]) => {
             const ativo = mostra === id
@@ -1001,16 +1016,16 @@ export function GraficosDaSimulacao({ meses, guarda, isMobile, mensal, textos }:
               <button key={id} role="tab" aria-selected={ativo} onClick={() => escolher(id)} style={{
                 padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: 13, fontWeight: 700,
-                background: ativo ? COR.branco : 'transparent', color: ativo ? COR.azulEscuro : '#fff',
+                background: ativo ? COR.branco : 'transparent', color: ativo ? TINTA : TINTA2, boxShadow: ativo ? '0 2px 8px rgba(11,37,69,.12)' : 'none',
               }}>{txt}</button>
             )
           })}
         </div>
       )}
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: TINTA, marginBottom: 3 }}>
         {mostra === 'saldo' ? 'Seu saldo, antes e depois' : 'Quanto você guarda em cada mês'}
       </div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: TINTA2, marginBottom: 12, lineHeight: 1.5 }}>
         {mostra === 'saldo'
           ? t.saldo
           : t.guarda}
@@ -1027,13 +1042,13 @@ const rotuloMes = (p: PontoFluxo, i: number) =>
 const curto = (v: number) => Math.abs(v) >= 1000
   ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`
   : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
-const eixo = { fontSize: 11, fill: 'rgba(255,255,255,.85)' }
+const eixo = { fontSize: 11, fill: TINTA2 }
 const tooltipSt = { fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }
 
 function Legenda({ itens }: { itens: [string, string, 'linha' | 'tracejado' | 'barra'][] }) {
   return (
     <div style={{ display: 'flex', gap: '6px 14px', flexWrap: 'wrap', marginTop: 8,
-      fontSize: 12, color: 'rgba(255,255,255,.85)', alignItems: 'center' }}>
+      fontSize: 12, color: TINTA2, alignItems: 'center' }}>
       {itens.map(([cor, txt, tipo]) => (
         <span key={txt} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           {tipo === 'barra'
@@ -1058,18 +1073,18 @@ function GraficoSaldo({ meses, isMobile, t }: { meses: PontoFluxo[]; isMobile: b
         aria-label={`Saldo no fim de cada mês. ${meses.map(p => `${mesEAno(p)}: ${t.sem} ${fmt(p.semCompra)}, ${t.com} ${fmt(p.comCompra)}`).join('; ')}`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
-            <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} interval="preserveStartEnd" />
             <YAxis tick={eixo} width={52} tickLine={false} axisLine={false} tickFormatter={curto} />
             <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? `Saldo ${t.com}` : `Saldo ${t.sem}`]}
               contentStyle={tooltipSt} />
             <ReferenceLine y={0} stroke="#c2410c" strokeDasharray="4 4" />
-            <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="sem" stroke={SEM_COMPRA} strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey="com" stroke={COM_COMPRA} strokeWidth={3} dot={false} activeDot={{ r: 5 }} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <Legenda itens={[['#fff', t.sem, 'tracejado'], [COM_COMPRA, t.com, 'linha']]} />
+      <Legenda itens={[[SEM_COMPRA, t.sem, 'tracejado'], [COM_COMPRA, t.com, 'linha']]} />
     </div>
   )
 }
@@ -1093,19 +1108,19 @@ function GraficoGuarda({ meses, guarda, isMobile, t }: {
         aria-label={`Quanto guarda em cada mês. ${meses.map((p, i) => guarda[i] ? `${mesEAno(p)}: ${fmt(guarda[i]!.guarda)}${guarda[i]!.meta > 0 ? ` de uma meta de ${fmt(guarda[i]!.meta)}` : ''}` : `${mesEAno(p)}: sem plano`).join('; ')}`}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
-            <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} interval="preserveStartEnd" />
             <YAxis tick={eixo} width={52} tickLine={false} axisLine={false} tickFormatter={curto} />
             <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)),
               n === 'com' ? `Guarda ${t.com}` : n === 'sem' ? `Guardaria ${t.sem}` : 'Meta do mês']}
               contentStyle={tooltipSt} />
-            <ReferenceLine y={0} stroke="rgba(255,255,255,.5)" />
+            <ReferenceLine y={0} stroke="#94a3b8" />
             <Bar dataKey="com" radius={[3, 3, 0, 0]} maxBarSize={22} isAnimationActive={false}>
               {dados.map((d, i) => (
                 <Cell key={i} fill={d.meta === null ? COM_COMPRA : (d.com ?? 0) >= d.meta - 0.005 ? ACIMA : ABAIXO} />
               ))}
             </Bar>
-            <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls isAnimationActive={false} />
+            <Line type="monotone" dataKey="sem" stroke={SEM_COMPRA} strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls isAnimationActive={false} />
             {temMeta && <Line type="stepAfter" dataKey="meta" stroke={META} strokeWidth={2.5} strokeDasharray="6 4" dot={false} isAnimationActive={false} />}
           </ComposedChart>
         </ResponsiveContainer>
@@ -1113,7 +1128,7 @@ function GraficoGuarda({ meses, guarda, isMobile, t }: {
       <Legenda itens={[
         ...(temMeta ? [[ACIMA, 'na meta ou acima', 'barra'], [ABAIXO, 'abaixo da meta', 'barra'], [META, 'meta do mês', 'tracejado']] as [string, string, 'barra' | 'tracejado'][]
           : [[COM_COMPRA, `guarda ${t.com}`, 'barra']] as [string, string, 'barra'][]),
-        ['#fff', t.sem, 'tracejado'],
+        [SEM_COMPRA, t.sem, 'tracejado'],
       ]} />
     </div>
   )
@@ -1130,8 +1145,8 @@ function AvisoMeta({ m, mensal }: { m: MetaNaSimulacao; mensal: boolean }) {
   const mes = (x: { mes: number; ano: number }) => `${MESES[x.mes].toLowerCase()}${x.ano !== new Date().getFullYear() ? ` de ${x.ano}` : ''}`
   const p = m.pior
   const caixa: React.CSSProperties = {
-    marginTop: 12, padding: '10px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.55, color: '#fff',
-    background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.18)',
+    marginTop: 12, padding: '10px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.55, color: TINTA,
+    background: '#f2f6fc', border: `1px solid ${BORDA_CLARA}`,
   }
   if (!m.caem.length && !m.jaAbaixo.length) {
     return (
@@ -1167,14 +1182,14 @@ function AvisoMeta({ m, mensal }: { m: MetaNaSimulacao; mensal: boolean }) {
 function Saida({ icone, titulo, detalhe }: { icone: string; titulo: string; detalhe: string }) {
   return (
     <div style={{
-      flex: 1, background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)',
+      flex: 1, background: '#eef3fa', border: `1px solid ${BORDA_CLARA}`,
       borderRadius: 10, padding: '12px 14px',
     }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: TINTA }}>
         <i aria-hidden className={`ti ${icone}`} style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />{titulo}
       </div>
       {detalhe && (
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12, color: TINTA2, marginTop: 4, lineHeight: 1.5 }}>
           {detalhe}
         </div>
       )}
@@ -1189,24 +1204,24 @@ function Detalhes({ meses, mensal }: { meses: PontoFluxo[]; mensal: boolean }) {
         gridTemplateColumns: 'minmax(60px,1fr) repeat(3,minmax(78px,1fr))',
         gap: '6px 10px', alignItems: 'center' }}>
         {['Mês', 'Sem comprar', mensal ? 'Por mês' : 'Parcela', 'Sobra'].map((h, i) => (
-          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.85)',
+          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: TINTA2,
             textTransform: 'uppercase', letterSpacing: '.3px',
             textAlign: i === 0 ? 'left' : 'right' }}>{h}</div>
         ))}
         {meses.map(p => (
           <div key={`${p.ano}-${p.mes}`} style={{ display: 'contents' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: TINTA }}>
               {MESES_CURTOS[p.mes]}/{String(p.ano).slice(2)}
             </div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: 'rgba(255,255,255,.85)',
+            <div style={{ fontSize: 12, textAlign: 'right', color: TINTA2,
               fontVariantNumeric: 'tabular-nums' }}>{fmt(p.semCompra)}</div>
             <div style={{ fontSize: 12, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
-              color: p.parcela > 0 ? NEG : 'rgba(255,255,255,.85)' }}>
+              color: p.parcela > 0 ? NEG : TINTA2 }}>
               {p.parcela > 0 ? `− ${fmt(p.parcela)}` : '—'}
             </div>
             <div style={{ fontSize: 12, fontWeight: 700, textAlign: 'right',
               fontVariantNumeric: 'tabular-nums',
-              color: p.comCompra < 0 ? NEG : '#fff' }}>{fmt(p.comCompra)}</div>
+              color: p.comCompra < 0 ? NEG : TINTA }}>{fmt(p.comCompra)}</div>
           </div>
         ))}
       </div>

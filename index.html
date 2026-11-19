@@ -23,9 +23,9 @@
     <meta name="twitter:description" content="Veja hoje com quanto cada um dos próximos meses vai terminar, decida melhor e faça sobrar. Grátis." />
     <meta name="twitter:image" content="https://www.compass-one.com.br/og-imagem.png" />
 
-    <link rel="icon" type="image/svg+xml" href="/icone.svg?v=3" />
+    <link rel="icon" type="image/svg+xml" href="/icone.svg?v=5" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icone-180.png?v=3" />
+    <link rel="apple-touch-icon" href="/icone-180.png?v=5" />
     <meta name="theme-color" content="#101d4f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -40,7 +40,7 @@
             "@id": "https://www.compass-one.com.br/#organizacao",
             "name": "Compass One",
             "url": "https://www.compass-one.com.br/",
-            "logo": "https://www.compass-one.com.br/icone-512.png?v=3"
+            "logo": "https://www.compass-one.com.br/icone-512.png?v=5"
           },
           {
             "@type": "WebSite",
@@ -74,7 +74,8 @@
       // apresentação; login, cadastro e o app moram no app.compass-one.com.br.
       // /ajuda e /aulas ficam reservados no www para a central de ajuda
       // (pedido do Guilherme, 11/11/2026: matéria para aulas futuras). /v2 é a
-      // prévia da apresentação nova, o voo (16/11/2026).
+      // prévia da apresentação nova, o voo (16/11/2026). /educador é o
+      // "Fale com o Educador" (18/11/2026): e-book, grupo e sessão.
       // Quem abre outra tela no www, ou já tem sessão, já entrou neste celular
       // ou abre pelo ícone instalado, vai para o app. no mesmo caminho.
       // Exceção: lançamento feito sem internet ainda não gravado (está no
@@ -101,7 +102,7 @@
         } catch (e) { /* sem armazenamento: fica a apresentação */ }
         if (sessao || jaUsa) esconder = true
         if (site && !pendente) {
-          var fica = p === '/termos' || p === '/privacidade' || /^\/(i|ajuda|aulas|v2)(\/|$)/.test(p) || (p === '/' && !sessao && !jaUsa)
+          var fica = p === '/termos' || p === '/privacidade' || /^\/(i|ajuda|aulas|v2|educador)(\/|$)/.test(p) || (p === '/' && !sessao && !jaUsa)
           if (!fica) {
             document.documentElement.classList.add('sem-apresentacao')
             location.replace('https://app.compass-one.com.br' + p + location.search + location.hash)

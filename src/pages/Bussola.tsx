@@ -14,8 +14,8 @@ import ConviteInstalar from '../components/ConviteInstalar'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
 import PlanoDoMesCard from '../components/inicio/PlanoDoMesCard'
-import { Cartao, Linha, OlhoIcone, Pilula, ResumoDoMes, SeletorCenario, TituloCartao } from '../components/mobile/ui'
-import { M, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
+import { Cartao, Linha, OlhoIcone, OndasTopo, Pilula, ResumoDoMes, RotuloTopo, SeletorCenario, TituloCartao } from '../components/mobile/ui'
+import { FONTE_SITE, FONTE_TITULO, M, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
 import type { Aviso } from '../utils/avisosDoMes'
 import { COR } from '../utils/cores'
@@ -88,16 +88,20 @@ export default function Bussola() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: FONTE_SITE }}>
       {/* ── Topo azul: a resposta do dia ─────────────────────────────── */}
+      {/* Topo no estilo da página do Educador (19/11/2026): rótulo âmbar, saldo
+          em Barlow Condensed e as duas ondas no pé. */}
       <header style={{
-        background: 'var(--cx-azul)', color: '#fff',
-        padding: 'calc(18px + env(safe-area-inset-top)) 20px 64px', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)',
+        position: 'relative', overflow: 'hidden', background: 'var(--cx-azul)', color: '#fff',
+        padding: 'calc(18px + env(safe-area-inset-top)) 20px 84px',
       }}>
-        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+        <OndasTopo />
+        <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <RotuloTopo icone="ti-compass">Início · {mesNome}</RotuloTopo>
+              <div style={{ fontSize: 20, fontWeight: 600, marginTop: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {nome ? `Olá, ${nome}` : 'Olá'} <span aria-hidden>👋</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: ROTULO, marginTop: 4 }}>
@@ -141,14 +145,14 @@ export default function Bussola() {
               cenário ali mesmo. O "passou do plano em" do topo saiu. ── */}
           <div style={{ marginTop: 24 }}>
             <div style={{ fontSize: 15, color: ROTULO }}>Saldo atual · bancos e dinheiro</div>
-            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-.02em', marginTop: 2, lineHeight: 1.1,
+            <div style={{ fontFamily: FONTE_TITULO, fontSize: 52, fontWeight: 700, marginTop: 2, lineHeight: 1,
               color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(b.saldoHoje)}</div>
           </div>
 
           <div style={{ ...pilulaTopo, alignItems: 'stretch', cursor: 'default', marginTop: 18, gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
               <span style={{ fontSize: 14, color: ROTULO }}>Saldo final previsto</span>
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                 {v(b.fechamento)}
               </span>
             </div>
@@ -165,7 +169,7 @@ export default function Bussola() {
         </div>
       </header>
 
-      <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-44px auto 0', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
+      <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-60px auto 0', position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
         {/* O cálculo abre logo abaixo do número, e a tela rola até ele: lá
             embaixo dos atalhos ele abria fora da vista e parecia que o link
             não fazia nada (relatado pelo Guilherme em 10/10/2026). */}
@@ -192,7 +196,7 @@ export default function Bussola() {
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}
         {(b.avisos.length > 0 || fechou.texto) && (
           <Cartao>
-            <TituloCartao>Pede sua atenção</TituloCartao>
+            <TituloCartao icone="ti-alert-triangle" rotulo="Avisos">Pede sua atenção</TituloCartao>
             {fechou.texto && (
               <Linha primeira icone={<i className="ti ti-calendar-check" style={{ color: COR.azul }} />} cor={COR.azul}
                 titulo={<span style={{ whiteSpace: 'normal' }}>{fechou.texto.titulo}</span>}
@@ -213,7 +217,7 @@ export default function Bussola() {
           <PlanoDoMesCard linhas={linhasSaida} categorias={categorias} oculto={oculto} onRadar={() => navigate('/radar')} />
         ) : (
           <Cartao>
-            <TituloCartao>Plano do mês</TituloCartao>
+            <TituloCartao icone="ti-target-arrow" rotulo="Despesas por grupo">Plano do mês</TituloCartao>
             <div style={{ fontSize: M.corpo, color: COR.textoSuave, lineHeight: 1.45 }}>
               Com um plano, a Bússola diz quanto ainda dá para gastar.
             </div>

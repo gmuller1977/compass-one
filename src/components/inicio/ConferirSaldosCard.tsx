@@ -65,7 +65,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
 
   return (
     <Cartao>
-      <TituloCartao direita={pendentes === 0
+      <TituloCartao icone="ti-building-bank" rotulo="Conferência do dia" direita={pendentes === 0
         ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
         : undefined}>
         Confira seus saldos

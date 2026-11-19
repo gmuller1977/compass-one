@@ -16,6 +16,8 @@ import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
 import { IconeCat } from '../IconeCat'
+import { OndasTopo, RotuloTopo } from '../mobile/ui'
+import { FONTE_SITE, FONTE_TITULO } from '../mobile/estilo'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 
 interface AcMobileViewProps {
@@ -307,7 +309,7 @@ export default function AcMobileView({
       // Fechado: número e anel azul neon; passou de 100%, marcador de atenção
       // (24/10/2026, Guilherme), igual ao computador.
       const gBorda = aberto ? '#1e40af' : !dg.julgado || SEM_MOVIMENTO.includes(dg.principal) ? 'transparent'
-        : gAtencao ? '#b91c1c' : '#93c5fd'
+        : gAtencao ? '#b91c1c' : 'var(--cx-borda)'
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
@@ -316,7 +318,7 @@ export default function AcMobileView({
         <div key={`g-${grupo}`} data-grupo={gid} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
           scrollMarginTop: 12,
           boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
-          border:`2px solid ${gBorda}` }}>
+          border: gBorda === 'var(--cx-borda)' ? '1px solid var(--cx-borda)' : `2px solid ${gBorda}`, padding: gBorda === 'var(--cx-borda)' ? 1 : undefined }}>
         <button onClick={() => toggleAberto(gid)} aria-expanded={aberto}
           aria-label={`${grupoLabel}: ${dg.principal}`}
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px',
@@ -393,17 +395,22 @@ export default function AcMobileView({
     // conteúdo num filho flex:1 rolável — sem minHeight:0 o filho crescia do
     // tamanho do conteúdo, a caixa cortava e nada rolava (relatado pelo
     // Guilherme em 10/10/2026).
-    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily:"-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily:FONTE_SITE }}>
 
       {/* Topo azul, no desenho da Bússola (redesenho de 10/10/2026): o mês
           com setas, o saldo de hoje grande, e as duas barras do mês com
           letra legível. A faixa branca "Quanto tenho" e a marca saíram. */}
-      <div style={{ background:'var(--cx-azul)', borderRadius:'0 0 28px 28px', boxShadow:'var(--cx-brilho-topo)',
-        padding:'calc(16px + env(safe-area-inset-top)) 20px 22px', flexShrink:0 }}>
+      <div style={{ background:'linear-gradient(180deg, #070c18 0%, #111c3f 35%, #1e40af 100%)', position:'relative', overflow:'hidden',
+        padding:'calc(16px + env(safe-area-inset-top)) 20px 66px', flexShrink:0 }}>
+        <OndasTopo />
+        <div style={{ position:'relative' }}>
         {/* Título e o mês com setas ao lado, como Lançamentos e o ano no
             Planejamento (pedido do Guilherme em 13/10/2026). */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-          <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-.01em' }}>Radar</h1>
+          <div style={{ minWidth:0 }}>
+            <RotuloTopo icone="ti-radar-2">Acompanhamento do mês</RotuloTopo>
+            <h1 style={{ margin:'4px 0 0', fontFamily:FONTE_TITULO, fontSize:32, fontWeight:700, lineHeight:1, color:'#fff' }}>Radar</h1>
+          </div>
           <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
             <button aria-label="Mês anterior" onClick={() => { if(mes===0){setMes(11);setAno(a=>a-1)}else setMes(m=>m-1) }} style={SETA}>‹</button>
             <span style={{ minWidth:58, textAlign:'center', color:'#fff', lineHeight:1.15 }}>
@@ -422,7 +429,7 @@ export default function AcMobileView({
         {ehMesAtual && (
           <div style={{ marginTop:18 }}>
             <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{`Quanto tenho hoje · dia ${diaHoje} de ${totalDias}`}</div>
-            <div style={{ fontSize:34, fontWeight:800, letterSpacing:'-.02em', lineHeight:1.15, fontVariantNumeric:'tabular-nums',
+            <div style={{ fontFamily:FONTE_TITULO, fontSize:46, fontWeight:700, lineHeight:1.1, fontVariantNumeric:'tabular-nums',
               color: '#fff' }}>{fmt(saldoReal)}</div>
           </div>
         )}
@@ -469,6 +476,7 @@ export default function AcMobileView({
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
 

@@ -7,22 +7,26 @@ body { font-family: -apple-system, 'Inter', sans-serif; }
    #0b1460 → #1b35c8. O brilho ciano não mudou. Extremo claro #26408f: branco
    9,5:1, rótulo a 75% 6,1:1 (a regra do #1e40af segue). */
 :root {
-  --cx-azul: linear-gradient(160deg, #101d4f 0%, #26408f 100%);
+  /* Degradê "noite" da página do Educador e borda azul-escura dos cartões
+     (19/11/2026, pedido do Guilherme), sem neon (só na logo). O extremo
+     claro é o próprio #1e40af: a regra do contraste segue. */
+  --cx-borda: #0b2545;
+  --cx-azul: linear-gradient(180deg, #070c18 0%, #111c3f 40%, #1e40af 100%);
   /* Bloco azul em duas partes (Lançamentos no celular: cabeçalho + saldo ou
      fatura): a de cima é sólida na cor do início, a de baixo desce dela na
      vertical. Com o gradiente diagonal nas duas, ele recomeçava embaixo das
      abas e o azul ficava cortado (28/10/2026, relatado pelo Guilherme). */
-  --cx-azul-inicio: #101d4f;
-  --cx-azul-continua: linear-gradient(180deg, #101d4f 0%, #26408f 100%);
-  --cx-neon: #22d3ee;
-  --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.55), 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(38,64,143,.45), 0 0 22px rgba(34,211,238,.18);
-  --cx-brilho-topo: inset 0 -2px 0 rgba(34,211,238,.9), 0 10px 34px rgba(34,211,238,.28);
+  --cx-azul-inicio: #070c18;
+  --cx-azul-continua: linear-gradient(180deg, #070c18 0%, #111c3f 40%, #1e40af 100%);
+  --cx-neon: rgba(255,255,255,.12);
+  --cx-brilho: 0 8px 30px rgba(11,19,34,.35);
+  --cx-brilho-topo: 0 10px 30px rgba(11,19,34,.28);
   /* Gráfico em card azul (24/10/2026, Guilherme: "nos cards azul, onde tiver
      gráfico, trilho branco e azul neon"). Preenchimento contra o trilho
      branco: #2563eb 5,2 e #0891b2 3,7 (gráfico pede 3:1). No azul a barra
      não diz mais o status: a cor dele fica no número e nos cards brancos. */
   --cx-trilho: #ffffff;
   --cx-barra: linear-gradient(90deg, #2563eb 0%, #0891b2 100%);
-  --cx-trilho-brilho: 0 0 10px rgba(34,211,238,.55);
-  --cx-bolinha: inset 0 0 0 1.5px rgba(34,211,238,.8), 0 0 18px rgba(34,211,238,.55);
+  --cx-trilho-brilho: none;
+  --cx-bolinha: 0 6px 16px rgba(11,19,34,.35);
 }

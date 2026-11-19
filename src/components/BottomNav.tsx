@@ -8,6 +8,7 @@ import { BOLINHA_AZUL } from './mobile/estilo'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { useMensagensNaoLidas } from './mensagens/useMensagensNaoLidas'
 import { textoDoSelo } from '../utils/mensagens'
+import { urlDoSite } from '../utils/site'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -38,6 +39,8 @@ const MAIS: { icon: string; label: string; path: string; emBreve?: boolean }[] =
   { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
   { icon: 'ti-mail', label: 'Mensagens',                 path: '/mensagens' },
   { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
+  // No site público (18/11/2026): abre em outra aba.
+  { icon: 'ti-school', label: 'Fale com o Educador', path: '/educador' },
 ]
 
 /** Rótulo e ícone inativos na barra azul: 75% de branco. */
@@ -116,7 +119,7 @@ export default function BottomNav() {
           }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: COR.borda, margin: '0 auto 8px' }} />
             {MAIS.map(m => (
-              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); navigate(m.path, { replace: !!window.history.state?.maisAberto }) }} style={{
+              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); if (m.path === '/educador') { window.open(urlDoSite('/educador'), '_blank', 'noopener'); return } navigate(m.path, { replace: !!window.history.state?.maisAberto }) }} style={{
                 display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 22px',
                 border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
@@ -150,7 +153,7 @@ export default function BottomNav() {
       )}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'var(--cx-azul)', boxShadow: 'inset 0 2px 0 rgba(34,211,238,.9), 0 -6px 24px rgba(34,211,238,.18)',
+        background: 'var(--cx-azul)', boxShadow: '0 -6px 20px rgba(11,19,34,.25)',
         padding: '8px 0 calc(14px + env(safe-area-inset-bottom))',
         display: 'flex', zIndex: 100,
       }}>

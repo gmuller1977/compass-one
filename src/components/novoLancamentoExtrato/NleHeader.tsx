@@ -1,7 +1,9 @@
 import type { Conta } from '../../context/AppContext'
 import { NOMES_MESES } from './NleShared'
-import PageHeader from '../PageHeader'
+import AjudaTela from '../AjudaTela'
 import SeletorMesAno from '../SeletorMesAno'
+import { OndasTopo, RotuloTopo } from '../mobile/ui'
+import { FONTE_TITULO } from '../mobile/estilo'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -83,17 +85,26 @@ export default function NleHeader({
       <SeletorMesAno mes={mes} ano={ano} onSelect={onMesSelect} />
     )
 
+    // Topo no estilo da página do Educador (19/11/2026): faixa escura de
+    // ponta a ponta, rótulo âmbar e título em Barlow Condensed. Continua no
+    // banner dos números (NleBanner / FcBanner), que fecha com as ondas.
+    // Sem banner (Resumo mensal), as ondas ficam aqui.
+    const tipo = isConsolidado ? 'Resumo' : isCartao ? 'Cartão' : isDinheiro ? 'Dinheiro' : 'Banco'
     return (
-      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
-        <PageHeader
-          icon={icon}
-          breadcrumb="LANÇAMENTOS"
-          ajuda="lancamentos"
-          title={title}
-          subtitle={subtitle}
-          mb={0}
-          rightContent={isCartao ? cartaoNav : bancoNav}
-        />
+      <div style={{ background: '#070c18', color: '#fff', padding: isConsolidado ? '16px 28px 66px' : '16px 28px 4px',
+        flexShrink: 0, position: 'relative', overflow: isConsolidado ? 'hidden' : undefined }}>
+        {isConsolidado && <OndasTopo />}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, position: 'relative' }}>
+          <div style={{ minWidth: 0 }}>
+            <RotuloTopo icone={icon}>Lançamentos · {tipo}</RotuloTopo>
+            <h1 style={{ margin: '6px 0 0', fontFamily: FONTE_TITULO, fontSize: 36, fontWeight: 700, lineHeight: 1, color: '#fff' }}>{title}</h1>
+            {subtitle && <div style={{ fontSize: 15, color: 'rgba(255,255,255,.75)', marginTop: 4 }}>{subtitle}</div>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {isCartao ? cartaoNav : bancoNav}
+            <AjudaTela tela="lancamentos" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -111,7 +122,12 @@ export default function NleHeader({
           do Guilherme em 13/10/2026: o mês ocupava uma linha inteira no meio
           do azul). No Cartão as setas andam a fatura; nos outros, o mês. */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:14}}>
-        <h1 style={{margin:0,fontSize:22,fontWeight:800,color:'#fff',letterSpacing:'-.01em'}}>Lançamentos</h1>
+        <div style={{minWidth:0}}>
+          <RotuloTopo icone={tabPrincipal === 'cartao' ? 'ti-credit-card' : tabPrincipal === 'dinheiro' ? 'ti-cash' : 'ti-building-bank'}>
+            {tabPrincipal === 'cartao' ? 'Cartão' : tabPrincipal === 'dinheiro' ? 'Dinheiro' : 'Banco'}
+          </RotuloTopo>
+          <h1 style={{margin:'4px 0 0',fontFamily:FONTE_TITULO,fontSize:32,fontWeight:700,lineHeight:1,color:'#fff'}}>Lançamentos</h1>
+        </div>
         {(() => {
           const m = tabPrincipal === 'cartao' ? cartaoMes : mes
           const a = tabPrincipal === 'cartao' ? cartaoAno : ano

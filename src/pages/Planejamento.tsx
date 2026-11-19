@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
+import { FONTE_SITE } from '../components/mobile/estilo'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
@@ -330,16 +331,18 @@ export default function Planejamento() {
     <div style={{
       minHeight: '100vh',
       background: COR.fundo,
-      fontFamily: "-apple-system, 'Inter', sans-serif",
+      fontFamily: FONTE_SITE,
       display: 'flex',
       flexDirection: 'column',
     }}>
       {/* PageHeader */}
       {(
-        <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        <div style={{ flexShrink: 0 }}>
           <PageHeader
+            site
+            fundo={COR.fundo}
             icon="ti-target"
-            breadcrumb="TODO ANO"
+            rotulo="O seu plano do ano"
             title="Planejamento"
             ajuda="planejamento"
             mb={12}

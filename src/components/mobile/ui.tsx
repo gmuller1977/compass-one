@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
-import { BOLINHA_AZUL, M, mostrar, TOPO_AZUL } from './estilo'
+import { AMBAR, AMBAR_ESCURO, BOLINHA_AZUL, BORDA_CLARA, FONTE_TITULO, M, NOITE, TINTA, TINTA2, mostrar } from './estilo'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 
@@ -23,14 +23,66 @@ import { corDoIcone } from '../../utils/iconeDesenhado'
 export function Cartao({ children, style, onClick }: { children: ReactNode; style?: CSSProperties; onClick?: () => void }) {
   return (
     <div onClick={onClick} style={{
-      background: COR.branco, borderRadius: M.raio, padding: '18px 18px', boxShadow: M.sombra,
+      background: COR.branco, borderRadius: M.raio, padding: '18px 18px', boxShadow: M.sombra, border: '1px solid var(--cx-borda)',
       cursor: onClick ? 'pointer' : undefined, ...style,
     }}>{children}</div>
   )
 }
 
-/** Título do cartão e, à direita, um valor ou uma ação. */
-export function TituloCartao({ children, direita }: { children: ReactNode; direita?: ReactNode }) {
+/**
+ * Cabeçalho no estilo da página do Educador (19/11/2026): ícone âmbar num
+ * quadrado escuro, rótulo pequeno em maiúsculas e o título em Barlow Condensed.
+ */
+export function CabecalhoCartao({ icone, rotulo, children, direita }: {
+  icone: string; rotulo?: ReactNode; children: ReactNode; direita?: ReactNode
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+      <span aria-hidden style={{
+        width: 44, height: 44, borderRadius: 13, background: NOITE, color: AMBAR, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}><i className={`ti ${icone}`} style={{ fontSize: 23 }} /></span>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        {rotulo && (
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase',
+            color: AMBAR_ESCURO, marginBottom: 2 }}>{rotulo}</div>
+        )}
+        <h2 style={{ margin: 0, fontFamily: FONTE_TITULO, fontSize: 25, fontWeight: 700, lineHeight: 1.05, color: TINTA }}>{children}</h2>
+      </div>
+      {direita}
+    </div>
+  )
+}
+
+/** As duas ondas no pé do topo escuro, como na página do Educador. A da frente
+ *  tem a cor do fundo da tela. O topo precisa de `position: relative`. */
+export function OndasTopo({ fundo = M.fundo }: { fundo?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 1440 90" preserveAspectRatio="none" style={{
+      position: 'absolute', left: 0, right: 0, bottom: -1, width: '100%', height: 70, pointerEvents: 'none',
+    }}>
+      <path d="M0 60 C 120 30, 220 70, 340 48 S 560 20, 700 50 S 940 80, 1080 46 S 1320 26, 1440 52 L1440 90 L0 90 Z" fill="#a9cbef" opacity=".55" />
+      <path d="M0 74 C 160 54, 300 88, 460 66 S 760 46, 920 70 S 1240 86, 1440 64 L1440 90 L0 90 Z" fill={fundo} />
+    </svg>
+  )
+}
+
+/** O rótulo âmbar do topo escuro ("INÍCIO · OUTUBRO 2026"). */
+export function RotuloTopo({ icone, children }: { icone: string; children: ReactNode }) {
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700,
+      letterSpacing: '.16em', textTransform: 'uppercase', color: AMBAR }}>
+      <i aria-hidden className={`ti ${icone}`} style={{ fontSize: 15 }} />{children}
+    </div>
+  )
+}
+
+/** Título do cartão e, à direita, um valor ou uma ação. Com `icone`, o
+ *  cabeçalho no estilo da página do Educador. */
+export function TituloCartao({ children, direita, icone, rotulo }: {
+  children: ReactNode; direita?: ReactNode; icone?: string; rotulo?: ReactNode
+}) {
+  if (icone) return <CabecalhoCartao icone={icone} rotulo={rotulo} direita={direita}>{children}</CabecalhoCartao>
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
       <h2 style={{ margin: 0, fontSize: M.titulo, fontWeight: 700, color: COR.texto }}>{children}</h2>
@@ -97,8 +149,9 @@ export function Atalho({ icone, rotulo, onClick }: { icone: string; rotulo: stri
 export function Pilula({ children, onClick, forte, disabled }: { children: ReactNode; onClick?: () => void; forte?: boolean; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      border: forte ? 'none' : `1.5px solid ${COR.azul}`, background: forte ? COR.azul : '#eff6ff',
-      color: forte ? '#fff' : COR.azul, borderRadius: 999, padding: '9px 16px', minHeight: 40,
+      // Azul-escuro da paleta do Educador (19/11/2026): branco 15,4:1; no #eef2f8, 13,9:1.
+      border: forte ? 'none' : '1.5px solid var(--cx-borda)', background: forte ? 'var(--cx-borda)' : '#eef2f8',
+      color: forte ? '#fff' : 'var(--cx-borda)', borderRadius: 999, padding: '9px 16px', minHeight: 40,
       fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
     }}>{children}</button>
   )
@@ -202,10 +255,10 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   const v = (n: number | null) => (n === null ? '' : mostrar(n, oculto))
   const cols = [previsto && { rot: 'Previsto', c: previsto }, realizado && { rot: 'Realizado', c: realizado }]
     .filter((x): x is { rot: string; c: ColunaResumo } => !!x)
-  const ROT = 'rgba(255,255,255,.75)'
-  const ROT_CAIXA = 'rgba(255,255,255,.85)'
+  const ROT = TINTA2
+  const ROT_CAIXA = TINTA2
   const caixa: CSSProperties = {
-    background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
+    background: '#f3f8fe', border: `1px solid ${BORDA_CLARA}`, borderRadius: 14,
     padding: '12px 14px', minWidth: 0,
   }
   const num: CSSProperties = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
@@ -218,25 +271,16 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   }
   const mostraMeta = meta > 0 || !!onDefinirMeta
   // Cada caractere em 800 ocupa ~0,56 em: o texto inteiro cabe na largura da caixa.
-  const tamanhoSaldo = (t: string) => `min(22px, ${(100 / (Math.max(t.length, 8) * 0.56)).toFixed(2)}cqi)`
+  const tamanhoSaldo = (t: string) => `min(28px, ${(100 / (Math.max(t.length, 8) * 0.46)).toFixed(2)}cqi)`
   return (
     <section aria-label={`Resumo de ${mesNome}`} style={{
-      background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 20px', boxShadow: 'var(--cx-brilho)', color: '#fff',
+      background: '#fff', borderRadius: M.raio, padding: '18px 18px 20px', boxShadow: '0 18px 40px rgba(11,37,69,.10)',
+      border: `2px solid ${TINTA}`, color: TINTA,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <span aria-hidden style={{
-          width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,.14)', flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}><i className="ti ti-report-money" style={{ fontSize: 22, color: '#fff' }} /></span>
-        <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: M.titulo, fontWeight: 700 }}>Resumo do mês</h2>
-          {inicial !== null && (
-            <div style={{ fontSize: M.legenda, color: ROT, marginTop: 2 }}>
-              {mesNome} começou com <b style={{ color: '#fff', ...num }}>{v(inicial)}</b>
-            </div>
-          )}
-        </div>
-      </div>
+      <CabecalhoCartao icone="ti-report-money"
+        rotulo={inicial !== null ? <>{mesNome} começou com <span style={num}>{v(inicial)}</span></> : undefined}>
+        Resumo do mês
+      </CabecalhoCartao>
 
       {/* Receitas e despesas em ANÉIS (24/10/2026, Guilherme escolheu a opção A):
           quanto do planejado já entrou e já saiu, em %. Trilho branco e azul neon,
@@ -244,15 +288,15 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
           fica vazio e só o valor aparece. Logo abaixo do título, alinhados com os
           anéis do "Plano do mês" ao lado (mesmo dia, pedido dele). */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {([['Receitas', 'receitas', 'recebido', '#0891b2'], ['Despesas', 'despesas', 'gasto', '#2563eb']] as const).map(([nome, campo, verbo, cor]) => {
+        {([['Receitas', 'receitas', 'recebido', '#15803d'], ['Despesas', 'despesas', 'gasto', TINTA]] as const).map(([nome, campo, verbo, cor]) => {
           const plan = previsto?.[campo] ?? null
           const real = realizado?.[campo] ?? null
           const pct = plan !== null && plan > 0 && real !== null ? Math.round((real / plan) * 100) : null
           return (
             <div key={campo} role="group" aria-label={nome} style={{ textAlign: 'center', minWidth: 0 }}>
-              <Anel pct={pct} cor={cor} rotulo={pct === null ? '' : verbo} oculto={oculto} />
+              <Anel pct={pct} cor={cor} rotulo={pct === null ? '' : verbo} oculto={oculto} claro />
               <div style={{ fontSize: M.legenda, color: ROT, marginTop: 6 }}>{nome}</div>
-              <div style={{ ...num, fontSize: M.corpo, fontWeight: 800 }}>{v(real ?? plan)}</div>
+              <div style={{ ...num, fontFamily: FONTE_TITULO, fontSize: 22, fontWeight: 700 }}>{v(real ?? plan)}</div>
               {real !== null && plan !== null && plan > 0 && (
                 <div style={{ ...num, fontSize: M.legenda, color: ROT }}>de {v(plan)}</div>
               )}
@@ -271,7 +315,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         {cols.map(({ rot, c }) => (
           <div key={rot} style={{ ...caixa, containerType: 'inline-size' }}>
             <div style={{ fontSize: M.legenda, color: ROT_CAIXA }}>{rot}</div>
-            <div style={{ ...num, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 800, marginTop: 4, color: '#fff' }}>
+            <div style={{ ...num, fontFamily: FONTE_TITULO, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 700, marginTop: 4, color: TINTA }}>
               {v(c.final)}
             </div>
           </div>
@@ -287,30 +331,30 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         const ok = pct !== null && pct >= 100
         return (
           <div style={{
-            marginTop: 18, padding: '14px 16px', borderRadius: 18, border: '1.5px solid #22d3ee',
-            boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)',
+            marginTop: 18, padding: '14px 16px', borderRadius: 14, border: `1px dashed ${BORDA_CLARA}`,
+            
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
               <span style={{ fontSize: M.corpo, fontWeight: 600 }}>Meta de economia</span>
               {meta > 0 ? (
-                <span style={{ ...num, fontSize: 18, fontWeight: 800 }}>{v(meta)}</span>
+                <span style={{ ...num, fontFamily: FONTE_TITULO, fontSize: 22, fontWeight: 700 }}>{v(meta)}</span>
               ) : (
                 <button onClick={onDefinirMeta} style={{
-                  background: '#fff', color: '#1e3a8a', border: 'none', borderRadius: 999, padding: '6px 14px',
+                  background: TINTA, color: '#fff', border: 'none', borderRadius: 999, padding: '6px 14px',
                   fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
                 }}>Definir meta</button>
               )}
             </div>
             {pct !== null && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
-                <Velocimetro pct={pct} />
+                <Velocimetro pct={pct} claro />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: M.corpo }}>
                     {oculto ? '••' : ok ? `Meta batida: ${pct}%` : `${pct}% da meta`}
                   </div>
                   {guardado > 0 && (
                     <div style={{ fontSize: 14, color: ROT_CAIXA }}>
-                      Você já guardou <b style={{ ...num, color: '#fff' }}>{v(guardado)}</b>
+                      Você já guardou <b style={{ ...num, color: TINTA }}>{v(guardado)}</b>
                       {investido > 0.005 && <> · {v(investido)} em investimentos</>}
                     </div>
                   )}
@@ -325,8 +369,10 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
 }
 
 /** Anel do Resumo do mês: trilho branco, arco azul neon até 100%; o texto diz o % real. */
-export function Anel({ pct, cor, rotulo, oculto, centro }: {
+export function Anel({ pct, cor, rotulo, oculto, centro, claro }: {
   pct: number | null; cor: string; rotulo: string; oculto: boolean
+  /** No cartão branco: trilho claro e texto em tinta (19/11/2026). */
+  claro?: boolean
   /** Texto no meio do anel; sem ele, o próprio %. */
   centro?: string
 }) {
@@ -335,15 +381,16 @@ export function Anel({ pct, cor, rotulo, oculto, centro }: {
   return (
     <svg width="116" height="116" viewBox="0 0 116 116" role="img"
       aria-label={pct === null ? 'sem comparação' : `${centro ?? `${pct}%`} ${rotulo}`} style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
-      <circle cx="58" cy="58" r={r} stroke="#fff" strokeWidth="11" fill="none" />
+      <circle cx="58" cy="58" r={r} stroke={claro ? '#e3ecf7' : '#fff'} strokeWidth="11" fill="none" />
       {arco > 0 && (
         <circle cx="58" cy="58" r={r} stroke={cor} strokeWidth="11" fill="none" strokeLinecap="round"
-          strokeDasharray={`${arco} ${c}`} transform="rotate(-90 58 58)" style={{ filter: 'drop-shadow(0 0 5px #22d3ee)' }} />
+          strokeDasharray={`${arco} ${c}`} transform="rotate(-90 58 58)" />
       )}
       {pct !== null && (
         <>
-          <text x="58" y="58" textAnchor="middle" fill="#fff" fontSize="21" fontWeight="800">{centro ?? (oculto ? '••' : `${pct}%`)}</text>
-          <text x="58" y="77" textAnchor="middle" fill="rgba(255,255,255,.8)" fontSize="12">{rotulo}</text>
+          <text x="58" y="60" textAnchor="middle" fill={claro ? TINTA : '#fff'} fontSize={claro ? 27 : 21} fontWeight={claro ? 700 : 800}
+            fontFamily={claro ? FONTE_TITULO : undefined}>{centro ?? (oculto ? '••' : `${pct}%`)}</text>
+          <text x="58" y="78" textAnchor="middle" fill={claro ? TINTA2 : 'rgba(255,255,255,.8)'} fontSize="12" fontWeight={claro ? 600 : undefined}>{rotulo}</text>
         </>
       )}
     </svg>
@@ -351,15 +398,15 @@ export function Anel({ pct, cor, rotulo, oculto, centro }: {
 }
 
 /** Velocímetro da meta no quadro neon: meio anel, cheio a partir de 100%. */
-function Velocimetro({ pct }: { pct: number }) {
+function Velocimetro({ pct, claro }: { pct: number; claro?: boolean }) {
   const r = 26, c = Math.PI * r
   const arco = Math.max(0, Math.min(100, pct)) / 100 * c
   return (
     <svg width="64" height="40" viewBox="0 0 64 40" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
-      <path d="M6 36a26 26 0 0 1 52 0" stroke="#fff" strokeWidth="8" fill="none" strokeLinecap="round" />
+      <path d="M6 36a26 26 0 0 1 52 0" stroke={claro ? '#e3ecf7' : '#fff'} strokeWidth="8" fill="none" strokeLinecap="round" />
       {arco > 0 && (
-        <path d="M6 36a26 26 0 0 1 52 0" stroke="#0891b2" strokeWidth="8" fill="none" strokeLinecap="round"
-          strokeDasharray={`${arco} ${c}`} style={{ filter: 'drop-shadow(0 0 4px #22d3ee)' }} />
+        <path d="M6 36a26 26 0 0 1 52 0" stroke={claro ? TINTA : '#0891b2'} strokeWidth="8" fill="none" strokeLinecap="round"
+          strokeDasharray={`${arco} ${c}`} />
       )}
     </svg>
   )

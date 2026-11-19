@@ -216,7 +216,7 @@ function Chat({ conversaDe, comoSuporte, nomeOutro, altura }: { conversaDe: stri
           style={{ flex: 1, padding: '12px 14px', border: `1.5px solid ${COR.borda}`, borderRadius: 14, fontSize: 16, fontFamily: 'inherit', resize: 'none', maxHeight: 140, color: COR.texto }} />
         <button type="submit" disabled={!texto.trim() || enviando} aria-label="Enviar" style={{
           width: 48, height: 48, alignSelf: 'flex-end', border: 'none', borderRadius: '50%', flexShrink: 0,
-          background: texto.trim() ? AZUL : '#cbd5e1', boxShadow: texto.trim() ? '0 0 10px rgba(34,211,238,.4)' : 'none',
+          background: texto.trim() ? AZUL : '#cbd5e1', 
           color: '#fff', fontSize: 20, cursor: texto.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}><i aria-hidden className="ti ti-send" /></button>
       </form>

@@ -3793,6 +3793,43 @@ muito intenso"; escolheu a A · Marinho suave, nos dois): `--cx-azul` é
 `#101d4f → #26408f` (branco 9,5:1, rótulo a 75% 6,1:1) e a barra do
 sistema (`theme-color`) `#101d4f`. O brilho ciano não mudou. Mostrados e
 preteridos: Azul profundo, Ardósia e Índigo (`analises/azul-celular/`).
+**O azul virou o degradê "noite" da página do Educador, sem neon**
+(19/11/2026, Guilherme, depois de ver `/educador`): `--cx-azul` é vertical,
+`#070c18 → #111c3f (40%) → #1e40af` (o extremo claro é o próprio limite da
+regra do contraste). O brilho ciano saiu de tudo (`--cx-brilho*`,
+`--cx-bolinha`, quadro neon, anéis, barra de baixo): **neon só na logo**.
+A borda dos cartões é azul-escura FINA (`--cx-borda` `#0b2545`, 1px; a que
+avisa, como vermelho, grupo aberto e hoje, segue 2px). Os botões redondos
+(`Pilula`: Confere, Pagar…) e as caixas de aviso (letra e botão,
+`COR.avisoTexto`) usam o mesmo `#0b2545`; o fundo amarelo do aviso ficou e
+o marrom saiu ("nunca gostei do marrom"). Mostrados e recusados no mesmo
+dia: âmbar no brilho e nas letras do menu, ícone em quadrado escuro com
+desenho âmbar, letra Barlow, avisos no tom do selo "Em breve". Prints em
+`analises/cores-educador/`. As notas que citam brilho ciano são histórico.
+**A Início ganhou o ESTILO DA PÁGINA DO EDUCADOR** (19/11/2026, Guilherme:
+"o site parece mais bonito que o app"; prévias em
+`analises/cores-educador/estilo-site/`, o Simulador aprovado primeiro como
+modelo). Revê, só na Início, a recusa do âmbar, da Barlow e do ícone em
+quadrado escuro acima: sozinhos não convenceram; juntos com espaço e cartões
+brancos, sim. Letra Barlow (`FONTE_SITE`), títulos e números grandes em
+Barlow Condensed (`FONTE_TITULO`); o topo escuro tem o rótulo âmbar
+(`RotuloTopo`, `#f5b942` 10,5 no escuro) e as DUAS ondas do site no pé
+(`OndasTopo`) no lugar dos cantos redondos; cada cartão tem o cabeçalho
+`CabecalhoCartao` (ícone âmbar em quadrado `#070c18`, rótulo `#9a5b00` 5,6 e
+título em tinta `#0b2545`). "Resumo do mês" e "Plano do mês" deixaram o azul:
+cartão BRANCO com borda de 2px em tinta, anéis claros (`Anel claro`), verde
+`#15803d` / vermelho `#b91c1c`. Ordem combinada: Início, depois Lançamentos,
+por último o Simulador. Peças em `components/mobile/ui.tsx` e `estilo.ts`.
+**Lançamentos (Banco, Cartão e Dinheiro) também** (19/11/2026, prévia
+aprovada pelo Guilherme): topo escuro com `RotuloTopo` e as duas ondas,
+título em Barlow Condensed, cards do topo em vidro (`KpiCard vidro`),
+pílulas de conta brancas/translúcidas, data do dia em Barlow Condensed. No
+celular o rótulo do topo é a aba (Banco/Cartão/Dinheiro com ícone): "Todo
+dia" não existe mais. Nenhum número mudou.
+**Radar e Planejamento também** (mesmo dia, aprovado por ele): `PageHeader site`
+(topo escuro de ponta a ponta, `RotuloTopo`, título em Barlow Condensed,
+ondas); rótulos "Acompanhamento do mês" (não "previsto") e "O seu plano do
+ano". No celular, o mesmo no `AcMobileView` e no `PlanMobile`.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
@@ -3809,6 +3846,15 @@ e-mails leem o `icone-192.png` publicado. Passaram e saíram no mesmo dia: o
 "Cristal" (C facetado aberto, ficou publicado algumas horas), a agulha
 inclinada atravessando o C ("parece um e"), o nome em tubo neon e em caixa
 alta. Tela nova usa `LogoCompass` + `NomeCompass`, nunca SVG ou texto próprio.
+**A logo virou a ROSA DOS VENTOS dourada** (19/11/2026, Guilherme: "vamos
+valorizar a logo"; escolheu "1B com círculo" entre seis conceitos e as
+variações com o dourado do site, em `analises/cores-educador/estilo-site/login/`):
+estrela de quatro pontas, norte dourado (`#fde68a`/`#e0a020`), pontas brancas,
+diagonais e anel fino em `#f5b942`, brilho dourado. `NomeCompass`: halo
+dourado e "One" em `#fcd34d`. Ícones regerados (`?v=4`). No mesmo dia
+(Guilherme: "ficou bonita mas não se destaca" na tela do celular), o ÍCONE do
+app ganhou a rosa ocupando quase o quadrado e borda dourada (opção A; `?v=5`). O parágrafo acima
+sobre o "Fechado neon" é histórico; os componentes e a regra continuam.
 
 **Anéis, quadro neon e azul nos cards** (24/10/2026, escolhas do Guilherme
 nos cards, mesmo dia do neon). Em card AZUL, todo gráfico tem trilho branco

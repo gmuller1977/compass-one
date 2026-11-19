@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs><linearGradient id="g" x1="0.33" y1="0" x2="0.67" y2="1"><stop offset="0" stop-color="#0b1460"/><stop offset="1" stop-color="#1b35c8"/></linearGradient>
-  <filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6" result="x"/><feFlood flood-color="#22d3ee" flood-opacity=".55"/><feComposite in2="x" operator="in" result="y"/><feMerge><feMergeNode in="y"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <rect x="5" y="5" width="502" height="502" rx="107" fill="none" stroke="#22d3ee" stroke-opacity=".6" stroke-width="6"/>
-  <g filter="url(#b)" transform="translate(87.03999999999999 87.03999999999999) scale(5.28)"><circle fill="none" cx="32" cy="32" r="24" stroke="#fff" stroke-width="7"/><circle fill="none" cx="32" cy="32" r="27.8" stroke="#22d3ee" stroke-width="1.4"/><circle fill="none" cx="32" cy="32" r="20.2" stroke="#22d3ee" stroke-width="1.4"/><polygon points="32,12 36.6,32 32,32" fill="#fff"/><polygon points="32,12 27.4,32 32,32" fill="#bfdbfe"/><polygon points="32,52 27.4,32 32,32" fill="#22d3ee"/><polygon points="32,52 36.6,32 32,32" fill="#0e7490"/><circle cx="32" cy="32" r="2.4" fill="#fff"/></g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070c18"/><stop offset=".45" stop-color="#111c3f"/><stop offset="1" stop-color="#1e40af"/></linearGradient>
+<filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="8" result="x"/><feFlood flood-color="#f5b942" flood-opacity=".55"/><feComposite in2="x" operator="in" result="y"/><feMerge><feMergeNode in="y"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<rect width="512" height="512" rx="112" fill="url(#g)"/><rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#f5b942" stroke-width="10"/>
+<g filter="url(#b)" transform="translate(19.19999999999999 19.19999999999999) scale(7.4)"><circle fill="none" cx="32" cy="32" r="21" stroke="#f5b942" stroke-width="2.4"/><polygon points="32,14 34,32 30,32" fill="#f5b942" opacity=".85" transform="rotate(45 32 32)"/><polygon points="32,14 34,32 30,32" fill="#f5b942" opacity=".85" transform="rotate(135 32 32)"/><polygon points="32,14 34,32 30,32" fill="#f5b942" opacity=".85" transform="rotate(225 32 32)"/><polygon points="32,14 34,32 30,32" fill="#f5b942" opacity=".85" transform="rotate(315 32 32)"/><polygon points="32,3 36,28 32,32" fill="#fde68a"/><polygon points="32,3 28,28 32,32" fill="#e0a020"/>
+<polygon points="61,32 36,28 32,32" fill="#fff"/><polygon points="61,32 36,36 32,32" fill="#bfdbfe"/>
+<polygon points="32,61 36,36 32,32" fill="#bfdbfe"/><polygon points="32,61 28,36 32,32" fill="#fff"/>
+<polygon points="3,32 28,28 32,32" fill="#fff"/><polygon points="3,32 28,36 32,32" fill="#bfdbfe"/>
+<circle cx="32" cy="32" r="3" fill="#070c18" stroke="#f5b942" stroke-width="1.5"/></g></svg>

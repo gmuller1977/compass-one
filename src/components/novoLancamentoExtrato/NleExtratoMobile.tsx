@@ -5,7 +5,7 @@ import { iconeCategoria, ehFixaDeCartao } from '../../utils/categoriaIcone'
 import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import { ehTransferencia } from '../acompanhamento/evolucaoCalcs'
 import { Cartao, IconeRedondo } from '../mobile/ui'
-import { M, BOLINHA_AZUL } from '../mobile/estilo'
+import { M, BOLINHA_AZUL, FONTE_TITULO } from '../mobile/estilo'
 import ModalTopo from '../ModalTopo'
 import { CalendarioMes } from '../CalendarioMes'
 import {
@@ -148,7 +148,7 @@ export default function NleExtratoMobile({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 8px' }}>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {/* dd/mm: com a página rolando, o mês do topo sai da vista. */}
-                <span style={{ fontSize: M.corpo, fontWeight: 800, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontFamily: FONTE_TITULO, fontSize: 21, fontWeight: 700, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
                   {String(dia).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
                 </span>
                 <span style={{ fontSize: M.corpo, fontWeight: 500, color: COR.textoSuave }}>{semana}</span>
@@ -166,7 +166,7 @@ export default function NleExtratoMobile({
             <Cartao style={{
               padding: '4px 16px',
               // Borda dos cards do Radar (24/10/2026, pedido do Guilherme); hoje, azul forte.
-              border: `2px solid ${ehHoje ? '#1d4ed8' : '#93c5fd'}`,
+              border: ehHoje ? '2px solid #1d4ed8' : '1px solid var(--cx-borda)',
               boxShadow: M.sombra,
               animation: highlightDia === dia ? 'rowSaved 1.2s ease-out' : undefined,
             }}>

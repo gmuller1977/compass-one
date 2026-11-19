@@ -12,6 +12,7 @@ import { textoQtdCompras, estaConferido } from '../../utils/conferirFatura'
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
+import { FONTE_TITULO } from '../mobile/estilo'
 import { BlocoProgramadas, EtiquetaTipo } from './FcProgramadas'
 
 type Props = {
@@ -97,7 +98,7 @@ export default function FcDesktopLeft({
             return (
             <section key={`${g.ac}-${g.mc}-${g.dc}`} style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 8px' }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontFamily: FONTE_TITULO, fontSize: 21, fontWeight: 700, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
                   {String(g.dc).padStart(2, '0')}/{String(g.mc + 1).padStart(2, '0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
                 </span>
                 <span style={{ fontSize: 15, fontWeight: 500, color: COR.textoSuave, flex: 1 }}>
@@ -110,7 +111,7 @@ export default function FcDesktopLeft({
                   onClick={() => novaNoDia(g.dc, g.mc, g.ac)} />
               </div>
             <div style={{ background: COR.branco, borderRadius: 16,
-              border: '2px solid #93c5fd', overflow: 'hidden' }}>
+              border: '1px solid var(--cx-borda)', overflow: 'hidden' }}>
             {g.itens.map(({ dia, dc, mc, ac, l }, idx) => {
               const catVisual = iconeCategoria(categorias, l.categoria)
               const emEdicao  = editandoId === l.id
