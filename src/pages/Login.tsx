@@ -10,26 +10,11 @@ import {
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass, NomeCompass } from '../components/LogoCompass'
-import { CabecalhoCartao, OndasTopo, RotuloTopo } from '../components/mobile/ui'
+import { CabecalhoCartao } from '../components/mobile/ui'
+import { CampoEntrada, TelaEntrada } from '../components/entrada/Entrada'
+import { useTelaBaixa } from '../components/entrada/estiloEntrada'
 import { FONTE_SITE, FONTE_TITULO, TINTA, TINTA2, BORDA_CLARA } from '../components/mobile/estilo'
 
-// Estilo da página do Educador (19/11/2026, pedido do Guilherme): topo
-// escuro com as duas ondas, letra Barlow, cartão branco e botão em tinta.
-const FUNDO = '#f3f7fd'
-
-// Tela baixa (iPhone SE no navegador, com as barras dele): o topo e os
-// espaços encolhem para o formulário inteiro caber.
-// No computador, notebook de 768px com as barras do navegador (~650 úteis).
-function useTelaBaixa(limite: number) {
-  const [v, setV] = useState(() => window.innerHeight < limite)
-  useEffect(() => {
-    const h = () => setV(window.innerHeight < limite)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [limite])
-  return v
-}
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -44,70 +29,6 @@ function traduzirErro(msg: string) {
   if (msg.includes('rate limit'))                 return 'Limite de e-mails atingido. Aguarde uma hora e tente de novo.'
   if (msg.includes('Error sending'))              return 'O servidor não conseguiu enviar o e-mail. Tente de novo mais tarde.'
   return msg
-}
-
-function Campo({
-  label, tipo = 'text', placeholder, valor, onChange, icone, onKeyDown, erroMsg, compacto,
-}: {
-  label: string; tipo?: string; placeholder: string; valor: string
-  onChange: (v: string) => void; icone?: string
-  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; erroMsg?: string
-  compacto?: boolean
-}) {
-  const [focado, setFocado] = useState(false)
-  const [verSenha, setVerSenha] = useState(false)
-  const ehSenha = tipo === 'password'
-  const tipoReal = ehSenha ? (verSenha ? 'text' : 'password') : tipo
-  const temErro = !!erroMsg
-
-  return (
-    <div style={{ marginBottom: compacto ? 10 : 14 }}>
-      <label style={{
-        display: 'block', fontSize: 11, fontWeight: 700, color: TINTA2,
-        textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 5,
-      }}>{label}</label>
-      <div style={{ position: 'relative' }}>
-        {icone && (
-          <i aria-hidden className={`ti ${icone}`} style={{
-            position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 19, pointerEvents: 'none', color: TINTA2,
-          }}/>
-        )}
-        <input
-          type={tipoReal}
-          placeholder={placeholder}
-          value={valor}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocado(true)}
-          onBlur={() => setFocado(false)}
-          onKeyDown={onKeyDown}
-          autoComplete={ehSenha ? 'current-password' : tipo === 'email' ? 'email' : undefined}
-          style={{
-            width: '100%',
-            padding: `${compacto ? 11 : 13}px ${ehSenha ? '44px' : '14px'} ${compacto ? 11 : 13}px ${icone ? '44px' : '14px'}`,
-            border: `1.5px solid ${temErro ? '#b91c1c' : focado ? TINTA : BORDA_CLARA}`,
-            borderRadius: 12, fontSize: 16, color: TINTA,
-            background: '#fff', outline: 'none', fontFamily: 'inherit',
-            transition: 'all .15s',
-            boxShadow: focado ? '0 0 0 3px rgba(11,37,69,.10)' : 'none',
-          }}
-        />
-        {ehSenha && (
-          <button type="button" aria-label={verSenha ? 'Esconder a senha' : 'Mostrar a senha'}
-            onClick={() => setVerSenha(v => !v)}
-            style={{
-              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-              border: 'none', background: 'transparent', cursor: 'pointer', color: TINTA2, padding: 6,
-              display: 'flex',
-            }}
-          ><i aria-hidden className={`ti ${verSenha ? 'ti-eye-off' : 'ti-eye'}`} style={{ fontSize: 20 }}/></button>
-        )}
-      </div>
-      {temErro && (
-        <div style={{ fontSize: 12, color: '#b91c1c', marginTop: 4 }}>{erroMsg}</div>
-      )}
-    </div>
-  )
 }
 
 const GoogleSVG = () => (
@@ -144,8 +65,6 @@ export default function Login() {
   const baixa       = useTelaBaixa(620)
   const pcBaixo     = useTelaBaixa(780) && !isMobile
   const pcMuitoBaixo = useTelaBaixa(640) && !isMobile
-  // A frase do topo só aparece no celular quando sobra altura.
-  const celAlto     = !useTelaBaixa(760)
   const [email,     setEmail]     = useState('')
   const [senha,     setSenha]     = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -267,70 +186,6 @@ export default function Login() {
   // inteira cabe sem rolar, com digital, e-mail, senha e Google à vista
   // (pedido do Guilherme em 25/10/2026). Ainda rola se faltar altura (teclado
   // aberto, aviso de erro).
-  // A logo em destaque (19/11/2026, pedido do Guilherme: "vamos valorizar a
-  // logo"): maior, com um halo ciano atrás, sem o quadrado em volta.
-  const marca = (grande: boolean) => {
-    const t = grande ? 76 : (baixa ? 44 : 58)
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: grande ? 18 : 14, position: 'relative' }}>
-        <div style={{ position: 'relative', width: t, height: t, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div aria-hidden style={{ position: 'absolute', inset: -t * .35, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(245,185,66,.22) 0%, rgba(245,185,66,0) 65%)' }}/>
-          <LogoCompass size={t}/>
-        </div>
-        <div style={{ position: 'relative' }}>
-          <div style={{ color: '#fff', fontSize: grande ? 34 : (baixa ? 23 : 27), fontWeight: 800, letterSpacing: -.5, lineHeight: 1 }}>
-            <NomeCompass />
-          </div>
-          {!baixa && (
-            <div style={{ color: 'rgba(255,255,255,.75)', fontSize: grande ? 15 : 13, fontWeight: 500, marginTop: 5 }}>
-              Sua bússola financeira
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // No celular o topo é baixo: marca, o rótulo âmbar e (com altura) a frase do
-  // site; o formulário cabe sem rolar (pedido do Guilherme em 25/10/2026). Ainda
-  // rola se faltar altura (teclado aberto, aviso de erro).
-  const hero = (compact: boolean) => compact ? (
-    <div style={{
-      background: 'var(--cx-azul)', position: 'relative', overflow: 'hidden', flexShrink: 0,
-      padding: `calc(env(safe-area-inset-top, 0px) + ${baixa ? 12 : 20}px) 22px ${baixa ? 46 : celAlto ? 66 : 56}px`,
-    }}>
-      {marca(false)}
-      <div style={{ marginTop: baixa ? 10 : 18, position: 'relative' }}>
-        <RotuloTopo icone="ti-route">Planeje · preveja · decida</RotuloTopo>
-      </div>
-      {celAlto && (
-        <h1 style={{ margin: '8px 0 0', fontFamily: FONTE_TITULO, fontSize: 34, fontWeight: 700, lineHeight: 1.02,
-          color: '#fff', position: 'relative' }}>Chega de voar às cegas com o seu dinheiro.</h1>
-      )}
-      <OndasTopo fundo={FUNDO}/>
-    </div>
-  ) : (
-    <div style={{
-      background: 'var(--cx-azul)', flex: 1, position: 'relative', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-      padding: pcBaixo ? '32px 56px 96px' : '48px 64px 120px',
-    }}>
-      {marca(true)}
-      <div style={{ maxWidth: 520, position: 'relative' }}>
-        <RotuloTopo icone="ti-route">Planeje · preveja · decida</RotuloTopo>
-        <h1 style={{ margin: '14px 0 16px', fontFamily: FONTE_TITULO, fontSize: pcBaixo ? 50 : 60, fontWeight: 700,
-          lineHeight: 1, color: '#fff' }}>Chega de voar às cegas com o seu dinheiro.</h1>
-        <p style={{ margin: 0, fontSize: 18, lineHeight: 1.55, color: 'rgba(255,255,255,.85)', maxWidth: 460 }}>
-          Planeje o mês, veja com quanto ele termina e saiba se cabe no bolso antes de comprar.
-        </p>
-      </div>
-      <div/>
-      <OndasTopo fundo={FUNDO}/>
-    </div>
-  )
-
   const botaoDigital = (destaque: boolean) => (
     <button onClick={() => handleDigital()} disabled={carregando} style={{
       width:'100%', padding: destaque ? (isMobile ? '13px' : '15px') : (isMobile ? '11px' : '13px'), borderRadius:14, fontFamily:'inherit',
@@ -433,10 +288,10 @@ export default function Login() {
         <div style={{ flex:1, height:1, background:BORDA_CLARA }}/>
       </div>
 
-      <Campo label="E-mail" tipo="email" placeholder="seu@email.com"
+      <CampoEntrada label="E-mail" tipo="email" placeholder="seu@email.com"
         valor={email} onChange={setEmail} icone="ti-mail" compacto={isMobile || pcBaixo} />
 
-      <Campo label="Senha" tipo="password" placeholder="Sua senha"
+      <CampoEntrada label="Senha" tipo="password" placeholder="Sua senha"
         valor={senha} onChange={setSenha} icone="ti-lock"
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile || pcBaixo} />
 
@@ -483,27 +338,10 @@ export default function Login() {
     </div>
   )
 
-  if (isMobile) {
-    return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:FUNDO, fontFamily:FONTE_SITE, overflow:'hidden' }}>
-        {hero(true)}
-        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', padding: baixa ? '0 12px 10px' : '0 14px 14px', marginTop: baixa ? -28 : -40, position:'relative' }}>
-          <div style={{ background:'#fff', borderRadius:20, border:'1px solid var(--cx-borda)', boxShadow:'0 10px 30px rgba(11,37,69,.10)' }}>
-            {form}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:FONTE_SITE, background:FUNDO }}>
-      {hero(false)}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding: pcMuitoBaixo ? '8px 20px' : pcBaixo ? '16px 20px' : '40px 20px' }}>
-        <div style={{ width:'100%', maxWidth:440, background:'#fff', borderRadius:20, border:'1px solid var(--cx-borda)', boxShadow:'0 12px 40px rgba(11,37,69,.10)', overflow:'hidden' }}>
-          {form}
-        </div>
-      </div>
-    </div>
+    <TelaEntrada frase="Chega de voar às cegas com o seu dinheiro."
+      apoio="Planeje o mês, veja com quanto ele termina e saiba se cabe no bolso antes de comprar.">
+      {form}
+    </TelaEntrada>
   )
 }

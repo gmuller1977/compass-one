@@ -5,7 +5,10 @@ import { supabase } from '../lib/supabase'
 import { urlDoApp } from '../utils/site'
 import { codigoRecebido } from '../utils/indicacao'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass, NomeCompass } from '../components/LogoCompass'
+import { CabecalhoCartao } from '../components/mobile/ui'
+import { TINTA, TINTA2, BORDA_CLARA, FONTE_SITE } from '../components/mobile/estilo'
+import { CampoEntrada, TelaEntrada, Separador } from '../components/entrada/Entrada'
+import { botaoPrincipal, botaoClaro, linkEntrada } from '../components/entrada/estiloEntrada'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -23,75 +26,13 @@ function traduzirErro(msg: string) {
 
 function forcaSenha(s: string) {
   if (s.length === 0) return { nivel: -1, label: '', cor: '' }
-  if (s.length < 8)   return { nivel: 0, label: 'Fraca — mínimo 8 caracteres', cor: '#dc2626' }
+  if (s.length < 8)   return { nivel: 0, label: 'Fraca — mínimo 8 caracteres', cor: '#b91c1c' }
   const temLetra  = /[a-zA-Z]/.test(s)
   const temNumero = /[0-9]/.test(s)
   const temEspec  = /[^a-zA-Z0-9]/.test(s)
-  if (temLetra && temNumero && temEspec) return { nivel: 2, label: 'Forte', cor: '#16a34a' }
+  if (temLetra && temNumero && temEspec) return { nivel: 2, label: 'Forte', cor: '#15803d' }
   if (temLetra && temNumero)             return { nivel: 1, label: 'Média — adicione símbolos para fortalecer', cor: '#b45309' }
   return { nivel: 1, label: 'Média', cor: '#b45309' }
-}
-
-function Campo({
-  label, tipo = 'text', placeholder, valor, onChange, icone, onKeyDown, erroMsg,
-}: {
-  label: string; tipo?: string; placeholder: string; valor: string
-  onChange: (v: string) => void; icone?: string
-  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; erroMsg?: string
-}) {
-  const [focado, setFocado] = useState(false)
-  const [verSenha, setVerSenha] = useState(false)
-  const ehSenha = tipo === 'password'
-  const tipoReal = ehSenha ? (verSenha ? 'text' : 'password') : tipo
-  const temErro = !!erroMsg
-
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{
-        display:'block', fontSize:10, fontWeight:700, color:'#1a56db',
-        textTransform:'uppercase', letterSpacing:.5, marginBottom:5,
-      }}>{label}</label>
-      <div style={{ position:'relative' }}>
-        {icone && (
-          <span style={{
-            position:'absolute', left:14, top:'50%', transform:'translateY(-50%)',
-            fontSize:16, pointerEvents:'none',
-          }}>{icone}</span>
-        )}
-        <input
-          type={tipoReal}
-          placeholder={placeholder}
-          value={valor}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocado(true)}
-          onBlur={() => setFocado(false)}
-          onKeyDown={onKeyDown}
-          autoComplete={ehSenha ? 'new-password' : tipo === 'email' ? 'email' : 'name'}
-          style={{
-            width:'100%',
-            padding:`13px ${ehSenha ? '44px' : '14px'} 13px ${icone ? '44px' : '14px'}`,
-            border:`1.5px solid ${temErro ? '#dc2626' : focado ? '#1a56db' : '#e2e8f0'}`,
-            borderRadius:14, fontSize:14, color:'#0f172a',
-            background:'#fff', outline:'none', fontFamily:'inherit',
-            transition:'all .15s',
-            boxShadow: focado ? '0 0 0 3px rgba(26,86,219,.08)' : 'none',
-          }}
-        />
-        {ehSenha && (
-          <span
-            onClick={() => setVerSenha(v => !v)}
-            style={{
-              position:'absolute', right:14, top:'50%', transform:'translateY(-50%)',
-              fontSize:16, cursor:'pointer', color:'#94a3b8', padding:4,
-            }}
-          >{verSenha ? '🙈' : '👁️'}</span>
-        )}
-      </div>
-      {temErro && (
-        <div style={{ fontSize:11, color:'#dc2626', marginTop:4 }}>{erroMsg}</div>
-      )}
-    </div>
-  )
 }
 
 const GoogleSVG = () => (
@@ -188,224 +129,111 @@ export default function Cadastro() {
     setCarregando(false)
   }
 
-  const hero = (compact: boolean) => (
-    <div style={{
-      background: 'var(--cx-azul)',
-      padding: compact ? '32px 32px 48px' : '60px 48px',
-      flexShrink: 0,
-      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-      position:'relative', overflow:'hidden',
-      ...(compact ? {} : { flex: 1 }),
-    }}>
-      <div style={{ position:'absolute', width:200, height:200, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-60, right:-60 }}/>
-      <div style={{ position:'absolute', width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.04)', bottom:-40, left:-20 }}/>
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, position:'relative', zIndex:1 }}>
-        <div style={{
-          width: compact ? 72 : 88, height: compact ? 72 : 88, borderRadius:20,
-          background:'rgba(255,255,255,.15)', border:'2px solid rgba(255,255,255,.25)',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          boxShadow:'0 8px 24px rgba(0,0,0,.2)',
-        }}>
-          <LogoCompass size={compact ? 48 : 58}/>
-        </div>
-        <div>
-          <div style={{ color:'#fff', fontSize: compact ? 26 : 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-            <NomeCompass />
-          </div>
-          <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
-            Comece a controlar suas finanças
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  const FRASE = 'Encontre o seu norte financeiro.'
+  const APOIO = 'Monte o seu plano em poucos minutos e acompanhe para onde o seu dinheiro está indo.'
 
   // Tela de confirmação enviada
   if (confirmacaoEnviada) {
-    const confirmacao = (
-      <div style={{ padding: isMobile ? '40px 24px 32px' : '48px 44px', textAlign:'center' }}>
-        <div style={{ fontSize:56, marginBottom:16 }}>📬</div>
-        <div style={{ fontSize:22, fontWeight:800, color:'#0f172a', marginBottom:8 }}>
-          Verifique seu e-mail!
-        </div>
-        <div style={{ fontSize:14, color:'#64748b', lineHeight:1.6, marginBottom:8 }}>
-          Enviamos um link de confirmação para
-        </div>
-        <div style={{ fontSize:15, fontWeight:700, color:'#1a56db', marginBottom:28 }}>{email}</div>
-        <div style={{ fontSize:13, color:'#94a3b8', marginBottom:16, lineHeight:1.5 }}>
-          Clique no link do e-mail para ativar sua conta e começar a usar o Compass One.
-        </div>
-        <div style={{ fontSize:12, color:'#94a3b8', marginBottom:28, lineHeight:1.5,
-          padding:'10px 14px', background:'#f8fafc', borderRadius:10, border:'1px solid #e2e8f0' }}>
-          Não recebeu? Verifique a pasta de spam ou lixo eletrônico. O email pode levar até 2 minutos.
-        </div>
-        <button onClick={handleReenviar} disabled={carregando} style={{
-          width:'100%', padding:'13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-          background:'#fff', color:'#1a56db', fontSize:14, fontWeight:700,
-          cursor:'pointer', fontFamily:'inherit', marginBottom:12, transition:'all .15s',
-        }}>
-          {carregando ? 'Reenviando...' : 'Reenviar e-mail'}
-        </button>
-        {reenvio && (
-          <div role="status" style={{ fontSize:13, marginBottom:12, color: reenvio.ok ? '#15803d' : '#b91c1c' }}>{reenvio.texto}</div>
-        )}
-        <button onClick={() => navigate('/login')} style={{
-          width:'100%', padding:'13px', border:'none', borderRadius:14,
-          background:'linear-gradient(135deg,#1a56db,#2563eb)',
-          color:'#fff', fontSize:14, fontWeight:700,
-          cursor:'pointer', fontFamily:'inherit',
-          boxShadow:'0 4px 20px rgba(26,86,219,.35)',
-        }}>
-          Voltar ao login
-        </button>
-      </div>
-    )
-
-    if (isMobile) {
-      return (
-        <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
-          {hero(true)}
-          <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>{confirmacao}</div>
-        </div>
-      )
-    }
     return (
-      <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
-        {hero(false)}
-        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
-          <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)' }}>
-            {confirmacao}
+      <TelaEntrada frase={FRASE} apoio={APOIO}>
+        <div style={{ padding: isMobile ? '22px 20px 20px' : '36px 40px', fontFamily: FONTE_SITE }}>
+          <CabecalhoCartao icone="ti-mail-check" rotulo="Quase lá">Verifique seu e-mail</CabecalhoCartao>
+          <div style={{ fontSize:15, color:TINTA2, lineHeight:1.6 }}>Enviamos um link de confirmação para</div>
+          <div style={{ fontSize:16, fontWeight:700, color:TINTA, marginBottom:14, wordBreak:'break-all' }}>{email}</div>
+          <div style={{ fontSize:14, color:TINTA2, marginBottom:14, lineHeight:1.55 }}>
+            Clique no link do e-mail para ativar sua conta e começar a usar o Compass One.
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  const form = (
-    <div style={{ padding: isMobile ? '28px 24px 32px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif" }}>
-      <div style={{ marginBottom:24 }}>
-        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Crie sua conta</div>
-        <div style={{ fontSize:13, color:'#64748b' }}>Grátis. Sem cartão de crédito. Sem anúncios.</div>
-      </div>
-
-      {erro && (
-        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16 }}>
-          {erro}
-          {erro.includes('já está cadastrado') && (
-            <button onClick={() => navigate('/login')} style={{
-              border:'none', background:'transparent', color:'#1a56db',
-              fontWeight:700, cursor:'pointer', fontFamily:'inherit', fontSize:13,
-            }}>Entrar</button>
+          <div style={{ fontSize:13, color:TINTA2, marginBottom:20, lineHeight:1.5,
+            padding:'10px 14px', background:'#f3f8fe', borderRadius:12, border:`1px solid ${BORDA_CLARA}` }}>
+            Não recebeu? Verifique a pasta de spam ou lixo eletrônico. O e-mail pode levar até 2 minutos.
+          </div>
+          <button onClick={handleReenviar} disabled={carregando} style={{ ...botaoClaro, marginBottom:12 }}>
+            {carregando ? 'Reenviando...' : 'Reenviar e-mail'}
+          </button>
+          {reenvio && (
+            <div role="status" style={{ fontSize:13, marginBottom:12, color: reenvio.ok ? '#15803d' : '#b91c1c' }}>{reenvio.texto}</div>
           )}
+          <button onClick={() => navigate('/login')} style={botaoPrincipal()}>Voltar ao login</button>
         </div>
-      )}
-
-      <Campo label="👤 Nome completo" placeholder="Como quer ser chamado?"
-        valor={nome} onChange={setNome} icone="👤" />
-
-      <Campo label="✉️ E-mail" tipo="email" placeholder="seu@email.com"
-        valor={email} onChange={setEmail} icone="✉️" erroMsg={erroEmail} />
-
-      <Campo label="🔑 Senha" tipo="password" placeholder="Mínimo 8 caracteres"
-        valor={senha} onChange={setSenha} icone="🔑" />
-
-      {senha.length > 0 && forca.nivel >= 0 && (
-        <div style={{ marginTop:-8, marginBottom:14 }}>
-          <div style={{ display:'flex', gap:4, marginBottom:5 }}>
-            {[0,1,2].map(i => (
-              <div key={i} style={{
-                flex:1, height:3, borderRadius:2,
-                background: i <= forca.nivel ? forca.cor : '#e2e8f0',
-                transition:'background .2s',
-              }}/>
-            ))}
-          </div>
-          <span style={{ fontSize:11, color:forca.cor, fontWeight:500 }}>{forca.label}</span>
-        </div>
-      )}
-
-      <Campo label="🔒 Confirmar senha" tipo="password" placeholder="Repita a senha"
-        valor={confirmar} onChange={setConfirmar} icone="🔒"
-        erroMsg={erroConfirmar}
-        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
-
-      <label style={{ display:'flex', gap:10, alignItems:'flex-start', margin:'2px 0 16px', fontSize:13, color:'#334155', lineHeight:1.45, cursor:'pointer' }}>
-        <input type="checkbox" checked={ofertas} onChange={e => setOfertas(e.target.checked)}
-          style={{ width:18, height:18, marginTop:1, flexShrink:0, accentColor:'#1a56db' }} />
-        <span>Quero receber novidades e ofertas do Compass One por e-mail. Você pode mudar isso quando quiser, no Perfil.</span>
-      </label>
-
-      <button onClick={handleSubmit} disabled={carregando} style={{
-        width:'100%', padding:'15px', border:'none', borderRadius:14,
-        background:'linear-gradient(135deg,#1a56db,#2563eb)',
-        color:'#fff', fontSize:16, fontWeight:800,
-        cursor: carregando ? 'default' : 'pointer',
-        opacity: carregando ? .75 : 1,
-        fontFamily:'inherit',
-        boxShadow:'0 4px 20px rgba(26,86,219,.35)',
-        transition:'all .15s',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        marginBottom:16,
-      }}>
-        {carregando ? 'Criando conta...' : 'Criar minha conta →'}
-      </button>
-
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-        <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou cadastre com</span>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-      </div>
-
-      <button onClick={handleGoogle} disabled={carregando} style={{
-        width:'100%', padding:'13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-        background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
-        cursor:'pointer', fontFamily:'inherit',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-        transition:'all .15s', marginBottom:24,
-      }}>
-        <GoogleSVG/> Cadastrar com Google
-      </button>
-
-      <div style={{ textAlign:'center' }}>
-        <span style={{ fontSize:13, color:'#64748b' }}>Já tenho conta </span>
-        <button onClick={() => navigate('/login')} style={{
-          border:'none', background:'transparent', color:'#1a56db',
-          fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-        }}>→ Entrar</button>
-      </div>
-
-      <div style={{ textAlign:'center', marginTop:20 }}>
-        <span style={{ fontSize:10, color:'#94a3b8', lineHeight:1.5 }}>
-          Ao criar sua conta você concorda com os{' '}
-          <a href="/termos" target="_blank" rel="noopener noreferrer"
-            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Termos de Uso</a>
-          {' '}e{' '}
-          <a href="/privacidade" target="_blank" rel="noopener noreferrer"
-            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Privacidade</a>
-        </span>
-      </div>
-    </div>
-  )
-
-  if (isMobile) {
-    return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
-        {hero(true)}
-        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>
-          {form}
-        </div>
-      </div>
+      </TelaEntrada>
     )
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
-      {hero(false)}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
-        <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>
-          {form}
+    <TelaEntrada frase={FRASE} apoio={APOIO}>
+    <div style={{ padding: isMobile ? '20px 20px 18px' : '32px 40px', fontFamily: FONTE_SITE }}>
+      <div style={{ marginBottom: 8 }}>
+        <CabecalhoCartao icone="ti-user-plus" rotulo="Grátis · sem anúncios">Crie sua conta</CabecalhoCartao>
+      </div>
+
+      {erro && (
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#b91c1c', marginBottom:16 }}>
+          {erro}
+          {erro.includes('já está cadastrado') && (
+            <button onClick={() => navigate('/login')} style={{ ...linkEntrada, fontSize:13 }}>Entrar</button>
+          )}
         </div>
+      )}
+
+      <button onClick={handleGoogle} disabled={carregando} style={botaoClaro}>
+        <GoogleSVG/> Cadastrar com Google
+      </button>
+
+      <Separador margem="16px 0">ou com e-mail</Separador>
+
+      <CampoEntrada label="Nome" placeholder="Como quer ser chamado?" autoComplete="name"
+        valor={nome} onChange={setNome} icone="ti-user" />
+
+      <CampoEntrada label="E-mail" tipo="email" placeholder="seu@email.com"
+        valor={email} onChange={setEmail} icone="ti-mail" erroMsg={erroEmail} />
+
+      <CampoEntrada label="Senha" tipo="password" placeholder="Mínimo 8 caracteres" autoComplete="new-password"
+        valor={senha} onChange={setSenha} icone="ti-lock" />
+
+      {senha.length > 0 && forca.nivel >= 0 && (
+        <div style={{ marginTop:-6, marginBottom:14 }}>
+          <div style={{ display:'flex', gap:4, marginBottom:5 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{
+                flex:1, height:4, borderRadius:2,
+                background: i <= forca.nivel ? forca.cor : BORDA_CLARA,
+                transition:'background .2s',
+              }}/>
+            ))}
+          </div>
+          <span style={{ fontSize:12, color:forca.cor, fontWeight:600 }}>{forca.label}</span>
+        </div>
+      )}
+
+      <CampoEntrada label="Confirmar senha" tipo="password" placeholder="Repita a senha" autoComplete="new-password"
+        valor={confirmar} onChange={setConfirmar} icone="ti-lock-check"
+        erroMsg={erroConfirmar}
+        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
+
+      <label style={{ display:'flex', gap:10, alignItems:'flex-start', margin:'2px 0 16px', fontSize:14, color:TINTA2, lineHeight:1.45, cursor:'pointer' }}>
+        <input type="checkbox" checked={ofertas} onChange={e => setOfertas(e.target.checked)}
+          style={{ width:18, height:18, marginTop:1, flexShrink:0, accentColor:TINTA }} />
+        <span>Quero receber novidades e ofertas do Compass One por e-mail. Você pode mudar isso quando quiser, no Perfil.</span>
+      </label>
+
+      <button onClick={handleSubmit} disabled={carregando} style={{ ...botaoPrincipal(carregando), marginBottom:16 }}>
+        {carregando ? 'Criando conta...' : 'Criar minha conta'}
+      </button>
+
+      <div style={{ textAlign:'center' }}>
+        <span style={{ fontSize:14, color:TINTA2 }}>Já tem conta? </span>
+        <button onClick={() => navigate('/login')} style={{ ...linkEntrada, fontSize:14 }}>Entrar</button>
+      </div>
+
+      <div style={{ textAlign:'center', marginTop:14 }}>
+        <span style={{ fontSize:11, color:TINTA2, lineHeight:1.5 }}>
+          Ao criar sua conta você concorda com os{' '}
+          <a href="/termos" target="_blank" rel="noopener noreferrer" style={{ color:TINTA, fontWeight:700 }}>Termos de Uso</a>
+          {' '}e{' '}
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{ color:TINTA, fontWeight:700 }}>Privacidade</a>
+        </span>
       </div>
     </div>
+    </TelaEntrada>
   )
 }
