@@ -3821,6 +3821,10 @@ título em Barlow Condensed, cards do topo em vidro (`KpiCard vidro`),
 pílulas de conta brancas/translúcidas, data do dia em Barlow Condensed. No
 celular o rótulo do topo é a aba (Banco/Cartão/Dinheiro com ícone): "Todo
 dia" não existe mais. Nenhum número mudou.
+**Radar e Planejamento também** (mesmo dia, aprovado por ele): `PageHeader site`
+(topo escuro de ponta a ponta, `RotuloTopo`, título em Barlow Condensed,
+ondas); rótulos "Acompanhamento do mês" (não "previsto") e "O seu plano do
+ano". No celular, o mesmo no `AcMobileView` e no `PlanMobile`.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
