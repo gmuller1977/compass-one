@@ -10,6 +10,8 @@ import { useObjetivos } from '../utils/objetivosBanco'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
+import { FONTE_SITE, FONTE_TITULO, NOITE, TINTA, AMBAR as AMBAR_SITE, BORDA_CLARA } from '../components/mobile/estilo'
+import { CabecalhoCartao } from '../components/mobile/ui'
 import { AnelGrupo } from '../components/acompanhamento/EvolucaoGrupo'
 import {
   DIAS_PARA_LEMBRAR, aplicadoNoMes, caminhoDoObjetivo, diasSemAtualizar, isoDe, movimentosDoMes, rendeuPercentual, resumoDosInvestimentos,
@@ -58,7 +60,7 @@ export default function Investimentos() {
     ? `Em ${MESES[agora.getMonth()]} você aplicou ${fmt(Math.max(0, aplicadoMes))} da meta de economia de ${fmt(metaMes)}.`
     : 'O que você aplica conta como guardado na meta de economia do Planejamento.'
 
-  const cartao = { background: '#fff', borderRadius: 20, boxShadow: '0 6px 24px rgba(30,64,175,.08)',
+  const cartao = { background: '#fff', borderRadius: 20, boxShadow: '0 10px 28px rgba(11,37,69,.08)', border: `1px solid ${BORDA_CLARA}`,
     padding: isMobile ? '14px 16px' : '16px 20px', minWidth: 0 } as const
 
   const minis: [string, number, string?][] = [
@@ -68,15 +70,15 @@ export default function Investimentos() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: FONTE_SITE }}>
       <AppHeader currentPath={pathname} />
-      <div style={{ padding: isMobile ? '12px 14px 90px' : '16px 28px 40px', maxWidth: 1280, margin: '0 auto' }}>
-        <PageHeader icon="ti-pig-money" breadcrumb="TODO ANO" title="Investimentos" ajuda="investimentos" mb={16}>
+        {/* O topo escuro da página do Educador, de ponta a ponta (19/11/2026). */}
+        <PageHeader site fundo={COR.fundo} icon="ti-pig-money" rotulo="O seu dinheiro guardado" title="Investimentos" ajuda="investimentos" mb={4}>
           <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.5fr)',
             gap: 22, alignItems: 'end', marginTop: 14 }}>
             <div style={{ containerType: 'inline-size', minWidth: 0 }}>
               <div style={{ fontSize: 14, color: 'rgba(255,255,255,.85)' }}>Você tem investido</div>
-              <div style={{ fontSize: 'min(40px, calc(100cqi / 8.4))', fontWeight: 800, color: '#fff', lineHeight: 1.1,
+              <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(46px, calc(100cqi / 7))', fontWeight: 700, color: '#fff', lineHeight: 1.05,
                 whiteSpace: 'nowrap' }}>{fmt(r.total)}</div>
               <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,.8)', marginTop: 4 }}>
                 Fica fora do saldo disponível: não é dinheiro para gastar.</div>
@@ -112,6 +114,7 @@ export default function Investimentos() {
             )}
           </div>
         </PageHeader>
+      <div style={{ padding: isMobile ? '0 14px 90px' : '0 28px 40px', maxWidth: 1280, margin: '0 auto' }}>
 
         {r.itens.length === 0 ? (
           <div style={{ ...cartao, textAlign: 'center', padding: '28px 20px' }}>
@@ -125,8 +128,8 @@ export default function Investimentos() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
               <div style={cartao}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: COR.texto }}>Quanto você tem investido</div>
-                <div style={{ fontSize: 13, color: '#475569', margin: '2px 0 8px' }}>
+                <CabecalhoCartao icone="ti-chart-bar" rotulo="O que já aconteceu">Quanto você tem investido</CabecalhoCartao>
+                <div style={{ fontSize: 13, color: '#475569', margin: '-4px 0 8px' }}>
                   fim de cada mês · <span style={{ color: AZUL_NUM, fontWeight: 700 }}>■ o que você aplicou</span>
                   {' · '}<span style={{ color: CIANO, fontWeight: 700 }}>■ o que rendeu</span></div>
                 <Grafico serie={r.serie} largo={!isMobile} />
@@ -135,11 +138,9 @@ export default function Investimentos() {
               </div>
 
               <div style={cartao}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: COR.texto }}>Seus investimentos</div>
-                  <button onClick={novo} style={{ ...BOTAO_CHEIO, marginLeft: 'auto', padding: '6px 12px', minHeight: 36 }}>
-                    <i aria-hidden className="ti ti-plus" /> Novo</button>
-                </div>
+                <CabecalhoCartao icone="ti-pig-money" rotulo="Aplicar, resgatar e atualizar"
+                  direita={<button onClick={novo} style={{ ...BOTAO_CHEIO, padding: '6px 12px', minHeight: 36 }}>
+                    <i aria-hidden className="ti ti-plus" /> Novo</button>}>Seus investimentos</CabecalhoCartao>
                 {r.itens.map((it, k) => (
                   <LinhaInvestimento key={it.conta.id} it={it} hoje={hoje} primeira={k === 0}
                     objetivos={objetivos.filter(o => o.contaId === it.conta.id)}
@@ -189,13 +190,13 @@ const CAIXA = { background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255
 
 const BOTAO_CHEIO = {
   display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, padding: '10px 16px', minHeight: 40,
-  fontSize: 14, fontWeight: 700, border: 'none', color: '#fff', background: 'var(--cx-azul)',
-  boxShadow: 'var(--cx-bolinha)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+  fontSize: 14, fontWeight: 700, border: 'none', color: '#fff', background: NOITE,
+  boxShadow: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
 } as const
 
 const BOTAO = {
-  ...BOTAO_CHEIO, padding: '7px 13px', minHeight: 38, fontSize: 13, color: '#1e3a8a', background: '#fff', justifyContent: 'center',
-  boxShadow: 'none', border: '1.5px solid #bfdbfe',
+  ...BOTAO_CHEIO, padding: '7px 13px', minHeight: 38, fontSize: 13, color: TINTA, background: '#fff', justifyContent: 'center',
+  boxShadow: 'none', border: `1.5px solid ${TINTA}`,
 } as const
 
 function LinhaInvestimento({ it, hoje, primeira, objetivos, podeObjetivo, celular, onAcao, onObjetivo }: {
@@ -235,8 +236,8 @@ function LinhaInvestimento({ it, hoje, primeira, objetivos, podeObjetivo, celula
       display: 'flex', gap: 18, alignItems: 'flex-start' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, containerType: 'inline-size' }}>
-          <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--cx-azul)', color: '#fff', flexShrink: 0,
-            display: 'grid', placeItems: 'center', fontSize: 20, boxShadow: 'var(--cx-bolinha)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: NOITE, color: AMBAR_SITE, flexShrink: 0,
+            display: 'grid', placeItems: 'center', fontSize: 22 }}>
             <i aria-hidden className="ti ti-pig-money" /></div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: 15, color: COR.texto }}>{nome}</div>
@@ -364,7 +365,7 @@ function Movimentos({ r, objetivos, ano, mes, andar, podeAvancar, onExcluir }: {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <div style={{ fontSize: 17, fontWeight: 800, color: COR.texto, minWidth: 0 }}>
+        <div style={{ fontFamily: FONTE_TITULO, fontSize: 25, fontWeight: 700, lineHeight: 1.05, color: TINTA, minWidth: 0 }}>
           Movimentos de {MESES[mes]}{ano !== new Date().getFullYear() ? ` de ${ano}` : ''}</div>
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>{seta(-1, true)}{seta(1, podeAvancar)}</div>
       </div>
