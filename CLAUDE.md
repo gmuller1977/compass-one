@@ -3830,6 +3830,12 @@ dia" não existe mais. Nenhum número mudou.
 (topo escuro de ponta a ponta, `RotuloTopo`, título em Barlow Condensed,
 ondas); rótulos "Acompanhamento do mês" (não "previsto") e "O seu plano do
 ano". No celular, o mesmo no `AcMobileView` e no `PlanMobile`.
+**Investimentos, Configurações, Mensagens, Indicar amigos e a folha "Mais"
+também** (19/11/2026, aprovado por ele). Configurações tem UM topo escuro
+para todas as abas (`topoDaAba` em `Configuracoes.tsx`, com "‹ Configurações"
+pelo `voltar` do `PageHeader site` e o botão "+ Nova…" dentro dele); os
+cadastros (`Cfg*`) não têm mais cabeçalho próprio. A tela de ícones e a folha
+"Mais" usam cartões brancos / linhas com o ícone âmbar no quadrado escuro.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
