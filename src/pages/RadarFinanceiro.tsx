@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
-import { M, ROTULO_TOPO } from '../components/mobile/estilo'
+import { M, ROTULO_TOPO, FONTE_SITE, FONTE_TITULO } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/saldoConta'
@@ -261,7 +261,7 @@ export default function RadarFinanceiro() {
 
   return (
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:M.fundo,
-      fontFamily:"-apple-system,'Inter',sans-serif"}}>
+      fontFamily:FONTE_SITE}}>
       <AppHeader currentPath={pathname} />
 
       {/* CONTEÚDO */}
@@ -272,13 +272,13 @@ export default function RadarFinanceiro() {
       {/* O topo é o do cardápio (12/10/2026): o mesmo azul do título traz a
           RESPOSTA do mês em letra grande e, ao lado, os quatro números de
           antes em miniatura. Clicar em qualquer um abre o detalhe por conta. */}
-      <div style={{ flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, margin: '-16px -24px 0' }}>
         <PageHeader
-          icon="ti-chart-bar"
-          breadcrumb="TODO DIA"
+          site
+          icon="ti-radar-2"
+          rotulo="Previsto × realizado"
           ajuda="radar"
           title="Radar financeiro"
-          subtitle="Previsto × Realizado"
           mb={0}
           rightContent={
             <SeletorMesAno
@@ -307,7 +307,7 @@ export default function RadarFinanceiro() {
                     regra do Guilherme: todo número pode chegar a isso). */}
                 <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
-                  <div style={{ fontSize: 'min(18px, calc(100cqi / 8.2))', fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
+                  <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(24px, calc(100cqi / 7))', fontWeight: 700, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                 </div>
@@ -319,7 +319,7 @@ export default function RadarFinanceiro() {
               <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
                 {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
               </div>
-              <div style={{ fontSize: 'min(40px, calc(100cqi / 8.6))', fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
+              <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(48px, calc(100cqi / 7.4))', fontWeight: 700, lineHeight: 1.1,
                 color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
               {/* A frase "Ainda dá para gastar" saiu do topo (24/10/2026, pedido do Guilherme). */}
               {!ritmo && resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}

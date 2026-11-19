@@ -2,6 +2,8 @@ import type { ReactNode, CSSProperties } from 'react'
 import AjudaTela from './AjudaTela'
 import type { TelaAjuda } from '../utils/ajudaDasTelas'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { OndasTopo, RotuloTopo } from './mobile/ui'
+import { FONTE_TITULO } from './mobile/estilo'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -64,10 +66,43 @@ type Props = {
   ajuda?: TelaAjuda
   /** Conteúdo embaixo do título, dentro do mesmo azul (a resposta do Radar). */
   children?: ReactNode
+  /** O topo da página do Educador (19/11/2026): fundo escuro de ponta a
+   *  ponta, rótulo âmbar, título em Barlow Condensed e as duas ondas no pé.
+   *  Quem usa tira o padding lateral do contêiner, para o topo encostar. */
+  site?: boolean
+  /** Rótulo âmbar do topo no modo `site` (no lugar do breadcrumb). */
+  rotulo?: string
+  /** Cor da tela embaixo do topo (a onda da frente usa ela). */
+  fundo?: string
 }
 
-export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda, children }: Props) {
+export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda, children, site, rotulo, fundo }: Props) {
   const isMobile = useIsMobile()
+
+  if (site) return (
+    <div style={{
+      background: 'linear-gradient(180deg, #070c18 0%, #111c3f 35%, #1e40af 100%)',
+      position: 'relative', overflow: 'hidden', color: '#fff',
+      padding: isMobile ? '14px 16px 62px' : '18px 28px 66px',
+      marginBottom: mb,
+    }}>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <RotuloTopo icone={icon}>{rotulo ?? breadcrumb ?? title}</RotuloTopo>
+          <h1 style={{ margin: '6px 0 0', fontFamily: FONTE_TITULO, fontSize: isMobile ? 32 : 36, fontWeight: 700, lineHeight: 1, color: '#fff' }}>{title}</h1>
+          {subtitle && <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{subtitle}</div>}
+        </div>
+        {(rightContent || ajuda) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {rightContent}
+            {ajuda && <AjudaTela tela={ajuda} />}
+          </div>
+        )}
+      </div>
+      <div style={{ position: 'relative' }}>{children}</div>
+      <OndasTopo fundo={fundo} />
+    </div>
+  )
 
   return (
     <div style={{
