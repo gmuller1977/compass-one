@@ -393,7 +393,7 @@ export default function AcMobileView({
     // conteúdo num filho flex:1 rolável — sem minHeight:0 o filho crescia do
     // tamanho do conteúdo, a caixa cortava e nada rolava (relatado pelo
     // Guilherme em 10/10/2026).
-    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
       {/* Topo azul, no desenho da Bússola (redesenho de 10/10/2026): o mês
           com setas, o saldo de hoje grande, e as duas barras do mês com

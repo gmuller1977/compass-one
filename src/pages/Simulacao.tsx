@@ -490,7 +490,7 @@ export default function Simulacao() {
   const fundoAba = aba === 'compra' ? '#eff6ff' : isDivida ? '#fef2f2' : '#f0fdf4'
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath="/simulacao" />
 
       {/* Header em largura cheia, como na tela de Lancamentos */}

@@ -164,7 +164,7 @@ export default function RedefinirSenha() {
   )
 
   const form = (
-    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Nova senha</div>
         <div style={{ fontSize:13, color:'#64748b' }}>
@@ -246,7 +246,7 @@ export default function RedefinirSenha() {
 
   if (isMobile) {
     return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
         <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>
           {form}
@@ -256,7 +256,7 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
+    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
       {hero(false)}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
         <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>

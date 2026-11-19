@@ -62,7 +62,7 @@ export default function ExcluirMovimentoDialog({ movimento: m, nomeConta, nomeOb
       <div onClick={e => e.stopPropagation()} style={{
         background: '#fff', width: '100%', maxWidth: central ? 420 : undefined,
         borderRadius: central ? raio : `${raio}px ${raio}px 0 0`,
-        fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
+        fontFamily: "-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
       }}>
         <ModalTopo icone="ti-trash" rotulo="Excluir movimento" titulo={titulo} raio={raio}
           subtitulo={`${nomeConta}${nomeObjetivo ? ` · ${nomeObjetivo}` : ''} · ${data}`} onFechar={onFechar} />

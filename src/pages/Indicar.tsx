@@ -53,7 +53,7 @@ export default function Indicar() {
   } as const)
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath={pathname} />
       <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
         <PageHeader icon="ti-gift" breadcrumb="MINHA CONTA" title="Indicar amigos"

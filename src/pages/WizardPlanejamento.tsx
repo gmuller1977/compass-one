@@ -634,7 +634,7 @@ export default function WizardPlanejamento() {
 
   return (
     <div style={{ minHeight:'100dvh', background:'#f8faff', display:'flex', flexDirection:'column',
-      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", maxWidth:480, margin:'0 auto' }}>
+      fontFamily:"-apple-system,'Inter',sans-serif", maxWidth:480, margin:'0 auto' }}>
       {header}
       <div style={{ flex:1, overflowY:'auto', padding:'20px 16px', scrollbarWidth:'none' }}>
         {stepContent[step - 1]}

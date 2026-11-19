@@ -85,7 +85,7 @@ function LoadingSpinner() {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      height: '100vh', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
+      height: '100vh', fontFamily: "-apple-system,'Inter',sans-serif",
       color: '#64748b', fontSize: 14, gap: 10,
     }}>
       <svg style={{ animation: 'spin 1s linear infinite' }} width="20" height="20" viewBox="0 0 20 20" fill="none">

@@ -95,7 +95,7 @@ export default function Norte() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: M.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100dvh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <header style={{
         position: 'sticky', top: 0, zIndex: 20,
         background: 'var(--cx-azul)', color: '#fff',

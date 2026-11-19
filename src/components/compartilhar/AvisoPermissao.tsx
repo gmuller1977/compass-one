@@ -26,7 +26,7 @@ export default function AvisoPermissao() {
       position: 'fixed', left: 16, right: 16, bottom: 'calc(110px + env(safe-area-inset-bottom))', zIndex: 300,
       maxWidth: 440, margin: '0 auto', background: COR.erroFundo, color: COR.erroTexto, border: '1.5px solid #fecaca',
       borderRadius: 14, padding: '12px 16px', fontSize: 14, fontWeight: 600, lineHeight: 1.45,
-      boxShadow: '0 8px 24px rgba(15,23,42,.15)', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
+      boxShadow: '0 8px 24px rgba(15,23,42,.15)', fontFamily: "-apple-system,'Inter',sans-serif",
     }}>
       {n === 'cadastro'
         ? 'Contas, categorias e planejamento só o administrador da conta altera. Nada foi mudado.'

@@ -171,7 +171,7 @@ export default function LegalPage({ rawMd }: { rawMd: string }) {
   if (isMobile) {
     return (
       <div style={{ height:'100dvh', display:'flex', flexDirection:'column',
-        background:'#f8faff', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+        background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
         <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', padding:'24px 20px 40px' }}>
           {backBtn}
@@ -182,7 +182,7 @@ export default function LegalPage({ rawMd }: { rawMd: string }) {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
+    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
       {hero(false)}
       <div style={{ flex:1, overflowY:'auto', padding:'48px 40px 64px' }}>
         <div style={{ maxWidth:680, margin:'0 auto' }}>

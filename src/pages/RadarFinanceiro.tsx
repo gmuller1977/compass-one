@@ -261,7 +261,7 @@ export default function RadarFinanceiro() {
 
   return (
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:M.fundo,
-      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif"}}>
+      fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
       {/* CONTEÚDO */}

@@ -190,7 +190,7 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
       <div onClick={e => e.stopPropagation()} style={{
         background: '#fff', width: '100%', maxWidth: central ? 440 : undefined, maxHeight: '92vh', overflowY: 'auto',
         borderRadius: central ? raio : `${raio}px ${raio}px 0 0`,
-        fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
+        fontFamily: "-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
       }}>
         <ModalTopo icone={t.icone} rotulo={t.rotulo} titulo={nomeInv} raio={raio}
           subtitulo={`No Compass: ${fmt(saldoCalculado)}`} onFechar={onFechar} />

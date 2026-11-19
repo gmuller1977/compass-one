@@ -459,7 +459,7 @@ export default function Sidebar() {
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,.7)', marginTop: 1 }}>Comunicados e suporte</div>
           </div>
           {naoLidas > 0 && <span style={{
-            background: '#f5b942', color: '#0b1322', borderRadius: 999, fontSize: 11, fontWeight: 800,
+            background: '#22d3ee', color: '#0b1460', borderRadius: 999, fontSize: 11, fontWeight: 800,
             padding: '1px 7px', flexShrink: 0,
           }}>{textoDoSelo(naoLidas)}</span>}
         </button>

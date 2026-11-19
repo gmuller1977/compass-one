@@ -412,7 +412,7 @@ export default function QuickLaunch() {
     <div style={{
       minHeight: '100vh', background: M.fundo,
       display: 'flex', flexDirection: 'column',
-      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
+      fontFamily: "-apple-system,'Inter',sans-serif",
       paddingBottom: 80,
     }}>
       <style>{`@keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}`}</style>

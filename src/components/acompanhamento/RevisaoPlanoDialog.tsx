@@ -264,7 +264,7 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
                   <b style={{ fontSize: 15 }}>{MESES_LONGOS[ls[0].mes]} {ls[0].ano}</b>
                   <span style={{ fontSize: 13, color: COR.textoSuave }}>· {ls.length} {ls.length === 1 ? 'categoria' : 'categorias'}</span>
                 </div>
-                <div style={{ border: '1.5px solid #93c5fd', borderRadius: 14, background: COR.branco, overflow: 'hidden' }}>
+                <div style={{ border: '1.5px solid var(--cx-borda)', borderRadius: 14, background: COR.branco, overflow: 'hidden' }}>
                   {!estreito && (
                     <div style={{ display: 'grid', gridTemplateColumns: colunas, gap: 8, padding: '8px 14px 6px' }}>
                       <span /><span style={{ ...rotuloCol, textAlign: 'left' }}>Categoria</span>

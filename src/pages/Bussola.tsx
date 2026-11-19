@@ -88,7 +88,7 @@ export default function Bussola() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       {/* ── Topo azul: a resposta do dia ─────────────────────────────── */}
       <header style={{
         background: 'var(--cx-azul)', color: '#fff',
@@ -119,7 +119,7 @@ export default function Bussola() {
               <i aria-hidden className="ti ti-mail" />
               {naoLidas > 0 && (
                 <span aria-hidden style={{ position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, padding: '0 4px',
-                  boxSizing: 'border-box', borderRadius: 999, background: '#f5b942', color: '#0b1322', fontSize: 11, fontWeight: 800,
+                  boxSizing: 'border-box', borderRadius: 999, background: '#22d3ee', color: '#0b1460', fontSize: 11, fontWeight: 800,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px #1b2d6e' }}>
                   {textoDoSelo(naoLidas)}
                 </span>

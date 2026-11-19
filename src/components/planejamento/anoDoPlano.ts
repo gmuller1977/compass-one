@@ -112,5 +112,5 @@ export function atencaoDoMes(m: MesDoAno) {
 
 export function bordaDoCartaoMes(m: MesDoAno) {
   if (atencaoDoMes(m)) return `${m.atual ? 2 : 1.5}px solid #b91c1c`
-  return m.atual ? '2px solid #1d4ed8' : '1.5px solid #93c5fd'
+  return m.atual ? '2px solid #1d4ed8' : '1.5px solid var(--cx-borda)'
 }

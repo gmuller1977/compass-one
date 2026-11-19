@@ -50,7 +50,7 @@ export default function ConviteCompartilhamento() {
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="convite-titulo" style={{ position: 'fixed', inset: 0, zIndex: 400,
       background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
-      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
+      fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(15,23,42,.3)' }}>
         <ModalTopo icone="ti-users" rotulo="Convite" titulo={`${quem} quer compartilhar as finanças com você`} id="convite-titulo" />
         <div style={{ padding: '18px 24px 24px' }}>

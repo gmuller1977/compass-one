@@ -1,5 +1,5 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Barlow', -apple-system, 'Inter', sans-serif; }
+body { font-family: -apple-system, 'Inter', sans-serif; }
 /* Azul da identidade (24/10/2026, "ar neon", escolha do Guilherme). Uma
    fonte só para o gradiente e o brilho: os componentes leem estas variáveis.
    O fundo ficou mais calmo em 28/10/2026 (Guilherme: "no mobile o azul está
@@ -7,10 +7,9 @@ body { font-family: 'Barlow', -apple-system, 'Inter', sans-serif; }
    #0b1460 → #1b35c8. O brilho ciano não mudou. Extremo claro #26408f: branco
    9,5:1, rótulo a 75% 6,1:1 (a regra do #1e40af segue). */
 :root {
-  /* Ícone da marca (19/11/2026, paleta da página do Educador): quadrado
-     noite com o ícone âmbar. */
-  --cx-icone-fundo: #0b1322;
-  --cx-icone: #f5b942;
+  /* Degradê "noite" da página do Educador e borda azul-escura dos cartões
+     (19/11/2026, pedido do Guilherme), sem neon (só na logo). O extremo
+     claro #1b3d80 é mais escuro que #1e40af: a regra do contraste segue. */
   --cx-borda: #0b2545;
   --cx-azul: linear-gradient(180deg, #0b1322 0%, #18233a 55%, #1b3d80 100%);
   /* Bloco azul em duas partes (Lançamentos no celular: cabeçalho + saldo ou

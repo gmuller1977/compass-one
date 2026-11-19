@@ -304,7 +304,7 @@ export default function PlanRevisaoAnual({
       <div role="dialog" aria-modal="true" aria-label={`Revisão do plano ${alvo}`} style={{
         background: COR.branco, borderRadius: isMobile ? 0 : 20, width: isMobile ? '100%' : 'min(960px, 96vw)',
         height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '92vh',
-        overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
+        overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: "-apple-system, 'Inter', sans-serif",
       }}>
         {/* Topo: o cabeçalho azul das telas (PageHeader) com o seletor de mês
             de sempre — preso no ano que se monta —, e embaixo a escolha da base. */}
