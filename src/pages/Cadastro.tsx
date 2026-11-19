@@ -131,7 +131,7 @@ export default function Cadastro() {
 
   // O cadastro tem texto próprio (19/11/2026, Guilherme): parabeniza a
   // decisão e prepara a decolagem, em vez da frase do login.
-  const FRASE = 'Parabéns pela decisão. Agora o seu dinheiro tem direção.'
+  const FRASE = 'Parabéns pela decisão. A\u00a0partir de hoje, você decide o seu amanhã.'
   const APOIO = 'Você deu o primeiro passo para sair da turbulência. O Compass One mostra o caminho, e quem pilota é você.'
   const ROTULO = 'Pronto para decolar'
 
