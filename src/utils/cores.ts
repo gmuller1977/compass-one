@@ -77,7 +77,7 @@ export const COR = {
 
   avisoFundo:    '#fffbeb',
   avisoBorda:    '#fde68a',
-  avisoTexto:    '#92400e',  // 6,8:1 sobre avisoFundo
+  avisoTexto:    '#0b2545',  // azul-escuro (19/11/2026, pedido do Guilherme; era o marrom #92400e): 15,6:1 sobre avisoFundo
 
   erroFundo:     '#fff1f2',
   erroTexto:     '#b91c1c',  // 5,9:1 — COR.vermelho (#dc2626) da 4,4:1 e
