@@ -316,7 +316,7 @@ export default function AcMobileView({
         <div key={`g-${grupo}`} data-grupo={gid} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
           scrollMarginTop: 12,
           boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
-          border:`2px solid ${gBorda}` }}>
+          border: gBorda === 'var(--cx-borda)' ? '1px solid var(--cx-borda)' : `2px solid ${gBorda}`, padding: gBorda === 'var(--cx-borda)' ? 1 : undefined }}>
         <button onClick={() => toggleAberto(gid)} aria-expanded={aberto}
           aria-label={`${grupoLabel}: ${dg.principal}`}
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px',

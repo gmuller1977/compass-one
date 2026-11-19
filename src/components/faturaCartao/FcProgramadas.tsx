@@ -61,7 +61,7 @@ export function BlocoProgramadas({ programadas, categorias, onAbrir, onConferir 
         </span>
       </button>
       {aberto && (
-        <div style={{ background: COR.branco, borderRadius: 16, border: '2px solid var(--cx-borda)', padding: '4px 14px' }}>
+        <div style={{ background: COR.branco, borderRadius: 16, border: '1px solid var(--cx-borda)', padding: '4px 14px' }}>
           {programadas.map(({ dia, l }, idx) => {
             const cv = iconeCategoria(categorias, l.categoria)
             return (

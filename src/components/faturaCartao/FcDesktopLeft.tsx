@@ -110,7 +110,7 @@ export default function FcDesktopLeft({
                   onClick={() => novaNoDia(g.dc, g.mc, g.ac)} />
               </div>
             <div style={{ background: COR.branco, borderRadius: 16,
-              border: '2px solid var(--cx-borda)', overflow: 'hidden' }}>
+              border: '1px solid var(--cx-borda)', overflow: 'hidden' }}>
             {g.itens.map(({ dia, dc, mc, ac, l }, idx) => {
               const catVisual = iconeCategoria(categorias, l.categoria)
               const emEdicao  = editandoId === l.id

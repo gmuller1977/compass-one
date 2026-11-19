@@ -716,7 +716,7 @@ export default function FcMobileView({
                   <BotaoMais rotulo={`Lançar compra em ${g.dc}/${g.mc+1}`} onClick={() => novaNoDia(g.dc, g.mc, g.ac)} />
                 </div>
               <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px',
-                border:`2px solid ${ehHoje ? '#1d4ed8' : 'var(--cx-borda)'}`}}>
+                border: ehHoje ? '2px solid #1d4ed8' : '1px solid var(--cx-borda)'}}>
                 {g.itens.length === 0 && (
                   <div style={{padding:'14px 0',fontSize:M.corpo,color:COR.textoSuave}}>Nenhuma compra hoje ainda.</div>
                 )}

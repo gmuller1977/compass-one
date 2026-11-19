@@ -23,7 +23,7 @@ import { corDoIcone } from '../../utils/iconeDesenhado'
 export function Cartao({ children, style, onClick }: { children: ReactNode; style?: CSSProperties; onClick?: () => void }) {
   return (
     <div onClick={onClick} style={{
-      background: COR.branco, borderRadius: M.raio, padding: '18px 18px', boxShadow: M.sombra, border: '1.5px solid var(--cx-borda)',
+      background: COR.branco, borderRadius: M.raio, padding: '18px 18px', boxShadow: M.sombra, border: '1px solid var(--cx-borda)',
       cursor: onClick ? 'pointer' : undefined, ...style,
     }}>{children}</div>
   )

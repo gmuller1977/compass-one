@@ -101,7 +101,7 @@ export default function EvolucaoGrupo({
       boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
-      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : atencao ? '#b91c1c' : 'var(--cx-borda)'}`,
+      border: aberto || semDados || atencao ? `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : '#b91c1c'}` : '1px solid var(--cx-borda)',
     }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
