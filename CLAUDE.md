@@ -3264,6 +3264,15 @@ precisar da tela completa de Lançamentos:
 
 `prova59` (26 invariantes).
 
+**O celular ABRE no Lançar, e a Início abre com os valores escondidos**
+(19/11/2026, Guilherme: "a pessoa vai acessar geralmente quando está
+comprando alguma coisa"; "tem que aparecer o saldo oculto"). A primeira "/"
+de cada abertura do app (e o destravar da `TelaBloqueio`) vai para
+`/lancar`; depois, "Início" na barra é a Bússola (`AbrirNoLancar` em
+`App.tsx`). O olho (`useValoresOcultos`) começa fechado a cada abertura e
+ao destravar (`ocultarValores`); a escolha fica só na memória, não mais no
+localStorage. No computador a "/" segue na Início, com o mesmo olho fechado.
+
 **Lembrete diário fica para depois**: notificação com o app fechado exige
 push (chaves VAPID + um envio agendado no servidor).
 
