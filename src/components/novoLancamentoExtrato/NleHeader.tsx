@@ -123,7 +123,9 @@ export default function NleHeader({
           do azul). No Cartão as setas andam a fatura; nos outros, o mês. */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:14}}>
         <div style={{minWidth:0}}>
-          <RotuloTopo icone="ti-list-details">Todo dia</RotuloTopo>
+          <RotuloTopo icone={tabPrincipal === 'cartao' ? 'ti-credit-card' : tabPrincipal === 'dinheiro' ? 'ti-cash' : 'ti-building-bank'}>
+            {tabPrincipal === 'cartao' ? 'Cartão' : tabPrincipal === 'dinheiro' ? 'Dinheiro' : 'Banco'}
+          </RotuloTopo>
           <h1 style={{margin:'4px 0 0',fontFamily:FONTE_TITULO,fontSize:32,fontWeight:700,lineHeight:1,color:'#fff'}}>Lançamentos</h1>
         </div>
         {(() => {
