@@ -3857,6 +3857,10 @@ para todas as abas (`topoDaAba` em `Configuracoes.tsx`, com "‹ Configurações
 pelo `voltar` do `PageHeader site` e o botão "+ Nova…" dentro dele); os
 cadastros (`Cfg*`) não têm mais cabeçalho próprio. A tela de ícones e a folha
 "Mais" usam cartões brancos / linhas com o ícone âmbar no quadrado escuro.
+**O Primeiro acesso também** (20/11/2026, aprovado por ele): topo escuro com
+"Pergunta X de 6" em `RotuloTopo`, progresso âmbar, título em Barlow Condensed
+e ondas; listas e cartões brancos com borda em tinta, ícone âmbar no quadrado
+escuro quando marcado, botão Continuar em tinta. Nenhuma pergunta mudou.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
