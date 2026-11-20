@@ -116,7 +116,6 @@ const CSS = `
 .v2-painel small { display: block; margin-top: 12px; font-size: 12px; color: rgba(255,255,255,.65); }
 @keyframes v2-placa { from { transform: rotateX(-75deg); } to { transform: rotateX(0); } }
 
-.v2-hero-sub { font-size: 21px !important; font-weight: 600; color: #fff !important; margin-bottom: 14px !important; }
 
 /* o app na primeira dobra */
 .v2-app { margin: 0; position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -198,6 +197,18 @@ const CSS = `
 .v2-nuvens g:nth-child(2) { animation-duration: 52s; animation-direction: alternate-reverse; }
 @keyframes v2-deriva { to { transform: translateX(-60px); } }
 .v2-turb .v2-lead { color: rgba(255,255,255,.85); }
+.v2-voos { margin-top: 72px; position: relative; z-index: 1; }
+.v2-voos-t { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; margin: 0 0 18px; color: #fff; }
+.v2-voos-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.v2-voo { border-radius: 18px; padding: 24px; background: rgba(11,19,34,.72); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18); backdrop-filter: blur(6px); display: flex; flex-direction: column; color: #fff; }
+.v2-voo-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--noite); color: var(--ambar); display: grid; place-items: center; font-size: 22px; box-shadow: 0 0 0 1.5px var(--ambar); margin-bottom: 14px; }
+.v2-voo h4 { margin: 0 0 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; line-height: 1.05; }
+.v2-voo ul { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 10px; font-size: 16px; line-height: 1.45; color: rgba(255,255,255,.9); }
+.v2-voo li { display: flex; gap: 10px; } .v2-voo li::before { content: '•'; color: var(--ambar); font-weight: 700; }
+.v2-voo > .v2-btn, .v2-voo-acoes { margin-top: auto; }
+.v2-voo-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.v2-voo-acoes .v2-btn { flex: 1 1 200px; }
+@media (min-width: 880px) { .v2-voos-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
 
 /* subida */
 .v2-turb { padding-bottom: 56px; }
@@ -288,18 +299,6 @@ const CSS = `
 .v2-cruz-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; align-items: center; }
 .v2-destino { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 10px 16px; border-radius: 99px; background: #fff; color: var(--tinta); font-weight: 600; font-size: 15px; box-shadow: 0 6px 16px rgba(11,37,69,.08); }
 .v2-destino i { color: var(--ambar-escuro); font-size: 19px; }
-.v2-comp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 80px; }
-.v2-comp > div { border-radius: 18px; padding: 28px; }
-.v2-comp h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.05; margin: 0 0 6px; }
-.v2-comp-sub { margin: 0 0 20px; font-size: 17px; font-weight: 600; }
-.v2-comp ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-.v2-comp li { display: flex; gap: 12px; font-size: 16px; line-height: 1.5; }
-.v2-comp li i { font-size: 21px; flex-shrink: 0; }
-.v2-janela { background: #fff; color: var(--tinta2); box-shadow: inset 0 0 0 1.5px #c9daf0; }
-.v2-janela h3, .v2-janela .v2-comp-sub { color: var(--tinta); } .v2-janela li i { color: #64748b; }
-.v2-instr { background: var(--noite); color: #fff; box-shadow: 0 18px 40px rgba(11,19,34,.25); }
-.v2-instr .v2-comp-sub { color: var(--ambar); } .v2-instr li i { color: var(--verde-claro); }
-
 /* checklist, bagagem, embarque, perguntas */
 .v2-claro { background: var(--claro2); }
 .v2-claro2 { background: #f4f9ff; }
@@ -312,15 +311,7 @@ const CSS = `
 .v2-check-mini { grid-column: 2; margin: 0; display: grid; gap: 4px; font-size: 14px; }
 .v2-check-mini div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 8px; background: #eef5fd; }
 .v2-check-mini dt { color: var(--tinta2); } .v2-check-mini dd { margin: 0; font-weight: 700; color: var(--tinta); }
-.v2-bancos { margin-top: 40px; text-align: center; }
-.v2-bancos p { margin: 0 0 12px; font-size: 15px; color: var(--tinta2); }
-.v2-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.v2-chips span { border-radius: 99px; padding: 8px 14px; background: #fff; font-size: 14px; font-weight: 600; color: var(--tinta); box-shadow: inset 0 0 0 1.5px #c9daf0; }
-.v2-bagagem { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; border-top: 1.5px solid #c9daf0; }
-.v2-bagagem li { display: grid; grid-template-columns: 48px 1fr; gap: 16px; padding: 22px 0; border-bottom: 1.5px solid #c9daf0; }
-.v2-bagagem i { width: 48px; height: 48px; border-radius: 12px; background: var(--noite); color: var(--ambar); display: grid; place-items: center; font-size: 24px; }
-.v2-bagagem h3 { margin: 2px 0 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 23px; font-weight: 700; color: var(--tinta); }
-.v2-bagagem p { margin: 0; font-size: 16px; color: var(--tinta2); line-height: 1.5; }
+.v2-bancos { margin: 28px auto 0; max-width: 640px; text-align: center; font-size: 16px; line-height: 1.55; color: var(--tinta2); }
 
 .v2-cartao { margin-top: 44px; display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 22px 50px rgba(11,37,69,.14); }
 .v2-cartao-main { padding: 26px; }
@@ -349,7 +340,19 @@ const CSS = `
 .v2-copiloto li i { width: 40px; height: 40px; border-radius: 10px; background: #e3eefb; color: var(--subida); display: grid; place-items: center; font-size: 20px; }
 .v2-copiloto li b { display: block; font-size: 16px; color: var(--tinta); }
 .v2-copiloto li span { font-size: 15px; color: var(--tinta2); line-height: 1.5; }
-.v2-copiloto small { display: block; margin-top: 16px; font-size: 14px; color: var(--tinta2); }
+.v2-copiloto small { display: block; font-size: 14px; color: var(--tinta2); }
+.v2-copiloto-fim { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.v2-hero-chamada { font-weight: 700; color: var(--ambar) !important; margin: -14px 0 24px !important; }
+.v2-hero-sub { font-size: 21px !important; font-weight: 600; line-height: 1.4 !important; color: #fff !important; margin-bottom: 14px !important; }
+.v2-guia { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; background: #fff; color: var(--tinta); border-radius: 20px;
+  padding: 26px 22px; margin: 0 0 88px; box-shadow: 0 18px 44px rgba(7,13,24,.3); }
+.v2-guia-foto { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: var(--noite); color: var(--ambar);
+  display: grid; place-items: center; font-family: 'Barlow Condensed', sans-serif; font-size: 46px; font-weight: 700; box-shadow: 0 0 0 3px var(--ambar); }
+.v2-guia-rot { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar-escuro); }
+.v2-guia h2 { margin: 0 0 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 30px; line-height: 1.05; }
+.v2-guia p { margin: 0 0 12px; font-size: 17px; line-height: 1.6; color: var(--tinta2); max-width: 680px; }
+.v2-guia-prova { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 18px; padding: 8px 14px; border-radius: 99px; background: #fff4dc; color: var(--ambar-escuro); font-weight: 700; font-size: 15px; }
+.v2-guia a.v2-guia-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; color: var(--tinta); }
 
 .v2-faq { max-width: 800px; margin: 36px auto 0; display: grid; gap: 10px; }
 .v2-faq details { border-radius: 14px; background: #fff; padding: 0 20px; box-shadow: inset 0 0 0 1.5px #c9daf0; }
@@ -382,8 +385,9 @@ const CSS = `
 
 @media (min-width: 640px) {
   .v2-ctas { flex-direction: row; }
-  .v2-comp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .v2-copiloto ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .v2-copiloto ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .v2-guia { grid-template-columns: auto minmax(0, 1fr); gap: 28px; padding: 34px 36px; }
+  .v2-guia-foto { width: 128px; height: 128px; font-size: 60px; }
 }
 @media (min-width: 960px) {
   .v2-sec { padding: 128px 0; }
@@ -407,9 +411,7 @@ const CSS = `
   .v2-rota-celular { display: none !important; }
   .v2-rota-largo { display: block !important; }
   .v2-painel, .v2-rota { padding: 26px; }
-  .v2-bagagem { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; border-top: 0; }
-  .v2-bagagem li { border-top: 1.5px solid #c9daf0; }
-  .v2-cartao { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+      .v2-cartao { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
   .v2-canhoto::before { left: -1px; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 3px dashed #dbe6f3; }
   .v2-fixo { display: none; }
   .v2-fim { padding: 140px 0 260px; }
@@ -820,24 +822,85 @@ function TelaCruzeiro() {
   )
 }
 
+/**
+ * Quem está por trás (decisão do Guilherme, 16/11/2026: ele aparece na
+ * página com foto e nome). Sem foto ainda: o círculo mostra a inicial.
+ * Para pôr a foto, salvar em public/ e preencher `foto` (ex.: '/educador.jpg').
+ */
+const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme', foto: null }
+
+function QuemEstaPorTras() {
+  return (
+    <section className="v2-guia" aria-labelledby="t-guia">
+      {EDUCADOR.foto
+        ? <img className="v2-guia-foto" src={EDUCADOR.foto} alt={`Foto de ${EDUCADOR.nome}`} width={128} height={128} />
+        : <span className="v2-guia-foto" aria-hidden>{EDUCADOR.nome.charAt(0)}</span>}
+      <div>
+        <p className="v2-guia-rot">Quem está por trás</p>
+        <h2 id="t-guia">Oi, eu sou o {EDUCADOR.nome}.</h2>
+        <p>
+          Sou educador financeiro e, no último ano, acompanhei cerca de 25 pessoas, uma a uma. Quase todas chegavam com o
+          mesmo aperto: trabalhavam muito e, mesmo assim, o dinheiro não fechava o mês. O que mudava a vida delas não era
+          cortar o cafezinho. Era saber, no dia 1, como o mês ia terminar, e no dia 15, se dava para seguir ou era hora de segurar.
+        </p>
+        <p>
+          A planilha que usávamos juntos virou o Compass One. Deixei o app grátis porque essa clareza não deveria custar
+          nada. Se quiser ajuda para ir além, eu estou aqui.
+        </p>
+        <span className="v2-guia-prova"><i className="ti ti-users" aria-hidden />Cerca de 25 pessoas acompanhadas, uma a uma</span>
+        <div><Link to="/educador" className="v2-guia-link">Conheça as formas de aprender comigo <i className="ti ti-arrow-right" aria-hidden /></Link></div>
+      </div>
+    </section>
+  )
+}
+
+/** Qual é o seu voo? (20/11/2026, pedido do Guilherme: falar também com quem tem um pequeno negócio). */
+function QualEOSeuVoo({ cadastro }: { cadastro: string }) {
+  return (
+    <div className="v2-voos" aria-labelledby="t-voos">
+      <h3 className="v2-voos-t" id="t-voos">Qual é o seu voo?</h3>
+      <div className="v2-voos-grade">
+        <div className="v2-voo">
+          <span className="v2-voo-ic" aria-hidden><i className="ti ti-briefcase" /></span>
+          <h4>Você vive de salário</h4>
+          <ul>
+            <li>O dinheiro acaba antes do mês</li>
+            <li>A fatura do cartão chega e assusta</li>
+            <li>Guardar fica para quando sobrar, e não sobra</li>
+          </ul>
+          <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+        </div>
+        <div className="v2-voo">
+          <span className="v2-voo-ic" aria-hidden><i className="ti ti-building-store" /></span>
+          <h4>Você tem um pequeno negócio</h4>
+          <ul>
+            <li>Fatura bem e, mesmo assim, vive no aperto</li>
+            <li>O dinheiro da casa e o da empresa se misturam</li>
+            <li>Não sabe quanto pode tirar para você</li>
+          </ul>
+          <div className="v2-voo-acoes">
+            <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+            <Link to="/educador" className="v2-btn v2-btn-linha">Falar com o educador</Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ETAPAS = [
-  { alt: 3000, icone: 'ti-plane-departure', altura: '3.000 pés · decolagem', titulo: 'Saiba exatamente onde você está',
+  { alt: 3000, icone: 'ti-plane-departure', altura: '3.000 pés · decolagem', titulo: 'Saldo de hoje e o fim do mês na mesma tela',
     texto: 'Bancos, cartões e dinheiro num só lugar, com o saldo de hoje e as contas do mês. Salário e débito automático aparecem no dia certo: você confere com um toque.', visual: <TelaHoje /> },
-  { alt: 10000, icone: 'ti-route', altura: '10.000 pés · plano de voo', titulo: 'Defina a rota do seu ano',
+  { alt: 10000, icone: 'ti-route', altura: '10.000 pés · plano de voo', titulo: 'Um plano simples para o ano inteiro',
     texto: 'Um plano com quanto gastar em cada categoria e quanto guardar por mês. Quem escolhe o destino é você; o Compass desenha a rota e mostra com quanto o ano termina.', visual: <TelaPlanoDeVoo /> },
-  { alt: 18000, icone: 'ti-radar-2', altura: '18.000 pés · radar meteorológico', titulo: 'Veja a turbulência antes de entrar nela',
+  { alt: 18000, icone: 'ti-radar-2', altura: '18.000 pés · radar meteorológico', titulo: 'Veja hoje qual mês vai ficar no vermelho',
     texto: 'Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o Compass mostra com quanto cada um dos próximos meses vai terminar. O mês no vermelho aparece com tempo de mudar a rota.', visual: <TelaRadarMeteorologico /> },
-  { alt: 24000, icone: 'ti-compass', altura: '24.000 pés · antes de mudar a rota', titulo: 'Antes de comprar, consulte a bússola',
+  { alt: 24000, icone: 'ti-compass', altura: '24.000 pés · antes de mudar a rota', titulo: 'Antes de comprar, saiba se cabe',
     texto: 'Digite o valor e as opções da loja. O Compass coloca a compra no seu plano, mês a mês, e mostra se ela tira você da rota e qual forma de pagar pesa menos.', visual: <TelaPossoComprar /> },
-  { alt: 30000, icone: 'ti-notebook', altura: '30.000 pés · diário de bordo', titulo: 'Confira se segue na rota',
+  { alt: 30000, icone: 'ti-notebook', altura: '30.000 pés · diário de bordo', titulo: 'No meio do mês, saiba quanto ainda resta',
     texto: 'Anote um gasto em segundos, no celular ou no computador. O Radar mostra, no meio do mês, quanto ainda resta em cada grupo, e o plano se ajusta para os próximos meses.', visual: <TelaDiario /> },
 ]
 
-const BAGAGEM = [
-  { icone: 'ti-plus', titulo: 'Lançar rápido', texto: 'Débito ou crédito, parcelado em até 24×, na fatura certa.' },
-  { icone: 'ti-users', titulo: 'Conta compartilhada', texto: 'As mesmas finanças para a família, cada um com o seu login.' },
-  { icone: 'ti-devices', titulo: 'Celular e computador', texto: 'Instale no celular e entre com a digital.' },
-]
 
 const LINKS: [string, string][] = [['#turbulencia', 'O voo'], ['#instrumentos', 'Instrumentos'], ['#embarque', 'Embarque'], ['#perguntas', 'Dúvidas']]
 const ALT_MAX = 35000
@@ -927,21 +990,22 @@ export default function LandingPageV2() {
           </nav>
           <div className="v2-hero">
             <div>
-              <h1>Prepare a <em>decolagem</em> da sua vida financeira.</h1>
-              <p className="v2-hero-sub">Antes da decolagem sempre bate aquele frio na barriga: será que vai subir?</p>
+              <h1>Sua vida financeira parece uma <em>tempestade</em> antes da decolagem?</h1>
+              <p className="v2-hero-sub">Todo mês, a mesma dúvida: “será que vai sobrar no final?”</p>
               <p>
-                Contas, parcelas e imprevistos formam a tempestade. O Compass One, a bússola financeira criada por um
-                educador financeiro, mostra por onde passar e onde ela termina, para você decolar sem dúvidas.
+                Voar sem enxergar o que vem pela frente cansa. O Compass One foi criado por um educador financeiro para dar
+                direção às suas escolhas, antes da turbulência.
               </p>
+              <p className="v2-hero-chamada">Não espere o fim do mês para descobrir se vai sobrar.</p>
               <div className="v2-ctas">
-                <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
-                <a href={login} className="v2-btn v2-btn-linha">Já tenho conta</a>
+                <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+                <a href="#instrumentos" className="v2-btn v2-btn-linha">Como funciona <i className="ti ti-arrow-down" /></a>
               </div>
               <ul className="v2-selos">
-                <li><i className="ti ti-gift" />Sem mensalidade</li>
+                <li><i className="ti ti-gift" />Grátis para sempre</li>
                 <li><i className="ti ti-ad-off" />Sem anúncios</li>
                 <li><i className="ti ti-lock" />Não pede a senha do banco</li>
-                <li><i className="ti ti-school" />Criado por um educador financeiro</li>
+                <li><i className="ti ti-school" />Criado pelo educador financeiro {EDUCADOR.nome}</li>
               </ul>
             </div>
             <AppNaDobra />
@@ -956,16 +1020,18 @@ export default function LandingPageV2() {
           <div className="v2-chuva" aria-hidden />
           <div className="v2-turb-clarao" aria-hidden />
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-turb">Ufa, decolamos. Mas agora aparecem outras panes.</h2>
-            <p className="v2-lead">Eu sei: você já se organiza por conta própria, anota o que entra e o que sai. Mesmo assim, a viagem é sempre turbulenta, o combustível acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
+            <h2 className="v2-h2" id="t-turb">Você se organiza, mas o mês sempre aperta no fim.</h2>
+            <p className="v2-lead">Eu sei: você já anota o que entra e o que sai. Mesmo assim, o dinheiro acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <CabineEmTurbulencia />
+            <QualEOSeuVoo cadastro={cadastro} />
           </div>
         </section>
 
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-subida">Até agora, você voou às cegas.<br />Está na hora de experimentar o Compass One.</h2>
-            <p className="v2-lead">A bússola financeira que mostra a direção a seguir para evitar novas turbulências. A única ferramenta de que você vai precisar.</p>
+            <QuemEstaPorTras />
+            <h2 className="v2-h2" id="t-subida">Anotar mostra o passado.<br />O Compass One mostra o fim do mês.</h2>
+            <p className="v2-lead">A bússola financeira que mostra a direção a seguir antes da turbulência, e não depois dela.</p>
             <ol className="v2-etapas">
               {ETAPAS.map(e => (
                 <li key={e.alt} className="v2-etapa" data-alt={e.alt}>
@@ -992,7 +1058,7 @@ export default function LandingPageV2() {
           <div className="v2-in">
             <div className="v2-cruz-in">
               <div>
-                <h2 className="v2-h2" id="t-cruz">Acima das nuvens, o voo fica tranquilo</h2>
+                <h2 className="v2-h2" id="t-cruz">Guarde de propósito, não com o que sobra</h2>
                 <p className="v2-lead">
                   O destino é o dinheiro que sobra de propósito: a meta de economia que você escolhe e acompanha mês a mês.
                   Um caminho mais tranquilo para você e para a sua família.
@@ -1002,28 +1068,6 @@ export default function LandingPageV2() {
               <TelaCruzeiro />
             </div>
 
-            <div className="v2-comp">
-              <div className="v2-janela">
-                <h3>Sem plano, olhando pela janela</h3>
-                <p className="v2-comp-sub">A turbulência aparece quando você já está nela.</p>
-                <ul>
-                  <li><i className="ti ti-eye-off" />Você sabe quanto já gastou, não com quanto vai terminar</li>
-                  <li><i className="ti ti-cloud-storm" />O aperto aparece quando o mês já acabou</li>
-                  <li><i className="ti ti-help" />Comprar ou esperar? Decide no escuro</li>
-                  <li><i className="ti ti-coin-off" />Guardar fica para quando sobrar, e não sobra</li>
-                </ul>
-              </div>
-              <div className="v2-instr">
-                <h3>Com planejamento, voando por instrumentos</h3>
-                <p className="v2-comp-sub">Você vê a rota antes.</p>
-                <ul>
-                  <li><i className="ti ti-circle-check" />Com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
-                  <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar a rota</li>
-                  <li><i className="ti ti-circle-check" />Se a compra cabe no plano, antes de você comprar</li>
-                  <li><i className="ti ti-circle-check" />Guardar vira meta do mês, decidida no começo</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </section>
         </div>
@@ -1045,24 +1089,13 @@ export default function LandingPageV2() {
                 </li>
               ))}
             </ol>
-            <div className="v2-bancos">
-              <p>Funciona com o seu banco, qualquer que seja, e com o dinheiro da carteira:</p>
-              <div className="v2-chips">
-                {['Nubank', 'Itaú', 'Bradesco', 'Caixa', 'Banco do Brasil', 'Inter', 'Santander', 'Sicredi', 'Sicoob', 'C6', 'Mercado Pago', 'PicPay', 'Dinheiro'].map(b => <span key={b}>{b}</span>)}
-              </div>
-            </div>
-
-            <h2 className="v2-h2" style={{ marginTop: 110 }} id="t-bag">Na bagagem de mão</h2>
-            <p className="v2-lead">O que mais vai junto, para o dia a dia.</p>
-            <ul className="v2-bagagem" aria-labelledby="t-bag">
-              {BAGAGEM.map(b => <li key={b.titulo}><i className={`ti ${b.icone}`} aria-hidden /><div><h3>{b.titulo}</h3><p>{b.texto}</p></div></li>)}
-            </ul>
+            <p className="v2-bancos">Funciona com qualquer banco e com o dinheiro da carteira, no celular e no computador, e dá para usar junto com a família.</p>
           </div>
         </section>
 
         <section className="v2-sec v2-claro2" id="embarque" aria-labelledby="t-emb">
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-emb">O seu cartão de embarque</h2>
+            <h2 className="v2-h2" id="t-emb">Grátis para sempre. Sem pegadinha.</h2>
             <p className="v2-lead">O app de planejamento é grátis para sempre. Se quiser aprender com um educador financeiro, você escolhe o quanto, em pacotes. Sem mensalidade.</p>
             <div className="v2-cartao">
               <div className="v2-cartao-main">
@@ -1094,15 +1127,18 @@ export default function LandingPageV2() {
 
             <div className="v2-copiloto">
               <h3>Educação financeira: quer um copiloto?</h3>
-              <p>É opcional. Para aprender a cuidar do seu dinheiro, um educador financeiro voa junto, no quanto de ajuda que você escolher, em pacotes e sem mensalidade:</p>
+              <p>Comece pelo app, grátis. Se quiser alguém do seu lado, escolha o quanto de ajuda, em pacotes e sem mensalidade:</p>
               <ol>
                 {[
-                  { icone: 'ti-player-play', nome: 'Curso em vídeo', texto: 'Aulas gravadas para montar o seu plano e usar o app no seu ritmo.' },
-                  { icone: 'ti-messages', nome: 'Grupo de acompanhamento', texto: 'O curso e um grupo para tirar dúvidas com o educador.' },
-                  { icone: 'ti-user-check', nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador para colocar a vida financeira em ordem.' },
+                  { icone: 'ti-book-2', nome: 'E-book', texto: 'O passo a passo para planejar o mês com o Compass One, no seu ritmo.' },
+                  { icone: 'ti-users-group', nome: 'Grupo de estudos', texto: 'Estudar junto com outras pessoas e tirar dúvidas com o educador.' },
+                  { icone: 'ti-user-check', nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador, começando por uma sessão de diagnóstico.' },
                 ].map(p => <li key={p.nome}><i className={`ti ${p.icone}`} aria-hidden /><div><b>{p.nome}</b><span>{p.texto}</span></div></li>)}
               </ol>
-              <small>Pacotes sob consulta. O app continua grátis, com ou sem eles.</small>
+              <div className="v2-copiloto-fim">
+                <Link to="/educador" className="v2-btn v2-btn-escuro">Ver as opções com o educador <i className="ti ti-arrow-right" /></Link>
+                <small>O app continua grátis, com ou sem elas.</small>
+              </div>
             </div>
           </div>
         </section>
