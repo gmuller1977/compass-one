@@ -352,7 +352,9 @@ const CSS = `
 .v2-guia-rot { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar-escuro); }
 .v2-guia h2 { margin: 0 0 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 30px; line-height: 1.05; }
 .v2-guia p { margin: 0 0 12px; font-size: 17px; line-height: 1.6; color: var(--tinta2); max-width: 680px; }
-.v2-guia-prova { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 18px; padding: 8px 14px; border-radius: 99px; background: #fff4dc; color: var(--ambar-escuro); font-weight: 700; font-size: 15px; }
+.v2-guia-cargo { font-weight: 700; color: var(--tinta) !important; margin-top: -4px !important; }
+.v2-guia-form { list-style: none; margin: 6px 0 18px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.v2-guia-form li { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 99px; background: #fff4dc; color: var(--ambar-escuro); font-weight: 700; font-size: 15px; }
 .v2-guia a.v2-guia-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; color: var(--tinta); }
 
 .v2-faq { max-width: 800px; margin: 36px auto 0; display: grid; gap: 10px; }
@@ -834,7 +836,7 @@ function TelaCruzeiro() {
  * página com foto e nome). Sem foto ainda: o círculo mostra a inicial.
  * Para pôr a foto, salvar em public/ e preencher `foto` (ex.: '/educador.jpg').
  */
-const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme', foto: null }
+const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme Müller', foto: null }
 
 function QuemEstaPorTras() {
   return (
@@ -845,16 +847,29 @@ function QuemEstaPorTras() {
       <div>
         <p className="v2-guia-rot">Quem está por trás</p>
         <h2 id="t-guia">Oi, eu sou o {EDUCADOR.nome}.</h2>
+        <p className="v2-guia-cargo">Consultor e mentor financeiro, especializado em gestão financeira empresarial.</p>
         <p>
-          Sou educador financeiro e, no último ano, acompanhei cerca de 25 pessoas, uma a uma. Quase todas chegavam com o
-          mesmo aperto: trabalhavam muito e, mesmo assim, o dinheiro não fechava o mês. O que mudava a vida delas não era
-          cortar o cafezinho. Era saber, no dia 1, como o mês ia terminar, e no dia 15, se dava para seguir ou era hora de segurar.
+          Há mais de 25 anos eu cuido das finanças de empresas, e vi uma coisa se repetir nas que alcançam os seus
+          objetivos: o que faz a diferença não é quanto elas faturam, e sim como usam o dinheiro, com estratégia e antes
+          de ele acabar.
         </p>
         <p>
-          A planilha que usávamos juntos virou o Compass One. Deixei o app grátis porque essa clareza não deveria custar
-          nada. Se quiser ajuda para ir além, eu estou aqui.
+          Em 2017 comecei a levar isso para as famílias, para que tivessem mais segurança e estabilidade. E encontrei o
+          mesmo aperto em quase todas as casas: gente que se esforça para manter as contas em dia e, ainda assim, só
+          descobre no fim do mês se sobrou. Não faltava esforço. Faltava enxergar o mês antes de ele acontecer.
         </p>
-        <span className="v2-guia-prova"><i className="ti ti-users" aria-hidden />Cerca de 25 pessoas acompanhadas, uma a uma</span>
+        <p>
+          Era isso que eu fazia com cada cliente, numa planilha, encontro a encontro. O Compass One nasceu para levar essa
+          mesma clareza a quem nunca vai sentar comigo. Por isso ele é grátis. E, como resultado exige novos hábitos, e
+          não só números, a ajuda para ir além continua aqui.
+        </p>
+        <ul className="v2-guia-form" aria-label="Formação e experiência">
+          <li><i className="ti ti-school" aria-hidden />Administração de Empresas</li>
+          <li><i className="ti ti-chart-line" aria-hidden />Especialista em Finanças</li>
+          <li><i className="ti ti-building" aria-hidden />Mais de 25 anos na gestão de empresas</li>
+          <li><i className="ti ti-brain" aria-hidden />Coaching e PNL</li>
+          <li><i className="ti ti-home-heart" aria-hidden />Ajudando famílias desde 2017</li>
+        </ul>
         <div><Link to="/educador" className="v2-guia-link">Conheça as formas de aprender comigo <i className="ti ti-arrow-right" aria-hidden /></Link></div>
       </div>
     </div>
