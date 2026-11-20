@@ -198,17 +198,18 @@ const CSS = `
 @keyframes v2-deriva { to { transform: translateX(-60px); } }
 .v2-turb .v2-lead { color: rgba(255,255,255,.85); }
 .v2-voos { margin-top: 72px; position: relative; z-index: 1; }
-.v2-voos-t { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; margin: 0 0 18px; color: #fff; }
 .v2-voos-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.v2-voo { border-radius: 18px; padding: 24px; background: rgba(11,19,34,.72); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18); backdrop-filter: blur(6px); display: flex; flex-direction: column; color: #fff; }
-.v2-voo-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--noite); color: var(--ambar); display: grid; place-items: center; font-size: 22px; box-shadow: 0 0 0 1.5px var(--ambar); margin-bottom: 14px; }
-.v2-voo h4 { margin: 0 0 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; line-height: 1.05; }
-.v2-voo ul { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 10px; font-size: 16px; line-height: 1.45; color: rgba(255,255,255,.9); }
-.v2-voo li { display: flex; gap: 10px; } .v2-voo li::before { content: '•'; color: var(--ambar); font-weight: 700; }
-.v2-voo > .v2-btn, .v2-voo-acoes { margin-top: auto; }
-.v2-voo-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
-.v2-voo-acoes .v2-btn { flex: 1 1 200px; }
-@media (min-width: 880px) { .v2-voos-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
+.v2-voo { border-radius: 18px; padding: 26px 24px; background: rgba(11,19,34,.72); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18); backdrop-filter: blur(6px); display: flex; flex-direction: column; color: #fff; }
+.v2-voos-t { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.05; margin: 0 0 18px; color: #fff; }
+.v2-voo ul { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 12px; font-size: 16px; line-height: 1.45; color: rgba(255,255,255,.92); }
+.v2-voo li { display: flex; gap: 10px; align-items: flex-start; }
+.v2-voo li i { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.v2-voo-sim i { color: var(--verde-claro); }
+.v2-voo-nao-l i { color: rgba(255,255,255,.6); }
+.v2-voo-nao { background: rgba(11,19,34,.5); }
+.v2-voo-nao ul { margin-bottom: 0; color: rgba(255,255,255,.8); }
+.v2-voo > .v2-btn { margin-top: auto; }
+@media (min-width: 880px) { .v2-voos-grade { grid-template-columns: 3fr 2fr; gap: 20px; } }
 
 /* subida */
 .v2-turb { padding-bottom: 56px; }
@@ -854,34 +855,38 @@ function QuemEstaPorTras() {
   )
 }
 
-/** Qual é o seu voo? (20/11/2026, pedido do Guilherme: falar também com quem tem um pequeno negócio). */
-function QualEOSeuVoo({ cadastro }: { cadastro: string }) {
+/**
+ * Para quem é e para quem não é (20/11/2026, pedido do Guilherme, no lugar do
+ * "Qual é o seu voo?"): os problemas de quem vive de salário e de quem tem um
+ * pequeno negócio numa lista só, e o filtro de quem não é o público.
+ */
+const PARA_QUEM_E = [
+  'Você trabalha, recebe todo mês e, mesmo assim, vive no aperto',
+  'Você tem um pequeno negócio, fatura bem e não sabe quanto pode tirar para você',
+  'Você anota os gastos, mas só descobre o problema quando o mês já acabou',
+  'A fatura do cartão chega e dá susto',
+  'Você quer guardar dinheiro, mas nunca sobra',
+  'Você quer saber se a compra cabe antes de comprar, e não depois',
+]
+const PARA_QUEM_NAO_E = [
+  'Quem procura dica de investimento, de ação ou de criptomoeda',
+  'Quem busca uma fórmula para ficar rico rápido',
+  'Quem quer que o app faça tudo sozinho: aqui você anota e decide',
+  'Quem precisa da contabilidade da empresa, com notas, impostos e folha',
+]
+
+function ParaQuemE({ cadastro }: { cadastro: string }) {
   return (
     <div className="v2-voos" aria-labelledby="t-voos">
-      <h3 className="v2-voos-t" id="t-voos">Qual é o seu voo?</h3>
       <div className="v2-voos-grade">
         <div className="v2-voo">
-          <span className="v2-voo-ic" aria-hidden><i className="ti ti-briefcase" /></span>
-          <h4>Você vive de salário</h4>
-          <ul>
-            <li>O dinheiro acaba antes do mês</li>
-            <li>A fatura do cartão chega e assusta</li>
-            <li>Guardar fica para quando sobrar, e não sobra</li>
-          </ul>
-          <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+          <h3 className="v2-voos-t" id="t-voos">Para quem é o Compass One</h3>
+          <ul className="v2-voo-sim">{PARA_QUEM_E.map(t => <li key={t}><i className="ti ti-circle-check" aria-hidden />{t}</li>)}</ul>
+          <a href={cadastro} className="v2-btn v2-btn-claro">Se você se viu aqui, comece grátis <i className="ti ti-arrow-right" /></a>
         </div>
-        <div className="v2-voo">
-          <span className="v2-voo-ic" aria-hidden><i className="ti ti-building-store" /></span>
-          <h4>Você tem um pequeno negócio</h4>
-          <ul>
-            <li>Fatura bem e, mesmo assim, vive no aperto</li>
-            <li>O dinheiro da casa e o da empresa se misturam</li>
-            <li>Não sabe quanto pode tirar para você</li>
-          </ul>
-          <div className="v2-voo-acoes">
-            <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
-            <Link to="/educador" className="v2-btn v2-btn-linha">Falar com o educador</Link>
-          </div>
+        <div className="v2-voo v2-voo-nao">
+          <h3 className="v2-voos-t">Para quem não é</h3>
+          <ul className="v2-voo-nao-l">{PARA_QUEM_NAO_E.map(t => <li key={t}><i className="ti ti-circle-x" aria-hidden />{t}</li>)}</ul>
         </div>
       </div>
     </div>
@@ -1023,7 +1028,7 @@ export default function LandingPageV2() {
             <h2 className="v2-h2" id="t-turb">Você se organiza, mas o mês sempre aperta no fim.</h2>
             <p className="v2-lead">Eu sei: você já anota o que entra e o que sai. Mesmo assim, o dinheiro acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <CabineEmTurbulencia />
-            <QualEOSeuVoo cadastro={cadastro} />
+            <ParaQuemE cadastro={cadastro} />
           </div>
         </section>
 
