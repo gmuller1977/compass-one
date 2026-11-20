@@ -346,7 +346,7 @@ const CSS = `
 .v2-hero-chamada { font-weight: 700; color: var(--ambar) !important; margin: -14px 0 24px !important; }
 .v2-hero-sub { font-size: 21px !important; font-weight: 600; line-height: 1.4 !important; color: #fff !important; margin-bottom: 14px !important; }
 .v2-guia { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; background: #fff; color: var(--tinta); border-radius: 20px;
-  padding: 26px 22px; margin: 0 0 88px; box-shadow: 0 18px 44px rgba(7,13,24,.3); }
+  padding: 26px 22px; margin: 0; border: 1px solid rgba(11,37,69,.12); box-shadow: 0 12px 30px rgba(7,13,24,.08); }
 .v2-guia-foto { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: var(--noite); color: var(--ambar);
   display: grid; place-items: center; font-family: 'Barlow Condensed', sans-serif; font-size: 46px; font-weight: 700; box-shadow: 0 0 0 3px var(--ambar); }
 .v2-guia-rot { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar-escuro); }
@@ -838,7 +838,7 @@ const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme', fot
 
 function QuemEstaPorTras() {
   return (
-    <section className="v2-guia" aria-labelledby="t-guia">
+    <div className="v2-guia">
       {EDUCADOR.foto
         ? <img className="v2-guia-foto" src={EDUCADOR.foto} alt={`Foto de ${EDUCADOR.nome}`} width={128} height={128} />
         : <span className="v2-guia-foto" aria-hidden>{EDUCADOR.nome.charAt(0)}</span>}
@@ -857,7 +857,7 @@ function QuemEstaPorTras() {
         <span className="v2-guia-prova"><i className="ti ti-users" aria-hidden />Cerca de 25 pessoas acompanhadas, uma a uma</span>
         <div><Link to="/educador" className="v2-guia-link">Conheça as formas de aprender comigo <i className="ti ti-arrow-right" aria-hidden /></Link></div>
       </div>
-    </section>
+    </div>
   )
 }
 
@@ -1039,7 +1039,6 @@ export default function LandingPageV2() {
 
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
-            <QuemEstaPorTras />
             <h2 className="v2-h2" id="t-subida">Anotar mostra o passado.<br />O Compass One mostra o fim do mês.</h2>
             <p className="v2-lead">A bússola financeira que mostra a direção a seguir antes da turbulência, e não depois dela.</p>
             <ol className="v2-etapas">
@@ -1150,6 +1149,12 @@ export default function LandingPageV2() {
                 <small>O app continua grátis, com ou sem elas.</small>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="v2-sec v2-claro2" id="quem" aria-labelledby="t-guia">
+          <div className="v2-in">
+            <QuemEstaPorTras />
           </div>
         </section>
 
