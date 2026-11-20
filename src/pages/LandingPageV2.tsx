@@ -1009,7 +1009,7 @@ export default function LandingPageV2() {
               </p>
               <p className="v2-hero-chamada">Não espere o fim do mês para descobrir se vai sobrar.</p>
               <div className="v2-ctas">
-                <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+                <a href={cadastro} className="v2-btn v2-btn-claro">Quero mudar agora <i className="ti ti-arrow-right" /></a>
                 <a href="#instrumentos" className="v2-btn v2-btn-linha">Como funciona <i className="ti ti-arrow-down" /></a>
               </div>
               <ul className="v2-selos">
