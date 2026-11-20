@@ -539,7 +539,7 @@ function RotaSemPlano({ largura = 520, className }: { largura?: number; classNam
         <text x={fim - 30} y="130" fill="rgba(255,255,255,.75)" fontSize="34" fontWeight="700">?</text>
         <text x={X(420)} y="214" fill="rgba(255,255,255,.6)" fontSize="26" fontWeight="700">?</text>
         <text x={fim - 22} y="252" fill="#fca5a5" fontSize="26" fontWeight="700">?</text>
-        <text x={(hoje + largura) / 2} y="52" fill="#fff" fontSize="14" fontWeight="700" textAnchor="middle">E daqui pra frente?</text>
+        <text x={(hoje + largura) / 2} y="52" fill="#fff" fontSize="14" fontWeight="700" textAnchor="middle">E agora, como será?</text>
       </g>
       <line x1={hoje} y1="34" x2={hoje} y2="276" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
       <text x={hoje} y="28" fill="rgba(255,255,255,.75)" fontSize="13" fontWeight="700" textAnchor="middle">hoje</text>
@@ -547,7 +547,13 @@ function RotaSemPlano({ largura = 520, className }: { largura?: number; classNam
         <path className="v2-rota-linha" d={d} pathLength={1} fill="none" stroke="var(--ambar)" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
       </g>
       <g className="v2-rota-marca m1"><circle cx={X(24)} cy="70" r="6" fill="var(--ambar)" /><text x={X(24) + 14} y="56" fill="#fff" fontSize="14" fontWeight="700">Início do mês</text></g>
-      <g className="v2-rota-marca m2"><circle cx={X(204)} cy="168" r="6" fill="var(--ambar)" /><text x={X(204) - 8} y="200" fill="#fff" fontSize="14" fontWeight="700" textAnchor="end">A fatura veio maior</text></g>
+      <g className="v2-rota-marca m3">
+        <circle cx={hoje} cy="186" r="14" fill="var(--ambar)" opacity=".25" />
+        <circle cx={hoje} cy="186" r="7" fill="var(--ambar)" stroke="#fff" strokeWidth="2.5" />
+        <path d={`M${hoje - 70},250 Q${hoje - 18},246 ${hoje - 6},202`} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+        <path d={`M${hoje - 12},210 L${hoje - 6},200 L${hoje + 1},209`} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <text x={hoje - 76} y="255" fill="#fff" fontSize="14" fontWeight="700" textAnchor="end">Você está aqui</text>
+      </g>
     </svg>
   )
 }
