@@ -1010,7 +1010,6 @@ export default function LandingPageV2() {
               <p className="v2-hero-chamada">Não espere o fim do mês para descobrir se vai sobrar.</p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Quero mudar agora <i className="ti ti-arrow-right" /></a>
-                <a href="#turbulencia" className="v2-btn v2-btn-linha">Quero saber mais <i className="ti ti-arrow-down" /></a>
               </div>
               <ul className="v2-selos">
                 <li><i className="ti ti-gift" />Grátis para sempre</li>
