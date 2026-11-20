@@ -871,7 +871,6 @@ const PARA_QUEM_NAO_E = [
   'Quem procura dica de investimento, de ação ou de criptomoeda',
   'Quem busca uma fórmula para ficar rico rápido',
   'Quem quer que o app faça tudo sozinho: aqui você anota e decide',
-  'Quem precisa da contabilidade da empresa, com notas, impostos e folha',
 ]
 
 function ParaQuemE({ cadastro }: { cadastro: string }) {
