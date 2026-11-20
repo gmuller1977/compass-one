@@ -31,8 +31,13 @@ export function mesDoGastoNoCartao(
 }
 
 /** A aba da fatura EM ABERTO do cartão em Lançamentos > Cartão (o mês do vencimento). */
-export const faturaAbertaNaTela = (cartao: Pick<Conta, 'diaFechamento' | 'diaVencimento'>, hoje: Date): MesRef =>
-  mesDoGastoNoCartao(cartao, hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+export const faturaAbertaNaTela = (
+  cartao: Pick<Conta, 'id' | 'diaFechamento' | 'diaVencimento'>, hoje: Date, faturas: Record<string, unknown> = {},
+): MesRef => {
+  // O fechamento ajustado só neste mês vale (comFechamentoDoMes, 20/11/2026).
+  const [a, m, d] = [hoje.getFullYear(), hoje.getMonth(), hoje.getDate()]
+  return mesDoGastoNoCartao(comFechamentoDoMes(cartao, faturas, a, m), a, m, d)
+}
 
 export const mesmoMes = (a: MesRef, b: MesRef) => indice(a) === indice(b)
 

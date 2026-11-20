@@ -99,6 +99,8 @@ type Props = {
   diaFechamento: number
   diaVencimento: number
   diaFechamentoBase: number
+  /** O fechamento que vale para uma compra de HOJE (ajuste do mês incluído). */
+  fechamentoDeHoje?: number
   diaVencimentoBase: number
   mesDados: DadosMes
   totalDias: number
@@ -152,7 +154,7 @@ export default function FcMobileView({
   fDataCompra, setFDataCompra,
   editandoId, editandoDiaOriginal, avisoParcelas,
   diaSel, setDiaSel,
-  diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
+  diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase, fechamentoDeHoje,
   mesDados, totalDias, programadas, purchaseMes, purchaseAno,
   faturaStatus, totalPrevisto, grandTotalFaturas, totalFatura,
   mesVenc, anoVenc,
@@ -665,7 +667,7 @@ export default function FcMobileView({
             }
             const hojeData = new Date()
             const hojeD = hojeData.getDate(), hojeM = hojeData.getMonth(), hojeA = hojeData.getFullYear()
-            const faturaDeHoje = mesDaFaturaDaCompra({ diaFechamento }, hojeA, hojeM, hojeD)
+            const faturaDeHoje = mesDaFaturaDaCompra({ diaFechamento: fechamentoDeHoje ?? diaFechamento }, hojeA, hojeM, hojeD)
             const hojeAqui = faturaDeHoje.mes === purchaseMes && faturaDeHoje.ano === purchaseAno
             // O "+" do dia abre a compra já com a data dele; o de hoje, vazio (= hoje).
             const novaNoDia = (dc: number, mc: number, ac: number) => {

@@ -2,7 +2,7 @@
 // `fechamentoOverride` na fatura) vale também no Lançar do celular. Relato do
 // Guilherme: o Sicredi fechou hoje, a fatura aparecia "Fechada" e o Lançar
 // seguia oferecendo a fatura de dezembro, não a de janeiro.
-import { cartoesDoCredito, gastoDeHoje } from '../src/utils/lancarPorMes'
+import { cartoesDoCredito, gastoDeHoje, faturaAbertaNaTela } from '../src/utils/lancarPorMes'
 import { comFechamentoDoMes, lancarNaFatura } from '../src/utils/lancamentoRapido'
 let ok = 0, falha = 0
 const t = (n: string, c: boolean) => { c ? ok++ : (falha++, console.log('FALHA', n)) }
@@ -28,6 +28,11 @@ const out = lancarNaFatura(faturas, {
 t('compra grava na fatura seguinte', (out['sic-2026-12']?.lancamentos?.[20] ?? []).length === 1)
 t('fatura fechada não recebe', Object.keys(out['sic-2026-11'].lancamentos).length === 0)
 t('gasto de hoje enxerga a compra', gastoDeHoje([sic], {}, out, hoje) === 10)
+
+// Lançamentos > Cartão abre na fatura em aberto, com o ajuste do mês.
+const ab = faturaAbertaNaTela(sic, hoje, faturas)
+t('tela do cartão abre em janeiro', ab.ano === 2027 && ab.mes === 0)
+t('sem ajuste, tela abre em dezembro', faturaAbertaNaTela(sic, hoje).mes === 11)
 
 console.log(`prova123: ${ok} ok, ${falha} falhas`)
 if (falha) process.exit(1)

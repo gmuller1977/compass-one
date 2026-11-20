@@ -19,6 +19,7 @@ import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategor
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
+import { comFechamentoDoMes } from '../utils/lancamentoRapido'
 import { pedeValorDaFatura, momentoDePerguntar, type MomentoDaFatura } from '../utils/pedirValorDaFatura'
 import { faturaLadoALado, resumoConferidos } from '../utils/conferirFatura'
 import { separarProgramadas } from '../utils/fixaNoCartao'
@@ -230,10 +231,10 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     const anterior = contaPosicionada.current
     if (anterior === contaId) return
     contaPosicionada.current = contaId
-    const aberta = faturaAbertaNaTela(conta, hoje)
+    const aberta = faturaAbertaNaTela(conta, hoje, dados)
     if (anterior !== null) {
       const contaAnterior = contas.find(c => c.id === anterior)
-      if (!contaAnterior || !mesmoMes(faturaAbertaNaTela(contaAnterior, hoje), { ano, mes })) return
+      if (!contaAnterior || !mesmoMes(faturaAbertaNaTela(contaAnterior, hoje, dados), { ano, mes })) return
       if (mesmoMes(aberta, { ano, mes })) return
     }
     setMes(aberta.mes); setAno(aberta.ano)
@@ -698,6 +699,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
       <>
       <FcMobileView
         contasCartao={contasCartao}
+        fechamentoDeHoje={contaInfo ? comFechamentoDoMes(contaInfo, dados, anoHoje, mesHoje).diaFechamento ?? undefined : undefined}
         contaId={contaId} setContaId={setContaId}
         mes={mes} setMes={setMes} ano={ano} setAno={setAno}
         anoHoje={anoHoje} diaHoje={diaHoje}
