@@ -350,7 +350,7 @@ const CSS = `
 .v2-copiloto li span { font-size: 15px; color: var(--tinta2); line-height: 1.5; }
 .v2-copiloto small { display: block; font-size: 14px; color: var(--tinta2); }
 .v2-copiloto-fim { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
-.v2-rotulo { display: block; font-size: 19px !important; font-weight: 700; line-height: 1.35; color: var(--ambar) !important; margin: 0 0 14px !important; max-width: 520px; }
+.v2-hero-sub { font-size: 21px !important; font-weight: 600; line-height: 1.4 !important; color: #fff !important; margin-bottom: 14px !important; }
 .v2-guia { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; background: #fff; color: var(--tinta); border-radius: 20px;
   padding: 26px 22px; margin: 0 0 88px; box-shadow: 0 18px 44px rgba(7,13,24,.3); }
 .v2-guia-foto { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: var(--noite); color: var(--ambar);
@@ -971,11 +971,12 @@ export default function LandingPageV2() {
           </nav>
           <div className="v2-hero">
             <div>
-              <p className="v2-rotulo">Sua vida financeira parece uma tempestade antes da decolagem?</p>
-              <h1>Saiba hoje como o seu mês vai <em>fechar</em>.</h1>
+              <h1>Sua vida financeira parece uma <em>tempestade</em> antes da decolagem?</h1>
+              <p className="v2-hero-sub">Com o Compass One, a sua bússola financeira, você sabe hoje como o seu mês vai fechar.</p>
               <p>
-                O Compass One, a sua bússola financeira, junta salário, contas, parcelas e cartão e mostra com quanto o mês
-                termina, a tempo de mudar a rota. Foi criado por um educador financeiro a partir das dúvidas de pessoas como você.
+                O salário cai no dia 5 e, no dia 20, já acabou? O Compass One junta salário, contas fixas, parcelas e a fatura do
+                cartão e mostra, em qualquer dia, com quanto o mês termina. Foi criado por um educador financeiro a partir das
+                dúvidas de pessoas como você.
               </p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
