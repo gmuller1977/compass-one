@@ -864,9 +864,8 @@ const PARA_QUEM_E = [
   'Você se esforça para manter as contas em dia, mas vive apertado',
   'Você usa o cartão de crédito para conseguir chegar ao fim do mês',
   'Você anota os gastos, mas só descobre o problema quando o mês já acabou',
-  'A fatura do cartão chega e dá susto',
   'Você quer guardar dinheiro, mas nunca sobra',
-  'Você quer saber se a compra cabe antes de comprar, e não depois',
+  'Você quer ter melhores escolhas para sobrar mais',
 ]
 const PARA_QUEM_NAO_E = [
   'Quem procura dica de investimento, de ação ou de criptomoeda',
