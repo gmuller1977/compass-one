@@ -861,8 +861,7 @@ function QuemEstaPorTras() {
  * pequeno negócio numa lista só, e o filtro de quem não é o público.
  */
 const PARA_QUEM_E = [
-  'Você trabalha, recebe todo mês e, mesmo assim, vive no aperto',
-  'Você tem um pequeno negócio, fatura bem e não sabe quanto pode tirar para você',
+  'Você se esforça para manter as contas em dia, mas vive apertado',
   'Você anota os gastos, mas só descobre o problema quando o mês já acabou',
   'A fatura do cartão chega e dá susto',
   'Você quer guardar dinheiro, mas nunca sobra',
