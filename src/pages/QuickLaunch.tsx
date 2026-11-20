@@ -13,7 +13,7 @@ import { saldoRealizadoConta, saldoBancosEDinheiro, type Deps } from '../utils/s
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { CalendarioMes } from '../components/CalendarioMes'
-import { lancarNaFatura, lancarNoExtrato, dataDoLancamento, dividirParcelas } from '../utils/lancamentoRapido'
+import { lancarNaFatura, comFechamentoDoMes, lancarNoExtrato, dataDoLancamento, dividirParcelas } from '../utils/lancamentoRapido'
 import { bancosDoDebito, cartoesDoCredito, gastoDeHoje, type MesRef } from '../utils/lancarPorMes'
 import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import { nomeDaConta } from '../utils/nomeDaConta'
@@ -134,7 +134,7 @@ export default function QuickLaunch() {
   }
   // Este mês (débito) e o mês da fatura de cada cartão (crédito), que pode ser
   // o próximo ou o seguinte a ele.
-  const cartoesHoje = useMemo(() => cartoesDoCredito(contas, hoje, 'saida'), [contas, dia]) // eslint-disable-line react-hooks/exhaustive-deps
+  const cartoesHoje = useMemo(() => cartoesDoCredito(contas, hoje, 'saida', faturaData), [contas, dia, faturaData]) // eslint-disable-line react-hooks/exhaustive-deps
   const linhasPorMes = useMemo(() => {
     const map = new Map<number, Map<string, { prev: number; real: number }>>()
     for (const m of [mesAtual, ...cartoesHoje.map(c => c.mes)]) {
@@ -235,7 +235,7 @@ export default function QuickLaunch() {
       // os centavos que sobram da divisão vão na 1ª parcela.
       const valores = dividirParcelas(v, parcelas)
       setFaturaData(prev => lancarNaFatura(prev, {
-        cartao: forma.conta!, ano: aL, mes: mL, dia: dL,
+        cartao: comFechamentoDoMes(forma.conta!, prev, aL, mL), ano: aL, mes: mL, dia: dL,
         tipoDaCategoria: tipoSel, categoria: catObj.nome, subCategoria: catObj.descricao,
         descricao, valorParcela: valores[valores.length - 1], valores, parcelas, baseId,
       }))

@@ -44,6 +44,23 @@ export function mesDaFaturaDaCompra(
   return mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 }
 }
 
+/**
+ * O cartão com o fechamento DAQUELE mês. Na tela da fatura dá para mudar o
+ * fechamento de um mês só ("Fecha dia 20 *", `fechamentoOverride`, gravado
+ * no mês da fatura que recebe as compras do mês, `<cartão>-AAAA-MM`), e ela
+ * já usava esse dia para dizer "Fechada" e mandar a compra para a próxima.
+ * O Lançar do celular lia só o cadastro: em 20/11/2026 o Sicredi fechou no
+ * dia 20 por esse ajuste, a fatura aparecia fechada e o Lançar seguia
+ * oferecendo a fatura que já tinha fechado (relatado pelo Guilherme).
+ */
+export function comFechamentoDoMes<C extends Pick<Conta, 'id' | 'diaFechamento'>>(
+  cartao: C, faturas: Record<string, unknown>, ano: number, mes: number,
+): C {
+  const dm = faturas[`${cartao.id}-${ano}-${String(mes + 1).padStart(2, '0')}`] as { fechamentoOverride?: number } | undefined
+  const f = dm?.fechamentoOverride
+  return f != null && f > 0 ? { ...cartao, diaFechamento: f } : cartao
+}
+
 type MesFatura = { lancamentos: Record<number, unknown[]>; faturaAtual?: string }
 
 /**

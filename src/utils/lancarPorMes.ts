@@ -1,5 +1,5 @@
 import type { Conta } from '../context/AppContext'
-import { mesDaFaturaDaCompra } from './lancamentoRapido'
+import { mesDaFaturaDaCompra, comFechamentoDoMes } from './lancamentoRapido'
 import { ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
 import { ehContaDisponivel } from './saldoConta'
 
@@ -42,10 +42,14 @@ export const bancosDoDebito = (contas: Conta[]): Conta[] => contas.filter(ehCont
 export type CartaoNoCredito = { cartao: Conta; mes: MesRef }
 
 /** Crédito: cada cartão com o mês da fatura que recebe a compra de hoje. */
-export function cartoesDoCredito(contas: Conta[], hoje: Date, tipo: 'saida' | 'entrada'): CartaoNoCredito[] {
+export function cartoesDoCredito(
+  contas: Conta[], hoje: Date, tipo: 'saida' | 'entrada', faturas: Record<string, unknown> = {},
+): CartaoNoCredito[] {
   if (tipo === 'entrada') return []
+  const [a, m, d] = [hoje.getFullYear(), hoje.getMonth(), hoje.getDate()]
   return contas.filter(c => c.tipo === 'cartao').map(c => ({
-    cartao: c, mes: mesDoGastoNoCartao(c, hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
+    // O fechamento ajustado só neste mês vale (comFechamentoDoMes).
+    cartao: c, mes: mesDoGastoNoCartao(comFechamentoDoMes(c, faturas, a, m), a, m, d),
   }))
 }
 
@@ -86,7 +90,7 @@ export function gastoDeHoje(
   // fechamento); olha as duas e decide pela data da COMPRA.
   const fat = faturaData as Record<string, MesComLanc>
   for (const c of contas.filter(c => c.tipo === 'cartao')) {
-    const daCompra = mesDaFaturaDaCompra(c, atual.ano, atual.mes, dia)
+    const daCompra = mesDaFaturaDaCompra(comFechamentoDoMes(c, fat, atual.ano, atual.mes), atual.ano, atual.mes, dia)
     for (const m of [atual, proximoMes(atual)]) {
       for (const itens of Object.entries(fat[chave(c.id, m)]?.lancamentos ?? {})) {
         const [diaChave, ls] = itens
