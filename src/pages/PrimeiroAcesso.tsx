@@ -9,7 +9,11 @@ import { marcarVisto } from '../utils/vistoNaConta'
 import { planoDoPrimeiroAcesso, primeiroMesCompleto, ultimoMesDoPlanoInicial } from '../utils/primeiroPlano'
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
 import type { OrigemDoSaldo } from '../utils/saldoDesde'
-import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
+import { TOPO_AZUL, FONTE_SITE, FONTE_TITULO, NOITE, TINTA, AMBAR, BORDA_CLARA } from '../components/mobile/estilo'
+import { OndasTopo, RotuloTopo } from '../components/mobile/ui'
+
+/** O topo escuro da página do Educador (19/11/2026), o mesmo do `PageHeader site`. */
+const TOPO_SITE = 'linear-gradient(180deg, #070c18 0%, #111c3f 35%, #1e40af 100%)'
 import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 import {
   CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, faturasInformadas,
@@ -640,7 +644,7 @@ export default function PrimeiroAcesso() {
   // celular, e esticada na largura toda ficava perdida. No celular de
   // verdade, a moldura some e a página rola como antes.
   return (
-    <div className="pa-palco" style={{ minHeight: '100dvh', background: '#f2f5fc', display: 'flex', justifyContent: 'center' }}>
+    <div className="pa-palco" style={{ minHeight: '100dvh', background: '#f2f5fc', display: 'flex', justifyContent: 'center', fontFamily: FONTE_SITE }}>
       <style>{`
         @media (min-width: 900px) {
           .pa-palco { height: 100dvh; align-items: center; padding: 24px; box-sizing: border-box }
@@ -660,7 +664,7 @@ export default function PrimeiroAcesso() {
         @media (prefers-reduced-motion: reduce) { .pa-abre, .pa-slide, .pa-pop { animation: none } }
       `}</style>
       <div ref={topoRef} className="pa-tel" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-        <div style={{ background: TOPO_AZUL, color: '#fff', padding: '22px 22px 30px' }}>
+        <div style={{ background: TOPO_SITE, color: '#fff', padding: '22px 22px 74px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>
             {voltar && (
               <button type="button" onClick={voltar} aria-label="Voltar" style={{ background: 'rgba(255,255,255,.14)', border: 'none', color: '#fff',
@@ -670,17 +674,23 @@ export default function PrimeiroAcesso() {
             )}
             <LogoCompass size={20} /> <NomeCompass />
           </div>
+          <div style={{ marginTop: 16 }}>
+            <RotuloTopo icone={passo >= 1 && passo <= TOTAL ? 'ti-user-question' : 'ti-compass'}>
+              {passo >= 1 && passo <= TOTAL ? `Pergunta ${passo} de ${TOTAL}` : 'Primeiro acesso'}
+            </RotuloTopo>
+          </div>
           {passo >= 1 && passo <= TOTAL && (
-            <div style={{ display: 'flex', gap: 5, marginTop: 16 }} aria-label={`Pergunta ${passo} de ${TOTAL}`} role="img">
+            <div style={{ display: 'flex', gap: 5, marginTop: 12 }} aria-label={`Pergunta ${passo} de ${TOTAL}`} role="img">
               {Array.from({ length: TOTAL }, (_, i) => (
-                <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i < passo ? '#fff' : 'rgba(255,255,255,.25)' }} />
+                <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i < passo ? AMBAR : 'rgba(255,255,255,.25)' }} />
               ))}
             </div>
           )}
-          <h1 style={{ fontSize: 23, lineHeight: 1.25, margin: '14px 0 0', textWrap: 'balance' } as CSSProperties}>{titulo}</h1>
-          {sub && <p style={{ margin: '8px 0 0', fontSize: 14, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>{sub}</p>}
+          <h1 style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, lineHeight: 1.05, margin: '14px 0 0', textWrap: 'balance' } as CSSProperties}>{titulo}</h1>
+          {sub && <p style={{ margin: '10px 0 0', fontSize: 15, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>{sub}</p>}
+          <OndasTopo />
         </div>
-        <div style={{ flex: 1, padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 14, marginTop: -14 }}>{corpo}</div>
+        <div style={{ flex: 1, padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 14, marginTop: -10, position: 'relative' }}>{corpo}</div>
         <div className="pa-pe" style={{ padding: '12px 16px 26px' }}>{pe}</div>
       </div>
     </div>
@@ -702,7 +712,7 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
   const [ofertas, setOfertas] = useState(false)
   const responder = (ir: () => void) => () => { if (perguntarOfertas) void gravarAceiteOfertas(ofertas); ir() }
   return (
-    <div className="pa-bv" style={{ background: '#f2f5fc' }}>
+    <div className="pa-bv" style={{ background: '#f2f5fc', fontFamily: FONTE_SITE }}>
       <style>{`
         /* Celular: azul em cima e o cartão subindo nele. Computador (largo):
            duas colunas numa tela só, sem rolar (pedido do Guilherme). */
@@ -710,6 +720,7 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
         .pa-bv-topo { padding-bottom: 96px }
         .pa-bv-corpo { margin: -72px auto 0; flex: 1 }
         @media (min-width: 900px) {
+          .pa-bv-ondas { display: none }
           .pa-bv { display: grid; grid-template-columns: 1fr 1fr; height: 100dvh; min-height: 560px }
           .pa-bv-topo { padding-bottom: 0; display: flex; align-items: center; justify-content: center }
           .pa-bv-corpo { margin: auto; flex: none; max-height: 100dvh; justify-content: center }
@@ -721,19 +732,20 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
         .pa-sobe { animation: pa-sobe .6s ease-out both }
         @media (prefers-reduced-motion: reduce) { .pa-agulha, .pa-sobe { animation: none } }
       `}</style>
-      <div className="pa-bv-topo" style={{ background: TOPO_AZUL, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+      <div className="pa-bv-topo" style={{ background: TOPO_SITE, color: '#fff', position: 'relative', overflow: 'hidden' }}>
         {/* luzes de fundo: só enfeite, atrás do texto */}
         <span aria-hidden style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', top: -180, right: -120,
-          background: 'radial-gradient(circle, rgba(147,197,253,.22), transparent 65%)' }} />
+          background: 'radial-gradient(circle, rgba(245,185,66,.14), transparent 65%)' }} />
         <span aria-hidden style={{ position: 'absolute', width: 360, height: 360, borderRadius: '50%', bottom: -200, left: -140,
-          background: 'radial-gradient(circle, rgba(147,197,253,.16), transparent 65%)' }} />
+          background: 'radial-gradient(circle, rgba(147,197,253,.14), transparent 65%)' }} />
         <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto', padding: '28px 22px 0', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
-          <div className="pa-sobe" style={{ width: 84, height: 84, borderRadius: 26, margin: '6px auto 0', background: 'rgba(255,255,255,.12)',
-            border: '1px solid rgba(255,255,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          <div className="pa-sobe" style={{ width: 84, height: 84, borderRadius: 26, margin: '6px auto 0', background: NOITE,
+            border: '1px solid rgba(245,185,66,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 12px 30px rgba(8,20,70,.35)' }}>
             <LogoCompass size={56} classeAgulha="pa-agulha" />
           </div>
-          <h1 className="pa-sobe" style={{ fontSize: 30, lineHeight: 1.2, margin: '22px 0 0', letterSpacing: '-.4px', animationDelay: '.08s' }}>
+          <div className="pa-sobe" style={{ marginTop: 20, animationDelay: '.04s' }}><RotuloTopo icone="ti-compass">Primeiro acesso</RotuloTopo></div>
+          <h1 className="pa-sobe" style={{ fontFamily: FONTE_TITULO, fontSize: 38, fontWeight: 700, lineHeight: 1.05, margin: '10px 0 0', animationDelay: '.08s' }}>
             {nome ? `Oi, ${nome}! 👋` : 'Oi! 👋'}<br />Que bom ter você aqui.
           </h1>
           <p className="pa-sobe" style={{ margin: '14px auto 0', maxWidth: 400, fontSize: 16, lineHeight: 1.55, color: 'rgba(255,255,255,.88)', animationDelay: '.16s' }}>
@@ -741,24 +753,25 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
             É isso que a gente vai construir, juntos.
           </p>
         </div>
+        <span className="pa-bv-ondas"><OndasTopo /></span>
       </div>
 
       <div className="pa-bv-corpo" style={{ width: '100%', boxSizing: 'border-box', maxWidth: 480, padding: '0 16px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="pa-sobe" style={{ background: '#fff', borderRadius: 24, padding: 18, boxShadow: '0 18px 40px rgba(15,40,120,.18)', animationDelay: '.26s',
+        <div className="pa-sobe" style={{ background: '#fff', borderRadius: 20, padding: 18, border: `1px solid ${TINTA}`, boxShadow: '0 18px 40px rgba(7,12,24,.16)', animationDelay: '.26s',
           display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>Com o tempo, o app responde para você</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#9a5b00' }}>Com o tempo, o app responde para você</span>
           {[
             { icone: 'ti-wallet', t: 'Quanto ainda posso gastar este mês?' },
             { icone: 'ti-compass', t: 'Vou terminar o mês no azul?' },
             { icone: 'ti-chart-pie', t: 'Para onde está indo o meu dinheiro?' },
           ].map(x => (
             <div key={x.t} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: '#eff6ff', color: '#1e40af',
+              <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: NOITE, color: AMBAR,
                 display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className={`ti ${x.icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: COR.texto, lineHeight: 1.35 }}>{x.t}</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: TINTA, lineHeight: 1.35 }}>{x.t}</span>
             </div>
           ))}
-          <div style={{ fontSize: 14, lineHeight: 1.5, color: COR.textoSuave, padding: 12, borderRadius: 14, background: '#f8fafc' }}>
+          <div style={{ fontSize: 14, lineHeight: 1.5, color: COR.textoSuave, padding: 12, borderRadius: 14, background: '#eaf4fe' }}>
             Estas são algumas das informações que você terá, <b style={{ color: COR.texto }}>e muito mais</b>.
           </div>
         </div>
@@ -773,10 +786,10 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
             { icone: 'ti-lock', t: 'Sem senha do banco' },
           ].map(x => (
             <div key={x.t} style={{ background: '#fff', borderRadius: 16, padding: '12px 8px', textAlign: 'center',
-              boxShadow: '0 4px 14px rgba(30,64,175,.07)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 36, height: 36, borderRadius: '50%', background: BOLINHA_AZUL, color: '#fff',
+              border: `1px solid ${TINTA}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 36, height: 36, borderRadius: 11, background: NOITE, color: AMBAR,
                 display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className={`ti ${x.icone}`} aria-hidden style={{ fontSize: 18 }} /></span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto, lineHeight: 1.3 }}>{x.t}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: TINTA, lineHeight: 1.3 }}>{x.t}</span>
             </div>
           ))}
         </div>
@@ -785,7 +798,7 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
           <label className="pa-sobe" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: COR.textoSuave, lineHeight: 1.45,
             cursor: 'pointer', animationDelay: '.5s' }}>
             <input type="checkbox" checked={ofertas} onChange={e => setOfertas(e.target.checked)}
-              style={{ width: 20, height: 20, marginTop: 1, flexShrink: 0, accentColor: '#1a56db' }} />
+              style={{ width: 20, height: 20, marginTop: 1, flexShrink: 0, accentColor: TINTA }} />
             <span>Quero receber novidades e ofertas do Compass One por e-mail. Dá para mudar quando quiser, no Perfil.</span>
           </label>
         )}
@@ -801,7 +814,7 @@ function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: str
 // ── Peças ─────────────────────────────────────────────────────────────
 
 const ola: CSSProperties = { fontSize: 15, lineHeight: 1.6, color: COR.textoSuave, margin: 0 }
-const numeroGrande: CSSProperties = { fontSize: 34, fontWeight: 800, color: COR.sucessoTexto, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.5px' }
+const numeroGrande: CSSProperties = { fontFamily: FONTE_TITULO, fontSize: 40, fontWeight: 700, color: COR.sucessoTexto, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.5px' }
 
 function chip(on: boolean, pequeno?: boolean, escuro?: boolean): CSSProperties {
   if (escuro) return { ...chip(on, pequeno), border: `1.5px solid ${on ? '#fff' : 'rgba(255,255,255,.4)'}`,
@@ -809,12 +822,12 @@ function chip(on: boolean, pequeno?: boolean, escuro?: boolean): CSSProperties {
   return {
     font: 'inherit', fontSize: pequeno ? 13 : 14, fontWeight: 600, padding: pequeno ? '8px 12px' : '10px 14px', minHeight: pequeno ? 40 : 44,
     borderRadius: 999, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7,
-    border: `1.5px solid ${on ? '#1a56db' : '#dbe3f0'}`, background: on ? '#eff6ff' : '#fff', color: on ? '#1e40af' : COR.texto,
+    border: `1.5px solid ${on ? TINTA : BORDA_CLARA}`, background: on ? '#eaf4fe' : '#fff', color: TINTA,
   }
 }
 
 function Cartao({ children }: { children: ReactNode }) {
-  return <div style={{ background: '#fff', borderRadius: 20, padding: 16, boxShadow: '0 4px 16px rgba(30,64,175,.08)', display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
+  return <div style={{ background: '#fff', borderRadius: 20, padding: 16, border: `1px solid ${TINTA}`, display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
 }
 
 function Rotulo({ children }: { children: ReactNode }) {
@@ -831,7 +844,7 @@ function Dica({ children }: { children: ReactNode }) {
   const escuro = useContext(NaCaixa)
   return (
     <div style={{ fontSize: 13, color: escuro ? 'rgba(255,255,255,.85)' : COR.textoSuave, lineHeight: 1.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-      <i className="ti ti-info-circle" aria-hidden style={{ fontSize: 16, color: escuro ? '#fff' : '#1a56db', marginTop: 1 }} /><span>{children}</span>
+      <i className="ti ti-info-circle" aria-hidden style={{ fontSize: 16, color: escuro ? AMBAR : TINTA, marginTop: 1 }} /><span>{children}</span>
     </div>
   )
 }
@@ -866,7 +879,7 @@ function Campo({ valor, onMudar, placeholder, pequeno, numerico, texto, autoFoco
   valor: string; onMudar: (v: string) => void; placeholder: string; pequeno?: boolean; numerico?: boolean; texto?: boolean; autoFoco?: boolean
 }) {
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1.5px solid #dbe3f0', borderRadius: 14, padding: '0 14px',
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1.5px solid ${BORDA_CLARA}`, borderRadius: 14, padding: '0 14px',
       minHeight: pequeno ? 46 : 52, background: '#fff' }}>
       {!numerico && !texto && <span style={{ fontWeight: 700, color: COR.textoSuave }}>R$</span>}
       <input value={valor} onChange={ev => onMudar(ev.target.value)} placeholder={placeholder} autoFocus={autoFoco}
@@ -904,24 +917,24 @@ function Escolha({ icone, rotulo, on, selo, seta, onTocar, children }: {
 }) {
   const check = (
     <span aria-hidden className={on ? 'pa-pop' : undefined} style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex',
-      alignItems: 'center', justifyContent: 'center', border: `2px solid ${on ? '#1a56db' : '#c3ccd8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
+      alignItems: 'center', justifyContent: 'center', border: `2px solid ${on ? TINTA : '#c3ccd8'}`, background: on ? TINTA : 'transparent', color: '#fff' }}>
       {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
     </span>
   )
   return (
-    <div style={{ border: `1.5px solid ${on ? '#1a56db' : '#dbe3f0'}`, background: on ? '#eff6ff' : '#fff', borderRadius: 16,
-      transition: 'background .2s, border-color .2s, box-shadow .2s', boxShadow: on ? '0 8px 22px rgba(30,64,175,.16)' : 'none', overflow: 'hidden' }}>
+    <div style={{ border: `${on ? 2 : 1}px solid ${on ? TINTA : BORDA_CLARA}`, background: on ? '#eaf4fe' : '#fff', borderRadius: 16,
+      transition: 'background .2s, border-color .2s, box-shadow .2s', boxShadow: on ? '0 8px 22px rgba(7,12,24,.14)' : 'none', overflow: 'hidden' }}>
       <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: icone ? '8px 12px' : '0 12px',
         display: 'flex', alignItems: 'center', gap: icone ? 12 : 10, width: '100%', minHeight: 48, cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
         {icone ? (
-          <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: on ? BOLINHA_AZUL : '#eff6ff', color: on ? '#fff' : '#1e40af', transition: 'background .2s' }}>
+          <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: on ? NOITE : '#eaf4fe', color: on ? AMBAR : TINTA, transition: 'background .2s' }}>
             <i className={`ti ${icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
         ) : check}
-        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{rotulo}</span>
-        {selo && <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#1e40af', borderRadius: 999, padding: '3px 9px' }}>{selo}</span>}
+        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: TINTA }}>{rotulo}</span>
+        {selo && <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: TINTA, borderRadius: 999, padding: '3px 9px' }}>{selo}</span>}
         {icone && (seta
-          ? <i className="ti ti-chevron-down" aria-hidden style={{ fontSize: 20, color: '#1e40af', transition: 'transform .25s', transform: on ? 'rotate(180deg)' : 'none' }} />
+          ? <i className="ti ti-chevron-down" aria-hidden style={{ fontSize: 20, color: TINTA, transition: 'transform .25s', transform: on ? 'rotate(180deg)' : 'none' }} />
           : check)}
       </button>
       {on && children && <div style={{ padding: '0 8px 8px' }}><CaixaAzul>{children}</CaixaAzul></div>}
@@ -976,7 +989,7 @@ function NomeLivre({ valor, onMudar, placeholder, autoFoco }: { valor: string; o
 
 function Adicionar({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} style={{ ...chip(false), alignSelf: 'flex-start', color: '#1e40af' }}>
+    <button type="button" onClick={onClick} style={{ ...chip(false), alignSelf: 'flex-start' }}>
       <i className="ti ti-plus" aria-hidden style={{ fontSize: 18 }} /> {children}
     </button>
   )
@@ -995,12 +1008,12 @@ function Pe({ rotulo, onSeguir, desabilitado, pular, onPular }: { rotulo: string
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <button type="button" onClick={onSeguir} disabled={desabilitado} style={{ font: 'inherit', fontSize: 16, fontWeight: 700, minHeight: 52,
-        borderRadius: 16, border: 'none', background: BOLINHA_AZUL, color: '#fff', cursor: desabilitado ? 'default' : 'pointer', opacity: desabilitado ? 0.45 : 1 }}>
+        borderRadius: 16, border: 'none', background: TINTA, color: '#fff', cursor: desabilitado ? 'default' : 'pointer', opacity: desabilitado ? 0.45 : 1 }}>
         {rotulo}
       </button>
       {pular && onPular && (
         <button type="button" onClick={onPular} style={{ font: 'inherit', fontSize: 14, fontWeight: 600, background: 'none', border: 'none',
-          color: '#1a56db', cursor: 'pointer', padding: 6 }}>{pular}</button>
+          color: TINTA, textDecoration: 'underline', cursor: 'pointer', padding: 6 }}>{pular}</button>
       )}
     </div>
   )
