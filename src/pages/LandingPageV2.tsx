@@ -350,6 +350,7 @@ const CSS = `
 .v2-copiloto li span { font-size: 15px; color: var(--tinta2); line-height: 1.5; }
 .v2-copiloto small { display: block; font-size: 14px; color: var(--tinta2); }
 .v2-copiloto-fim { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.v2-hero-chamada { font-weight: 700; color: var(--ambar) !important; margin: -14px 0 24px !important; }
 .v2-hero-sub { font-size: 21px !important; font-weight: 600; line-height: 1.4 !important; color: #fff !important; margin-bottom: 14px !important; }
 .v2-guia { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; background: #fff; color: var(--tinta); border-radius: 20px;
   padding: 26px 22px; margin: 0 0 88px; box-shadow: 0 18px 44px rgba(7,13,24,.3); }
@@ -972,12 +973,12 @@ export default function LandingPageV2() {
           <div className="v2-hero">
             <div>
               <h1>Sua vida financeira parece uma <em>tempestade</em> antes da decolagem?</h1>
-              <p className="v2-hero-sub">Com o Compass One, a sua bússola financeira, você sabe hoje como o seu mês vai fechar.</p>
+              <p className="v2-hero-sub">Todo mês, a mesma dúvida: “será que vai sobrar no final?”</p>
               <p>
-                O salário cai no dia 5 e, no dia 20, já acabou? O Compass One junta salário, contas fixas, parcelas e a fatura do
-                cartão e mostra, em qualquer dia, com quanto o mês termina. Foi criado por um educador financeiro a partir das
-                dúvidas de pessoas como você.
+                Voar sem enxergar o que vem pela frente cansa. O Compass One foi criado por um educador financeiro para dar
+                direção às suas escolhas, antes da turbulência.
               </p>
+              <p className="v2-hero-chamada">Não espere o fim do mês para descobrir se vai sobrar.</p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
                 <a href="#instrumentos" className="v2-btn v2-btn-linha">Como funciona <i className="ti ti-arrow-down" /></a>
