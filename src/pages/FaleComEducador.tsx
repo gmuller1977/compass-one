@@ -26,7 +26,7 @@ import { entrarNaListaDeEspera, validarInscricao, type Inscricao } from '../util
  */
 
 /** Quem conduz (decisão de 16/11/2026: foto e nome). Para a foto, salvar em public/ e preencher `foto`. */
-const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme', foto: null }
+const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme Müller', foto: null }
 
 /** WhatsApp do educador (18/11/2026): agenda a sessão e recebe a lista de espera do grupo. */
 const WHATSAPP = '5547988231323'
