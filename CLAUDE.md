@@ -531,6 +531,12 @@ Banco). Sem informado e com `saldoBancoData` no mês, o cartão "No [banco]" /
 "Em dinheiro" (celular) e "Saldo no banco" (computador) mostram o saldo do
 Compass com "✓ conferido hoje" / "✓ conferido em 25/10" e o ✎ para alterar.
 No mês corrente vale até a conta pedir conferência de novo (`pedeConferencia`).
+**A bolinha de conferido no banco foi DESFEITA** (20/11/2026, Guilherme:
+"vamos voltar como era"). Por um dia (19/11) cada linha de banco teve a
+bolinha de conferido, o card somava o conferido ("falta conferir R$ X") e o
+lançamento futuro só entrava no saldo no dia. Voltou a regra de antes: bolinha
+só na fixa (paga), lançamento manual entra no saldo ao ser lançado, e o card é
+Manual (digitado) ou Conferido (o "Confere" da Início). Não refazer sem pedido.
 
 **Sem plano, o Radar não julga: só mostra o realizado** (19/10/2026,
 decisão do Guilherme sobre a análise da chegada v3, C2: "ele não deve julgar
