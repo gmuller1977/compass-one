@@ -21,11 +21,13 @@ import { entrarNaListaDeEspera, validarInscricao, type Inscricao } from '../util
  *
  * A sessão vai para o WhatsApp com a mensagem pronta; o grupo tem a lista de
  * espera gravada no banco (listaEspera.ts, migração 027), para o aviso quando
- * abrir; o e-book abre um e-mail (CONTATO) até haver o link de venda.
+ * abrir; o e-book e o individual também vão para o WhatsApp até haver o link
+ * de venda (20/11/2026: e-mail no celular perde gente no caminho).
  */
 
-const CONTATO = 'suporte@compassone.app'
-const email = (assunto: string) => `mailto:${CONTATO}?subject=${encodeURIComponent(assunto)}`
+/** Quem conduz (decisão de 16/11/2026: foto e nome). Para a foto, salvar em public/ e preencher `foto`. */
+const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme', foto: null }
+
 /** WhatsApp do educador (18/11/2026): agenda a sessão e recebe a lista de espera do grupo. */
 const WHATSAPP = '5547988231323'
 const whatsapp = (texto: string) => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`
@@ -49,13 +51,13 @@ const OPCOES: Opcao[] = [
     id: 'ebook',
     icone: 'ti-book-2',
     rotulo: 'Manual de bordo',
-    nome: 'E-book: o passo a passo do Compass One',
-    texto: 'O guia completo para usar o app tela por tela, do primeiro acesso ao plano do ano, no seu ritmo.',
+    nome: 'E-book: o mês previsível, passo a passo',
+    texto: 'O método para planejar o mês e saber como ele fecha, usando o Compass One tela por tela, no seu ritmo.',
     itens: ['Do cadastro das contas ao primeiro plano', 'Como ler o Radar e a previsão do mês', 'Simulador: saber se cabe antes de comprar'],
     preco: 'R$ 97,00',
     precoNota: 'pagamento único',
     botao: 'Quero o e-book',
-    href: email('Quero o e-book do Compass One'),
+    href: whatsapp('Olá! Quero o e-book do Compass One.'),
   },
   {
     id: 'grupo',
@@ -73,15 +75,42 @@ const OPCOES: Opcao[] = [
   {
     id: 'diagnostico',
     icone: 'ti-route',
-    rotulo: 'Plano de voo individual',
+    rotulo: 'Primeiro passo',
     nome: 'Sessão de diagnóstico',
-    texto: 'Um encontro só seu, de 45 minutos, para olhar a sua situação com o educador e traçar os próximos passos.',
-    itens: ['Encontro individual de 45 minutos', 'Online, no horário combinado', 'Seus números vistos com calma'],
+    texto: '45 minutos, online, só você e eu. Olhamos juntos os seus números e você sai com o plano do mês e as 3 primeiras ações.',
+    itens: ['Encontro individual de 45 minutos', 'Online, no horário combinado', 'Plano do mês e as 3 primeiras ações'],
     preco: 'R$ 247,00',
     precoNota: 'por sessão · combinamos o horário pelo WhatsApp',
+    selo: 'Comece por aqui',
     botao: 'Quero agendar',
     href: whatsapp('Olá! Quero agendar uma sessão de diagnóstico de 45 minutos.'),
   },
+  {
+    id: 'individual',
+    icone: 'ti-user-check',
+    rotulo: 'Plano de voo individual',
+    nome: 'Acompanhamento individual',
+    texto: 'Dez encontros só seus para colocar a vida financeira em ordem com calma: o plano do mês, as dívidas, as metas e o hábito de acompanhar.',
+    itens: ['10 encontros individuais, online', 'O e-book e o grupo de estudos incluídos', 'Acesso direto ao educador'],
+    preco: 'Sob consulta',
+    precoNota: 'conversamos pelo WhatsApp sobre o seu momento',
+    botao: 'Quero conversar',
+    href: whatsapp('Olá! Quero saber mais sobre o acompanhamento individual de 10 encontros.'),
+  },
+]
+
+/** Como funciona a sessão de diagnóstico, em três passos. */
+const PASSOS = [
+  { icone: 'ti-brand-whatsapp', titulo: 'Você chama no WhatsApp', texto: 'Combinamos o dia e o horário da sessão.' },
+  { icone: 'ti-video', titulo: 'Olhamos os seus números juntos', texto: 'Salário, contas, cartão e dívidas, com calma e sem julgamento.' },
+  { icone: 'ti-list-check', titulo: 'Você sai com um rumo', texto: 'O plano do mês e as 3 primeiras ações para colocar em prática.' },
+]
+
+const PERGUNTAS = [
+  { p: 'Preciso usar o Compass One?', r: 'Não é obrigatório, mas ajuda: com o app, olhamos os seus números já organizados. Ele é grátis, para sempre.' },
+  { p: 'É recomendação de investimento?', r: 'Não. É educação financeira: você aprende a entender os seus números e toma as suas decisões.' },
+  { p: 'Como marco o horário e pago?', r: 'Pelo WhatsApp: combinamos o horário e a forma de pagamento antes da sessão.' },
+  { p: 'Os encontros são online?', r: 'Sim, por vídeo, no horário combinado. Funciona do celular ou do computador.' },
 ]
 
 const CSS = `
@@ -149,11 +178,32 @@ const CSS = `
 .fe-rodape .fe-in { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
 .fe-rodape nav { display: flex; gap: 18px; }
 
+.fe-h2 { font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-size: 34px; line-height: 1.05; margin: 0 0 22px; color: var(--tinta); }
+.fe-passos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; counter-reset: passo; }
+.fe-passos li { background: #fff; border: 1px solid #c9dcf2; border-radius: 16px; padding: 20px; display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; }
+.fe-passos li > i { width: 44px; height: 44px; border-radius: 12px; background: var(--noite); color: var(--ambar); display: grid; place-items: center; font-size: 22px; }
+.fe-passos b { display: block; font-size: 17px; color: var(--tinta); margin-bottom: 4px; }
+.fe-passos span { font-size: 15px; line-height: 1.5; color: var(--tinta2); }
+.fe-paraquem { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.fe-paraquem > div { background: #fff; border: 1px solid #c9dcf2; border-radius: 16px; padding: 22px; }
+.fe-paraquem h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 18px; }
+.fe-paraquem p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--tinta2); }
+.fe-sim i { color: #15803d; } .fe-nao i { color: #b91c1c; }
+.fe-faq { display: grid; gap: 10px; max-width: 820px; }
+.fe-faq details { background: #fff; border: 1px solid #c9dcf2; border-radius: 14px; padding: 0 20px; }
+.fe-faq summary { cursor: pointer; min-height: 52px; display: flex; align-items: center; font-weight: 700; font-size: 16px; color: var(--tinta); }
+.fe-faq summary:focus-visible { outline: 3px solid var(--ambar); outline-offset: 3px; border-radius: 8px; }
+.fe-faq details p { margin: 0 0 16px; font-size: 16px; line-height: 1.6; color: var(--tinta2); }
+.fe-quem { display: flex; gap: 18px; align-items: flex-start; }
+.fe-foto { flex-shrink: 0; width: 76px; height: 76px; border-radius: 50%; object-fit: cover; background: var(--noite); color: var(--ambar);
+  display: grid; place-items: center; font-family: 'Barlow Condensed', sans-serif; font-size: 38px; font-weight: 700; box-shadow: 0 0 0 3px var(--ambar); }
 @media (min-width: 880px) {
   .fe-hero h1 { font-size: 60px; }
   .fe-rota { display: block; }
-  .fe-cartoes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+  .fe-cartoes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
   .fe-nota { grid-template-columns: minmax(0, 1fr) auto; padding: 28px 32px; }
+  .fe-passos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fe-paraquem { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .fe-btn { transition: none; } }
 `
@@ -179,8 +229,8 @@ export default function FaleComEducador() {
           </nav>
           <div className="fe-hero">
             <span className="fe-olho"><i className="ti ti-school" aria-hidden />FALE COM O EDUCADOR</span>
-            <h1>Aprenda a pilotar o seu dinheiro com <em>um educador ao lado</em>.</h1>
-            <p>O Compass One continua grátis. Se quiser ir além, aprenda com um educador financeiro a usar cada instrumento do painel e a decidir com mais clareza. Escolha como quer seguir viagem.</p>
+            <h1>Organize o seu dinheiro com <em>um educador ao seu lado</em>.</h1>
+            <p>O Compass One mostra como o seu mês vai fechar. Comigo, você aprende a usar essa previsão para sair do aperto, quitar o que deve e começar a guardar. Sem mensalidade e sem recomendação de investimento.</p>
           </div>
         </div>
         <svg className="fe-rota" viewBox="0 0 520 300" aria-hidden>
@@ -199,7 +249,7 @@ export default function FaleComEducador() {
         <div className="fe-in">
           <div className="fe-cartoes">
             {OPCOES.map(o => (
-              <section key={o.id} className={`fe-cartao${o.id === 'ebook' ? ' destaque' : ''}`} aria-labelledby={`t-${o.id}`}>
+              <section key={o.id} className={`fe-cartao${o.id === 'diagnostico' ? ' destaque' : ''}`} aria-labelledby={`t-${o.id}`}>
                 {o.selo && <span className="fe-selo">{o.selo}</span>}
                 <span className="fe-ic" aria-hidden><i className={`ti ${o.icone}`} /></span>
                 <p className="fe-rot">{o.rotulo}</p>
@@ -209,7 +259,7 @@ export default function FaleComEducador() {
                 <div className="fe-preco"><b>{o.preco}</b><span>{o.precoNota}</span></div>
                 {o.id === 'grupo'
                   ? <ListaDeEspera botao={o.botao} />
-                  : <a href={o.href} target={o.href.startsWith('https') ? '_blank' : undefined} rel="noreferrer" className={`fe-btn ${o.id === 'ebook' ? 'fe-btn-escuro' : 'fe-btn-linha'}`}>{o.botao} <i className="ti ti-arrow-right" aria-hidden /></a>}
+                  : <a href={o.href} target={o.href.startsWith('https') ? '_blank' : undefined} rel="noreferrer" className={`fe-btn ${o.id === 'diagnostico' ? 'fe-btn-escuro' : 'fe-btn-linha'}`}>{o.botao} <i className="ti ti-arrow-right" aria-hidden /></a>}
               </section>
             ))}
           </div>
@@ -218,11 +268,50 @@ export default function FaleComEducador() {
         <section className="fe-sec" aria-labelledby="t-quem">
           <div className="fe-in">
             <div className="fe-nota">
-              <div>
-                <h3 id="t-quem">Educação financeira, no seu ritmo</h3>
-                <p>Quem conduz é um educador financeiro, criador do Compass One. O foco é você entender os seus números e tomar as suas decisões. Não há recomendação de investimento.</p>
+              <div className="fe-quem">
+                {EDUCADOR.foto
+                  ? <img className="fe-foto" src={EDUCADOR.foto} alt={`Foto de ${EDUCADOR.nome}`} width={76} height={76} />
+                  : <span className="fe-foto" aria-hidden>{EDUCADOR.nome.charAt(0)}</span>}
+                <div>
+                  <h3 id="t-quem">Quem conduz: {EDUCADOR.nome}, educador financeiro</h3>
+                  <p>Criei o Compass One a partir da planilha que usava com as pessoas que acompanhei, cerca de 25 em um ano, uma a uma. O foco é você entender os seus números e tomar as suas decisões. Não há recomendação de investimento.</p>
+                </div>
               </div>
-              <a href={email('Dúvida sobre o Fale com o Educador')} className="fe-btn fe-btn-linha">Tirar uma dúvida</a>
+              <a href={whatsapp('Olá! Tenho uma dúvida sobre as aulas do Compass One.')} target="_blank" rel="noreferrer" className="fe-btn fe-btn-linha">Tirar uma dúvida</a>
+            </div>
+          </div>
+        </section>
+
+        <section className="fe-sec" aria-labelledby="t-como">
+          <div className="fe-in">
+            <h2 className="fe-h2" id="t-como">Como funciona a sessão de diagnóstico</h2>
+            <ol className="fe-passos">
+              {PASSOS.map(p => <li key={p.titulo}><i className={`ti ${p.icone}`} aria-hidden /><div><b>{p.titulo}</b><span>{p.texto}</span></div></li>)}
+            </ol>
+          </div>
+        </section>
+
+        <section className="fe-sec" aria-labelledby="t-paraquem">
+          <div className="fe-in">
+            <h2 className="fe-h2" id="t-paraquem">Para quem é</h2>
+            <div className="fe-paraquem">
+              <div className="fe-sim">
+                <h3><i className="ti ti-circle-check" aria-hidden />É para você se</h3>
+                <p>Você trabalha, ganha o suficiente para viver e, mesmo assim, o dinheiro aperta no fim do mês. Quer sair das dívidas, ter as contas em dia e começar a guardar.</p>
+              </div>
+              <div className="fe-nao">
+                <h3><i className="ti ti-circle-x" aria-hidden />Não é para você se</h3>
+                <p>Você procura dica de investimento, de ação ou de criptomoeda. Aqui o assunto é organizar o dinheiro do mês a mês.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="fe-sec" aria-labelledby="t-faq">
+          <div className="fe-in">
+            <h2 className="fe-h2" id="t-faq">Perguntas frequentes</h2>
+            <div className="fe-faq">
+              {PERGUNTAS.map(q => <details key={q.p}><summary>{q.p}</summary><p>{q.r}</p></details>)}
             </div>
           </div>
         </section>

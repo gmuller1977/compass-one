@@ -116,7 +116,6 @@ const CSS = `
 .v2-painel small { display: block; margin-top: 12px; font-size: 12px; color: rgba(255,255,255,.65); }
 @keyframes v2-placa { from { transform: rotateX(-75deg); } to { transform: rotateX(0); } }
 
-.v2-hero-sub { font-size: 21px !important; font-weight: 600; color: #fff !important; margin-bottom: 14px !important; }
 
 /* o app na primeira dobra */
 .v2-app { margin: 0; position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -349,7 +348,18 @@ const CSS = `
 .v2-copiloto li i { width: 40px; height: 40px; border-radius: 10px; background: #e3eefb; color: var(--subida); display: grid; place-items: center; font-size: 20px; }
 .v2-copiloto li b { display: block; font-size: 16px; color: var(--tinta); }
 .v2-copiloto li span { font-size: 15px; color: var(--tinta2); line-height: 1.5; }
-.v2-copiloto small { display: block; margin-top: 16px; font-size: 14px; color: var(--tinta2); }
+.v2-copiloto small { display: block; font-size: 14px; color: var(--tinta2); }
+.v2-copiloto-fim { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.v2-rotulo { display: block; font-size: 19px !important; font-weight: 700; line-height: 1.35; color: var(--ambar) !important; margin: 0 0 14px !important; max-width: 520px; }
+.v2-guia { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; background: #fff; color: var(--tinta); border-radius: 20px;
+  padding: 26px 22px; margin: 0 0 88px; box-shadow: 0 18px 44px rgba(7,13,24,.3); }
+.v2-guia-foto { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: var(--noite); color: var(--ambar);
+  display: grid; place-items: center; font-family: 'Barlow Condensed', sans-serif; font-size: 46px; font-weight: 700; box-shadow: 0 0 0 3px var(--ambar); }
+.v2-guia-rot { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar-escuro); }
+.v2-guia h2 { margin: 0 0 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 30px; line-height: 1.05; }
+.v2-guia p { margin: 0 0 12px; font-size: 17px; line-height: 1.6; color: var(--tinta2); max-width: 680px; }
+.v2-guia-prova { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 18px; padding: 8px 14px; border-radius: 99px; background: #fff4dc; color: var(--ambar-escuro); font-weight: 700; font-size: 15px; }
+.v2-guia a.v2-guia-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; color: var(--tinta); }
 
 .v2-faq { max-width: 800px; margin: 36px auto 0; display: grid; gap: 10px; }
 .v2-faq details { border-radius: 14px; background: #fff; padding: 0 20px; box-shadow: inset 0 0 0 1.5px #c9daf0; }
@@ -384,6 +394,8 @@ const CSS = `
   .v2-ctas { flex-direction: row; }
   .v2-comp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v2-copiloto ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .v2-guia { grid-template-columns: auto minmax(0, 1fr); gap: 28px; padding: 34px 36px; }
+  .v2-guia-foto { width: 128px; height: 128px; font-size: 60px; }
 }
 @media (min-width: 960px) {
   .v2-sec { padding: 128px 0; }
@@ -820,16 +832,48 @@ function TelaCruzeiro() {
   )
 }
 
+/**
+ * Quem está por trás (decisão do Guilherme, 16/11/2026: ele aparece na
+ * página com foto e nome). Sem foto ainda: o círculo mostra a inicial.
+ * Para pôr a foto, salvar em public/ e preencher `foto` (ex.: '/educador.jpg').
+ */
+const EDUCADOR: { nome: string; foto: string | null } = { nome: 'Guilherme', foto: null }
+
+function QuemEstaPorTras() {
+  return (
+    <section className="v2-guia" aria-labelledby="t-guia">
+      {EDUCADOR.foto
+        ? <img className="v2-guia-foto" src={EDUCADOR.foto} alt={`Foto de ${EDUCADOR.nome}`} width={128} height={128} />
+        : <span className="v2-guia-foto" aria-hidden>{EDUCADOR.nome.charAt(0)}</span>}
+      <div>
+        <p className="v2-guia-rot">Quem está por trás</p>
+        <h2 id="t-guia">Oi, eu sou o {EDUCADOR.nome}.</h2>
+        <p>
+          Sou educador financeiro e, no último ano, acompanhei cerca de 25 pessoas, uma a uma. Quase todas chegavam com o
+          mesmo aperto: trabalhavam muito e, mesmo assim, o dinheiro não fechava o mês. O que mudava a vida delas não era
+          cortar o cafezinho. Era saber, no dia 1, como o mês ia terminar, e no dia 15, se dava para seguir ou era hora de segurar.
+        </p>
+        <p>
+          A planilha que usávamos juntos virou o Compass One. Deixei o app grátis porque essa clareza não deveria custar
+          nada. Se quiser ajuda para ir além, eu estou aqui.
+        </p>
+        <span className="v2-guia-prova"><i className="ti ti-users" aria-hidden />Cerca de 25 pessoas acompanhadas, uma a uma</span>
+        <div><Link to="/educador" className="v2-guia-link">Conheça as formas de aprender comigo <i className="ti ti-arrow-right" aria-hidden /></Link></div>
+      </div>
+    </section>
+  )
+}
+
 const ETAPAS = [
-  { alt: 3000, icone: 'ti-plane-departure', altura: '3.000 pés · decolagem', titulo: 'Saiba exatamente onde você está',
+  { alt: 3000, icone: 'ti-plane-departure', altura: '3.000 pés · decolagem', titulo: 'Saldo de hoje e o fim do mês na mesma tela',
     texto: 'Bancos, cartões e dinheiro num só lugar, com o saldo de hoje e as contas do mês. Salário e débito automático aparecem no dia certo: você confere com um toque.', visual: <TelaHoje /> },
-  { alt: 10000, icone: 'ti-route', altura: '10.000 pés · plano de voo', titulo: 'Defina a rota do seu ano',
+  { alt: 10000, icone: 'ti-route', altura: '10.000 pés · plano de voo', titulo: 'Um plano simples para o ano inteiro',
     texto: 'Um plano com quanto gastar em cada categoria e quanto guardar por mês. Quem escolhe o destino é você; o Compass desenha a rota e mostra com quanto o ano termina.', visual: <TelaPlanoDeVoo /> },
-  { alt: 18000, icone: 'ti-radar-2', altura: '18.000 pés · radar meteorológico', titulo: 'Veja a turbulência antes de entrar nela',
+  { alt: 18000, icone: 'ti-radar-2', altura: '18.000 pés · radar meteorológico', titulo: 'Veja hoje qual mês vai ficar no vermelho',
     texto: 'Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o Compass mostra com quanto cada um dos próximos meses vai terminar. O mês no vermelho aparece com tempo de mudar a rota.', visual: <TelaRadarMeteorologico /> },
-  { alt: 24000, icone: 'ti-compass', altura: '24.000 pés · antes de mudar a rota', titulo: 'Antes de comprar, consulte a bússola',
+  { alt: 24000, icone: 'ti-compass', altura: '24.000 pés · antes de mudar a rota', titulo: 'Antes de comprar, saiba se cabe',
     texto: 'Digite o valor e as opções da loja. O Compass coloca a compra no seu plano, mês a mês, e mostra se ela tira você da rota e qual forma de pagar pesa menos.', visual: <TelaPossoComprar /> },
-  { alt: 30000, icone: 'ti-notebook', altura: '30.000 pés · diário de bordo', titulo: 'Confira se segue na rota',
+  { alt: 30000, icone: 'ti-notebook', altura: '30.000 pés · diário de bordo', titulo: 'No meio do mês, saiba quanto ainda resta',
     texto: 'Anote um gasto em segundos, no celular ou no computador. O Radar mostra, no meio do mês, quanto ainda resta em cada grupo, e o plano se ajusta para os próximos meses.', visual: <TelaDiario /> },
 ]
 
@@ -927,21 +971,21 @@ export default function LandingPageV2() {
           </nav>
           <div className="v2-hero">
             <div>
-              <h1>Prepare a <em>decolagem</em> da sua vida financeira.</h1>
-              <p className="v2-hero-sub">Antes da decolagem sempre bate aquele frio na barriga: será que vai subir?</p>
+              <p className="v2-rotulo">Sua vida financeira parece uma tempestade antes da decolagem?</p>
+              <h1>Saiba hoje como o seu mês vai <em>fechar</em>.</h1>
               <p>
-                Contas, parcelas e imprevistos formam a tempestade. O Compass One, a bússola financeira criada por um
-                educador financeiro, mostra por onde passar e onde ela termina, para você decolar sem dúvidas.
+                O Compass One, a sua bússola financeira, junta salário, contas, parcelas e cartão e mostra com quanto o mês
+                termina, a tempo de mudar a rota. Foi criado por um educador financeiro a partir das dúvidas de pessoas como você.
               </p>
               <div className="v2-ctas">
-                <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
-                <a href={login} className="v2-btn v2-btn-linha">Já tenho conta</a>
+                <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+                <a href="#instrumentos" className="v2-btn v2-btn-linha">Como funciona <i className="ti ti-arrow-down" /></a>
               </div>
               <ul className="v2-selos">
-                <li><i className="ti ti-gift" />Sem mensalidade</li>
+                <li><i className="ti ti-gift" />Grátis para sempre</li>
                 <li><i className="ti ti-ad-off" />Sem anúncios</li>
                 <li><i className="ti ti-lock" />Não pede a senha do banco</li>
-                <li><i className="ti ti-school" />Criado por um educador financeiro</li>
+                <li><i className="ti ti-school" />Criado pelo educador financeiro {EDUCADOR.nome}</li>
               </ul>
             </div>
             <AppNaDobra />
@@ -956,16 +1000,17 @@ export default function LandingPageV2() {
           <div className="v2-chuva" aria-hidden />
           <div className="v2-turb-clarao" aria-hidden />
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-turb">Ufa, decolamos. Mas agora aparecem outras panes.</h2>
-            <p className="v2-lead">Eu sei: você já se organiza por conta própria, anota o que entra e o que sai. Mesmo assim, a viagem é sempre turbulenta, o combustível acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
+            <h2 className="v2-h2" id="t-turb">Você se organiza, mas o mês sempre aperta no fim.</h2>
+            <p className="v2-lead">Eu sei: você já anota o que entra e o que sai. Mesmo assim, o dinheiro acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <CabineEmTurbulencia />
           </div>
         </section>
 
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-subida">Até agora, você voou às cegas.<br />Está na hora de experimentar o Compass One.</h2>
-            <p className="v2-lead">A bússola financeira que mostra a direção a seguir para evitar novas turbulências. A única ferramenta de que você vai precisar.</p>
+            <QuemEstaPorTras />
+            <h2 className="v2-h2" id="t-subida">Anotar mostra o passado.<br />O Compass One mostra o fim do mês.</h2>
+            <p className="v2-lead">A bússola financeira que mostra a direção a seguir antes da turbulência, e não depois dela.</p>
             <ol className="v2-etapas">
               {ETAPAS.map(e => (
                 <li key={e.alt} className="v2-etapa" data-alt={e.alt}>
@@ -992,7 +1037,7 @@ export default function LandingPageV2() {
           <div className="v2-in">
             <div className="v2-cruz-in">
               <div>
-                <h2 className="v2-h2" id="t-cruz">Acima das nuvens, o voo fica tranquilo</h2>
+                <h2 className="v2-h2" id="t-cruz">Guarde de propósito, não com o que sobra</h2>
                 <p className="v2-lead">
                   O destino é o dinheiro que sobra de propósito: a meta de economia que você escolhe e acompanha mês a mês.
                   Um caminho mais tranquilo para você e para a sua família.
@@ -1062,7 +1107,7 @@ export default function LandingPageV2() {
 
         <section className="v2-sec v2-claro2" id="embarque" aria-labelledby="t-emb">
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-emb">O seu cartão de embarque</h2>
+            <h2 className="v2-h2" id="t-emb">Grátis para sempre. Sem pegadinha.</h2>
             <p className="v2-lead">O app de planejamento é grátis para sempre. Se quiser aprender com um educador financeiro, você escolhe o quanto, em pacotes. Sem mensalidade.</p>
             <div className="v2-cartao">
               <div className="v2-cartao-main">
@@ -1094,15 +1139,18 @@ export default function LandingPageV2() {
 
             <div className="v2-copiloto">
               <h3>Educação financeira: quer um copiloto?</h3>
-              <p>É opcional. Para aprender a cuidar do seu dinheiro, um educador financeiro voa junto, no quanto de ajuda que você escolher, em pacotes e sem mensalidade:</p>
+              <p>Comece pelo app, grátis. Se quiser alguém do seu lado, escolha o quanto de ajuda, em pacotes e sem mensalidade:</p>
               <ol>
                 {[
-                  { icone: 'ti-player-play', nome: 'Curso em vídeo', texto: 'Aulas gravadas para montar o seu plano e usar o app no seu ritmo.' },
-                  { icone: 'ti-messages', nome: 'Grupo de acompanhamento', texto: 'O curso e um grupo para tirar dúvidas com o educador.' },
-                  { icone: 'ti-user-check', nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador para colocar a vida financeira em ordem.' },
+                  { icone: 'ti-book-2', nome: 'E-book', texto: 'O passo a passo para planejar o mês com o Compass One, no seu ritmo.' },
+                  { icone: 'ti-users-group', nome: 'Grupo de estudos', texto: 'Estudar junto com outras pessoas e tirar dúvidas com o educador.' },
+                  { icone: 'ti-user-check', nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador, começando por uma sessão de diagnóstico.' },
                 ].map(p => <li key={p.nome}><i className={`ti ${p.icone}`} aria-hidden /><div><b>{p.nome}</b><span>{p.texto}</span></div></li>)}
               </ol>
-              <small>Pacotes sob consulta. O app continua grátis, com ou sem eles.</small>
+              <div className="v2-copiloto-fim">
+                <Link to="/educador" className="v2-btn v2-btn-escuro">Ver as opções com o educador <i className="ti ti-arrow-right" /></Link>
+                <small>O app continua grátis, com ou sem elas.</small>
+              </div>
             </div>
           </div>
         </section>
