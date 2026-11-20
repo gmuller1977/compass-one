@@ -871,6 +871,8 @@ const PARA_QUEM_NAO_E = [
   'Quem procura dica de investimento, de ação ou de criptomoeda',
   'Quem busca uma fórmula para ficar rico rápido',
   'Quem quer que o app faça tudo sozinho: aqui você anota e decide',
+  'Quem não quer se comprometer com o próprio dinheiro',
+  'Quem prefere viver o hoje sem pensar no amanhã',
 ]
 
 function ParaQuemE({ cadastro }: { cadastro: string }) {
