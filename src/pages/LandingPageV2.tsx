@@ -197,6 +197,18 @@ const CSS = `
 .v2-nuvens g:nth-child(2) { animation-duration: 52s; animation-direction: alternate-reverse; }
 @keyframes v2-deriva { to { transform: translateX(-60px); } }
 .v2-turb .v2-lead { color: rgba(255,255,255,.85); }
+.v2-voos { margin-top: 72px; position: relative; z-index: 1; }
+.v2-voos-t { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; margin: 0 0 18px; color: #fff; }
+.v2-voos-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.v2-voo { border-radius: 18px; padding: 24px; background: rgba(11,19,34,.72); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18); backdrop-filter: blur(6px); display: flex; flex-direction: column; color: #fff; }
+.v2-voo-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--noite); color: var(--ambar); display: grid; place-items: center; font-size: 22px; box-shadow: 0 0 0 1.5px var(--ambar); margin-bottom: 14px; }
+.v2-voo h4 { margin: 0 0 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 26px; line-height: 1.05; }
+.v2-voo ul { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 10px; font-size: 16px; line-height: 1.45; color: rgba(255,255,255,.9); }
+.v2-voo li { display: flex; gap: 10px; } .v2-voo li::before { content: '•'; color: var(--ambar); font-weight: 700; }
+.v2-voo > .v2-btn, .v2-voo-acoes { margin-top: auto; }
+.v2-voo-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.v2-voo-acoes .v2-btn { flex: 1 1 200px; }
+@media (min-width: 880px) { .v2-voos-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
 
 /* subida */
 .v2-turb { padding-bottom: 56px; }
@@ -287,18 +299,6 @@ const CSS = `
 .v2-cruz-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; align-items: center; }
 .v2-destino { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 10px 16px; border-radius: 99px; background: #fff; color: var(--tinta); font-weight: 600; font-size: 15px; box-shadow: 0 6px 16px rgba(11,37,69,.08); }
 .v2-destino i { color: var(--ambar-escuro); font-size: 19px; }
-.v2-comp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 80px; }
-.v2-comp > div { border-radius: 18px; padding: 28px; }
-.v2-comp h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.05; margin: 0 0 6px; }
-.v2-comp-sub { margin: 0 0 20px; font-size: 17px; font-weight: 600; }
-.v2-comp ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-.v2-comp li { display: flex; gap: 12px; font-size: 16px; line-height: 1.5; }
-.v2-comp li i { font-size: 21px; flex-shrink: 0; }
-.v2-janela { background: #fff; color: var(--tinta2); box-shadow: inset 0 0 0 1.5px #c9daf0; }
-.v2-janela h3, .v2-janela .v2-comp-sub { color: var(--tinta); } .v2-janela li i { color: #64748b; }
-.v2-instr { background: var(--noite); color: #fff; box-shadow: 0 18px 40px rgba(11,19,34,.25); }
-.v2-instr .v2-comp-sub { color: var(--ambar); } .v2-instr li i { color: var(--verde-claro); }
-
 /* checklist, bagagem, embarque, perguntas */
 .v2-claro { background: var(--claro2); }
 .v2-claro2 { background: #f4f9ff; }
@@ -311,15 +311,7 @@ const CSS = `
 .v2-check-mini { grid-column: 2; margin: 0; display: grid; gap: 4px; font-size: 14px; }
 .v2-check-mini div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 8px; background: #eef5fd; }
 .v2-check-mini dt { color: var(--tinta2); } .v2-check-mini dd { margin: 0; font-weight: 700; color: var(--tinta); }
-.v2-bancos { margin-top: 40px; text-align: center; }
-.v2-bancos p { margin: 0 0 12px; font-size: 15px; color: var(--tinta2); }
-.v2-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.v2-chips span { border-radius: 99px; padding: 8px 14px; background: #fff; font-size: 14px; font-weight: 600; color: var(--tinta); box-shadow: inset 0 0 0 1.5px #c9daf0; }
-.v2-bagagem { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; border-top: 1.5px solid #c9daf0; }
-.v2-bagagem li { display: grid; grid-template-columns: 48px 1fr; gap: 16px; padding: 22px 0; border-bottom: 1.5px solid #c9daf0; }
-.v2-bagagem i { width: 48px; height: 48px; border-radius: 12px; background: var(--noite); color: var(--ambar); display: grid; place-items: center; font-size: 24px; }
-.v2-bagagem h3 { margin: 2px 0 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 23px; font-weight: 700; color: var(--tinta); }
-.v2-bagagem p { margin: 0; font-size: 16px; color: var(--tinta2); line-height: 1.5; }
+.v2-bancos { margin: 28px auto 0; max-width: 640px; text-align: center; font-size: 16px; line-height: 1.55; color: var(--tinta2); }
 
 .v2-cartao { margin-top: 44px; display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 22px 50px rgba(11,37,69,.14); }
 .v2-cartao-main { padding: 26px; }
@@ -393,8 +385,7 @@ const CSS = `
 
 @media (min-width: 640px) {
   .v2-ctas { flex-direction: row; }
-  .v2-comp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .v2-copiloto ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .v2-copiloto ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .v2-guia { grid-template-columns: auto minmax(0, 1fr); gap: 28px; padding: 34px 36px; }
   .v2-guia-foto { width: 128px; height: 128px; font-size: 60px; }
 }
@@ -420,9 +411,7 @@ const CSS = `
   .v2-rota-celular { display: none !important; }
   .v2-rota-largo { display: block !important; }
   .v2-painel, .v2-rota { padding: 26px; }
-  .v2-bagagem { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; border-top: 0; }
-  .v2-bagagem li { border-top: 1.5px solid #c9daf0; }
-  .v2-cartao { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+      .v2-cartao { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
   .v2-canhoto::before { left: -1px; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 3px dashed #dbe6f3; }
   .v2-fixo { display: none; }
   .v2-fim { padding: 140px 0 260px; }
@@ -865,6 +854,40 @@ function QuemEstaPorTras() {
   )
 }
 
+/** Qual é o seu voo? (20/11/2026, pedido do Guilherme: falar também com quem tem um pequeno negócio). */
+function QualEOSeuVoo({ cadastro }: { cadastro: string }) {
+  return (
+    <div className="v2-voos" aria-labelledby="t-voos">
+      <h3 className="v2-voos-t" id="t-voos">Qual é o seu voo?</h3>
+      <div className="v2-voos-grade">
+        <div className="v2-voo">
+          <span className="v2-voo-ic" aria-hidden><i className="ti ti-briefcase" /></span>
+          <h4>Você vive de salário</h4>
+          <ul>
+            <li>O dinheiro acaba antes do mês</li>
+            <li>A fatura do cartão chega e assusta</li>
+            <li>Guardar fica para quando sobrar, e não sobra</li>
+          </ul>
+          <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+        </div>
+        <div className="v2-voo">
+          <span className="v2-voo-ic" aria-hidden><i className="ti ti-building-store" /></span>
+          <h4>Você tem um pequeno negócio</h4>
+          <ul>
+            <li>Fatura bem e, mesmo assim, vive no aperto</li>
+            <li>O dinheiro da casa e o da empresa se misturam</li>
+            <li>Não sabe quanto pode tirar para você</li>
+          </ul>
+          <div className="v2-voo-acoes">
+            <a href={cadastro} className="v2-btn v2-btn-claro">Ver como o meu mês fecha <i className="ti ti-arrow-right" /></a>
+            <Link to="/educador" className="v2-btn v2-btn-linha">Falar com o educador</Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ETAPAS = [
   { alt: 3000, icone: 'ti-plane-departure', altura: '3.000 pés · decolagem', titulo: 'Saldo de hoje e o fim do mês na mesma tela',
     texto: 'Bancos, cartões e dinheiro num só lugar, com o saldo de hoje e as contas do mês. Salário e débito automático aparecem no dia certo: você confere com um toque.', visual: <TelaHoje /> },
@@ -878,11 +901,6 @@ const ETAPAS = [
     texto: 'Anote um gasto em segundos, no celular ou no computador. O Radar mostra, no meio do mês, quanto ainda resta em cada grupo, e o plano se ajusta para os próximos meses.', visual: <TelaDiario /> },
 ]
 
-const BAGAGEM = [
-  { icone: 'ti-plus', titulo: 'Lançar rápido', texto: 'Débito ou crédito, parcelado em até 24×, na fatura certa.' },
-  { icone: 'ti-users', titulo: 'Conta compartilhada', texto: 'As mesmas finanças para a família, cada um com o seu login.' },
-  { icone: 'ti-devices', titulo: 'Celular e computador', texto: 'Instale no celular e entre com a digital.' },
-]
 
 const LINKS: [string, string][] = [['#turbulencia', 'O voo'], ['#instrumentos', 'Instrumentos'], ['#embarque', 'Embarque'], ['#perguntas', 'Dúvidas']]
 const ALT_MAX = 35000
@@ -1005,6 +1023,7 @@ export default function LandingPageV2() {
             <h2 className="v2-h2" id="t-turb">Você se organiza, mas o mês sempre aperta no fim.</h2>
             <p className="v2-lead">Eu sei: você já anota o que entra e o que sai. Mesmo assim, o dinheiro acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <CabineEmTurbulencia />
+            <QualEOSeuVoo cadastro={cadastro} />
           </div>
         </section>
 
@@ -1049,28 +1068,6 @@ export default function LandingPageV2() {
               <TelaCruzeiro />
             </div>
 
-            <div className="v2-comp">
-              <div className="v2-janela">
-                <h3>Sem plano, olhando pela janela</h3>
-                <p className="v2-comp-sub">A turbulência aparece quando você já está nela.</p>
-                <ul>
-                  <li><i className="ti ti-eye-off" />Você sabe quanto já gastou, não com quanto vai terminar</li>
-                  <li><i className="ti ti-cloud-storm" />O aperto aparece quando o mês já acabou</li>
-                  <li><i className="ti ti-help" />Comprar ou esperar? Decide no escuro</li>
-                  <li><i className="ti ti-coin-off" />Guardar fica para quando sobrar, e não sobra</li>
-                </ul>
-              </div>
-              <div className="v2-instr">
-                <h3>Com planejamento, voando por instrumentos</h3>
-                <p className="v2-comp-sub">Você vê a rota antes.</p>
-                <ul>
-                  <li><i className="ti ti-circle-check" />Com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
-                  <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar a rota</li>
-                  <li><i className="ti ti-circle-check" />Se a compra cabe no plano, antes de você comprar</li>
-                  <li><i className="ti ti-circle-check" />Guardar vira meta do mês, decidida no começo</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </section>
         </div>
@@ -1092,18 +1089,7 @@ export default function LandingPageV2() {
                 </li>
               ))}
             </ol>
-            <div className="v2-bancos">
-              <p>Funciona com o seu banco, qualquer que seja, e com o dinheiro da carteira:</p>
-              <div className="v2-chips">
-                {['Nubank', 'Itaú', 'Bradesco', 'Caixa', 'Banco do Brasil', 'Inter', 'Santander', 'Sicredi', 'Sicoob', 'C6', 'Mercado Pago', 'PicPay', 'Dinheiro'].map(b => <span key={b}>{b}</span>)}
-              </div>
-            </div>
-
-            <h2 className="v2-h2" style={{ marginTop: 110 }} id="t-bag">Na bagagem de mão</h2>
-            <p className="v2-lead">O que mais vai junto, para o dia a dia.</p>
-            <ul className="v2-bagagem" aria-labelledby="t-bag">
-              {BAGAGEM.map(b => <li key={b.titulo}><i className={`ti ${b.icone}`} aria-hidden /><div><h3>{b.titulo}</h3><p>{b.texto}</p></div></li>)}
-            </ul>
+            <p className="v2-bancos">Funciona com qualquer banco e com o dinheiro da carteira, no celular e no computador, e dá para usar junto com a família.</p>
           </div>
         </section>
 
