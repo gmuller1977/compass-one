@@ -75,7 +75,7 @@ export default function NleExtratoMobile({
   setDiaSel, editarFixa, editarLancamento, excluir, lancar,
   desconsolidarFixa, consolidarFixa, setMobileDiaForm,
   setFTipo, setFCat, setFSubDesc, setFDesc, setFValor, setFPag,
-  setEditandoId, setEditandoFixaId, ehAutomatico, resetarParaNovo, desktop, alternarNaoOcorre, alternarConferido,
+  setEditandoId, setEditandoFixaId, ehAutomatico, resetarParaNovo, desktop, alternarNaoOcorre,
 }: Props & { desktop?: boolean }) {
   const [memoriaAberta, setMemoriaAberta] = React.useState(false)
   const [futurosAbertos, setFuturosAbertos] = React.useState(false)
@@ -249,25 +249,6 @@ export default function NleExtratoMobile({
                     borderTop: idx === 0 && fs.length === 0 ? 'none' : '1px solid #eef2f8',
                     background: emEdicao ? '#f1f5ff' : undefined,
                   }}>
-                    {/* Bolinha de CONFERIDO com o banco, como na fatura
-                        (19/11/2026, decisão do Guilherme: "igual ao cartão").
-                        Dia futuro não se confere: o lançamento ainda não
-                        aconteceu. Na carteira não há bolinha. */}
-                    {alternarConferido && (() => {
-                      const conferido = mesDados.conferidos?.[l.id] === true
-                      return (
-                        <button
-                          aria-label={conferido ? 'Desmarcar conferido com o banco' : diaFuturo ? `Confere a partir de ${dia}/${mes + 1}` : 'Marcar como conferido com o banco'}
-                          aria-pressed={conferido} title={conferido ? 'Conferido com o banco' : 'Conferir com o banco'}
-                          disabled={diaFuturo && !conferido}
-                          onClick={e => { e.stopPropagation(); if (conferido || !diaFuturo) alternarConferido(l.id) }}
-                          style={{
-                            width: 30, height: 30, borderRadius: '50%', flexShrink: 0, cursor: diaFuturo && !conferido ? 'default' : 'pointer', padding: 0,
-                            border: conferido ? 'none' : `2px ${diaFuturo ? 'dashed' : 'solid'} #94a3b8`, background: conferido ? VERDE : '#fff',
-                            color: '#fff', fontSize: 16, fontWeight: 800, fontFamily: 'inherit', lineHeight: 1,
-                          }}>{conferido ? '✓' : ''}</button>
-                      )
-                    })()}
                     <IconeRedondo icone={vis.icone} cor={vis.cor} tamanho={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: M.corpo, fontWeight: 600, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nome}</div>

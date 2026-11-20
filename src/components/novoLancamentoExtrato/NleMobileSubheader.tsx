@@ -39,8 +39,6 @@ type Props = {
   conciliado: boolean
   /** Data em que o saldo foi conferido sem valor digitado ("Confere"), ou null. */
   conferidoEm: string | null
-  /** Banco: o que ainda não tem bolinha (utils/conferirExtrato); null na carteira. */
-  faltaConferir?: { liquido: number; qtd: number } | null
   chaveAtual: string
 }
 
@@ -48,7 +46,7 @@ export default function NleMobileSubheader({
   isMobile, tabPrincipal,
   contasExtrato, contaIdEfetivo, mes, ano, mesNome,
   setContaId, setModalSaldo, setModalSaldoValor, saldoSugerido,
-  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, conferidoEm, faltaConferir = null, chaveAtual,
+  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, conferidoEm, chaveAtual,
 }: Props) {
   return (
     <>
@@ -66,10 +64,6 @@ export default function NleMobileSubheader({
           if (isDinheiro) setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:COR.verde, key:chaveAtual})
           else setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
         }
-        // Sem valor digitado, o banco mostra o CONFERIDO pelas bolinhas, como
-        // a fatura (19/11/2026, decisão do Guilherme: "igual ao cartão").
-        const pelasBolinhas = diferenca === null && !conferidoEm && faltaConferir !== null
-        const tudoConferido = pelasBolinhas && faltaConferir!.qtd === 0
         return (
           <div style={{background:'var(--cx-azul-continua)',position:'relative',overflow:'hidden',
             padding:'12px 16px 64px',flexShrink:0,marginBottom:4}}>
@@ -116,24 +110,15 @@ export default function NleMobileSubheader({
                       amarelo como na fatura (18/11/2026, pedido do Guilherme). */}
                   <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
                     {isDinheiro ? 'Em dinheiro' : `No ${contaInfo?.banco ?? 'banco'}`}
-                    {(diferenca !== null || conferidoEm || pelasBolinhas) && <> · <b style={{color:'#fde047',fontWeight:800}}>{diferenca !== null ? 'Manual' : 'Conferido'}</b></>}
+                    {(diferenca !== null || conferidoEm) && <> · <b style={{color:'#fde047',fontWeight:800}}>{diferenca !== null ? 'Manual' : 'Conferido'}</b></>}
                   </span>
                   <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-                    {diferenca !== null ? fmt(saldoMes + diferenca) : conferidoEm ? fmt(saldoMes) : pelasBolinhas ? fmt(saldoMes - faltaConferir!.liquido) : isDinheiro ? 'Informar saldo ✎' : 'Informar saldo banco ✎'}
+                    {diferenca !== null ? fmt(saldoMes + diferenca) : conferidoEm ? fmt(saldoMes) : isDinheiro ? 'Informar saldo ✎' : 'Informar saldo banco ✎'}
                   </span>
-                  {(diferenca !== null || conferidoEm || pelasBolinhas) && (
-                    <span style={{display:'block',fontSize:12,fontWeight:700,color:'rgba(255,255,255,.85)',marginTop:2}}>{pelasBolinhas ? '✎ Informar saldo banco' : '✎ Alterar valor'}</span>
+                  {(diferenca !== null || conferidoEm) && (
+                    <span style={{display:'block',fontSize:12,fontWeight:700,color:'rgba(255,255,255,.85)',marginTop:2}}>✎ Alterar valor</span>
                   )}
                 </span>
-                {pelasBolinhas && (tudoConferido ? (
-                  <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
-                    background:'rgba(15,23,42,.3)',color:'#86efac'}}>✓ tudo conferido</span>
-                ) : Math.abs(faltaConferir!.liquido) >= 0.005 ? (
-                  <PilulaFaltaConferir falta={Math.abs(faltaConferir!.liquido)} />
-                ) : (
-                  <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
-                    background:'rgba(15,23,42,.3)',color:'#fff'}}>falta conferir {faltaConferir!.qtd}</span>
-                ))}
                 {diferenca === null && conferidoEm && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
                     background:'rgba(15,23,42,.3)',color:'#86efac'}}>

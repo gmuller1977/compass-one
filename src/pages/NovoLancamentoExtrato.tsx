@@ -10,9 +10,7 @@ import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import { ehAutomaticoCategoria, ehFixaDeCartao } from '../utils/categoriaIcone'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { valorFixaNoMes } from '../utils/valorFixa'
-import { alternarConferido } from '../utils/conferirFatura'
-import { faltaConferirNoExtrato } from '../utils/conferirExtrato'
-import { faltaVariavelDoMes, saldoRealizadoConta, ultimoDiaRealizado, type Deps as DepsSaldo } from '../utils/saldoConta'
+import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
 import { M, FONTE_SITE } from '../components/mobile/estilo'
@@ -567,12 +565,6 @@ export default function NovoLancamentoExtrato() {
     setModalSaldo(null)
   }
 
-  // Bolinha de conferido no lançamento do banco (19/11/2026, decisão do
-  // Guilherme: "igual ao cartão"). Só marca; nenhum número muda.
-  function alternarConferidoLanc(id: string) {
-    updateMes(prev => alternarConferido(prev, id))
-  }
-
   function ehAutomatico(f: CatFixa) {
     return f.ehFaturaCartao === true || ehAutomaticoCategoria(categorias, f.categoria)
   }
@@ -882,19 +874,9 @@ export default function NovoLancamentoExtrato() {
             else mem.fixasPrevistas += v
           }
         })
-      // Lançamento com data depois de hoje é previsto: só entra no saldo de
-      // hoje quando o dia chega (19/11/2026, regra do Guilherme).
-      const futuro = ehCorrente && d > diaHoje
       ;(lancs[d] ?? []).forEach(l => {
-        if (l.tipo === 'entrada') {
-          saldo += l.valor; entradas += l.valor
-          if (futuro) mem.entradasLancadas = (mem.entradasLancadas ?? 0) + l.valor
-          else mem.entradasReais += l.valor
-        } else {
-          saldo -= l.valor; saidas += l.valor
-          if (futuro) mem.saidasLancadas = (mem.saidasLancadas ?? 0) + l.valor
-          else mem.saidasReais += l.valor
-        }
+        if (l.tipo === 'entrada') { saldo += l.valor; entradas += l.valor; mem.entradasReais += l.valor }
+        else { saldo -= l.valor; saidas += l.valor; mem.saidasReais += l.valor }
       })
       res[d] = saldo
     }
@@ -938,11 +920,7 @@ export default function NovoLancamentoExtrato() {
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehFixaDeCartao(categorias, f))
     let te=0, ts=0
-    // "Saldo no Compass" é até HOJE: lançamento de dia futuro entra quando o
-    // dia chega (19/11/2026, regra do Guilherme). Fixa de dia futuro não se
-    // marca, então o mesmo corte vale para as duas.
-    const ate = ultimoDiaRealizado(ano, mes)
-    for (let d=1; d<=Math.min(totalDias, ate); d++) {
+    for (let d=1; d<=totalDias; d++) {
       fc.filter(f => diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
         .filter(f => { return dadosMesAtual?.fixasConsolidadas?.[f.id] === true })
         .forEach(f=>{ const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor; f.tipo==='entrada'?te+=v:ts+=v })
@@ -953,10 +931,6 @@ export default function NovoLancamentoExtrato() {
   }, [mesFuturo, cascata, dados, key, contaId, totalDias, mes, ano, categorias])
 
   const saldoMes   = saldoBaseExibido + totalEntradas - totalSaidas
-  // Saldo no banco pelas bolinhas: o do Compass menos o que não foi conferido
-  // (utils/conferirExtrato). Mês futuro não confere; a carteira também não.
-  const faltaConferir = mesFuturo || isDinheiro ? null
-    : faltaConferirNoExtrato(dados[key], Math.min(totalDias, ultimoDiaRealizado(ano, mes)))
   const diferenca  = saldoExtNum !== null ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
   // Conferido na Início ("Confere") grava só a data e limpa o informado:
@@ -1290,7 +1264,6 @@ export default function NovoLancamentoExtrato() {
         diferenca={diferenca}
         conciliado={conciliado}
         conferidoEm={conferidoEm}
-        faltaConferir={faltaConferir}
         chaveAtual={key}
       />
 
@@ -1360,7 +1333,6 @@ export default function NovoLancamentoExtrato() {
             ano={ano}
             saldoBancoNum={saldoExtNum}
             conferidoEm={conferidoEm}
-            faltaConferir={faltaConferir}
             setModalSaldo={setModalSaldo}
             setModalSaldoValor={setModalSaldoValor}
             contasExtrato={contasExtrato}
@@ -1432,7 +1404,6 @@ export default function NovoLancamentoExtrato() {
               setEditandoId={setEditandoId}
               setEditandoFixaId={setEditandoFixaId}
               ehAutomatico={ehAutomatico}
-              alternarConferido={isDinheiro ? undefined : alternarConferidoLanc}
               alternarNaoOcorre={alternarNaoOcorre}
             />
 
