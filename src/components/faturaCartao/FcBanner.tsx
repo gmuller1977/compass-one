@@ -1,3 +1,4 @@
+import { VALOR_OCULTO, valoresOcultos } from '../../utils/valoresOcultos'
 import type { Conta } from '../../context/AppContext'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
 import { fmt, NOMES_MESES, type DadosMes } from './FcShared'
@@ -68,7 +69,7 @@ export default function FcBanner({
             <KpiCard icon={informada ? 'ti-building-bank' : 'ti-circle-check'}
               label={`Fatura no ${contasCartao.find(c => c.id === contaId)?.banco ?? 'banco'}`}
               destaque={informada ? 'Manual' : 'Conferido'}
-              value={informada ? mesDados.faturaAtual! : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
+              value={informada ? (valoresOcultos() ? VALOR_OCULTO : mesDados.faturaAtual!) : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}
               valueColor="#fff" vidro style={{ flex: 1 }}>
               {/* Bem simples (06/11/2026, Guilherme): "Valor manual" ou

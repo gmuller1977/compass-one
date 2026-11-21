@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import { EVENTO_OCULTAR, definirOculto, valoresOcultos } from '../../utils/valoresOcultos'
 
 /** Medidas do celular — ver o comentário em ./ui.tsx. */
 export const M = {
@@ -16,29 +17,22 @@ export const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency',
 // Toda abertura do app começa com os valores ESCONDIDOS (19/11/2026,
 // Guilherme: "tem que aparecer o saldo oculto; para visualizar, clicar no
 // olhinho"). Tocar no olho mostra até o app ser fechado ou a tela travar
-// (`ocultarValores`, chamado ao destravar). Fica na memória, não no
+// (`ocultarValores`, chamado ao destravar). Vale para as outras telas
+// (`utils/valoresOcultos.ts`). Fica na memória, não no
 // localStorage: guardar a escolha faria o app abrir com o saldo à vista.
-const EVENTO = 'compass-ocultar'
-let ocultoAgora = true
-
 /** Esconde de novo os valores (tela destravada, app reaberto). */
 export function ocultarValores() {
-  ocultoAgora = true
-  window.dispatchEvent(new Event(EVENTO))
+  definirOculto(true)
 }
 
 export function useValoresOcultos(): [boolean, () => void] {
-  const [oculto, setOculto] = useState(ocultoAgora)
+  const [oculto, setOculto] = useState(valoresOcultos())
   useEffect(() => {
-    const h = () => setOculto(ocultoAgora)
-    window.addEventListener(EVENTO, h)
-    return () => window.removeEventListener(EVENTO, h)
+    const h = () => setOculto(valoresOcultos())
+    window.addEventListener(EVENTO_OCULTAR, h)
+    return () => window.removeEventListener(EVENTO_OCULTAR, h)
   }, [])
-  const alternar = () => {
-    ocultoAgora = !ocultoAgora
-    setOculto(ocultoAgora)
-    window.dispatchEvent(new Event(EVENTO))
-  }
+  const alternar = () => definirOculto(!valoresOcultos())
   return [oculto, alternar]
 }
 

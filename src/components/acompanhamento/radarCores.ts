@@ -1,3 +1,4 @@
+import { moedaNaTela } from '../../utils/valoresOcultos'
 /**
  * As cores das barras e números do Radar, e a regra que escolhe entre elas.
  * Um lugar só para os cartões do topo, o cabeçalho de grupo e a linha de
@@ -153,7 +154,7 @@ export const SEM_MOVIMENTO = ['Sem planejamento']
 export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   opts: { fixa?: boolean; fixaPaga?: boolean; naoOcorre?: boolean } = {}):
   { principal: string; contexto: string } {
-  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const fmt = (v: number) => moedaNaTela(v)
   // Fixa marcada "Não vai ocorrer neste mês" em Lançamentos (05/11/2026,
   // pedido do Guilherme): o plano fica à vista e a linha diz que não gastou.
   if (opts.naoOcorre && prev > 0.005 && Math.abs(real) <= 0.005)
@@ -239,7 +240,7 @@ export function comGastoDaFixa<T extends { prev: number; real: number; fixa: boo
 export function destaqueDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
 ): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number } {
-  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const fmt = (v: number) => moedaNaTela(v)
   // A fixa ainda não paga já conta como gasta, pelo plano (21/11/2026).
   const pagaAntes = linhas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
   const tinhaPlano = linhas.some(l => !semPlano(l.prev))

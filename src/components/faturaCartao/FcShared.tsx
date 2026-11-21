@@ -1,3 +1,4 @@
+import { moedaNaTela } from '../../utils/valoresOcultos'
 import React from 'react'
 
 // ── Paleta de cores ──────────────────────────────────────────────────
@@ -106,7 +107,9 @@ export function mesKey(conta: string, ano: number, mes: number) {
   return `${conta}-${ano}-${String(mes+1).padStart(2,'0')}`
 }
 
-export function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+/** Valor para a tela: "R$ ••••" com o olho da Início fechado (`valoresOcultos.ts`). */
+export function fmt(v: number) { return moedaNaTela(v) }
+// Valor de verdade (campo de edição, soma do formulário): `fmt` de mobile/estilo.
 
 export { parseBRL, parseValor } from '../../utils/moeda'
 

@@ -1,3 +1,4 @@
+import { useValoresOcultos } from '../components/mobile/estilo'
 import { diaNoMes } from '../utils/diasDaFatura'
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
@@ -42,6 +43,8 @@ type Props = {
 }
 
 export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStatusChange, mes, setMes, ano, setAno }: Props) {
+  // O olho da Início vale aqui: redesenha quando ele muda (valoresOcultos.ts).
+  useValoresOcultos()
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()

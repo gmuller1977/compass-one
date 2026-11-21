@@ -1,4 +1,5 @@
 // ── Paleta de cores ──────────────────────────────────────────────────
+import { moedaNaTela } from '../../utils/valoresOcultos'
 import { COR } from '../../utils/cores'
 export { COR }
 
@@ -30,7 +31,9 @@ export type CatSel = {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 export function mkCatReal(): CatReal { return { total:0, totalBanc:0, totalCart:0, totalDinheiro:0, lancamentos:[] } }
-export function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+/** Valor para a tela: "R$ ••••" com o olho da Início fechado (`valoresOcultos.ts`). */
+export function fmt(v: number) { return moedaNaTela(v) }
+// Valor de verdade (campo de edição, soma do formulário): `fmt` de mobile/estilo.
 export function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
 export function barCor(perc: number, isEntrada?: boolean) {
   if (isEntrada) return perc >= 1 ? COR.verde : (perc >= 0.8 ? COR.amarelo : COR.textoSuave)

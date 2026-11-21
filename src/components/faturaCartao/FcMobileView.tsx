@@ -1,3 +1,5 @@
+import { fmt as fmtSempre } from '../mobile/estilo'
+import { VALOR_OCULTO, valoresOcultos } from '../../utils/valoresOcultos'
 import { mascaraCentavos, paraMascara } from '../../utils/moeda'
 import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
@@ -246,7 +248,7 @@ export default function FcMobileView({
               <span style={PILULA_LADO}>✎ Informar fatura</span>
             </> : <>
               <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'}</span>
-              <span style={VALOR_LADO}>{mesDados.faturaAtual}</span>
+              <span style={VALOR_LADO}>{valoresOcultos() ? VALOR_OCULTO : mesDados.faturaAtual}</span>
               <span style={SELO_LADO}>Manual</span>
               <span style={LINHA_LADO}>
                 {lado.banco.estado === 'comparado' && lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
@@ -594,7 +596,7 @@ export default function FcMobileView({
                   display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                   <span style={{fontSize:13,color:COR.textoSuave}}>Total da compra</span>
                   <span style={{fontSize:14,fontWeight:800,color:'#16a34a'}}>
-                    {fmt(parseBRL(fValor) * Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
+                    {fmtSempre(parseBRL(fValor) * Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
                   </span>
                 </div>
               )}

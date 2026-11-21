@@ -1,8 +1,9 @@
+import { fmt as fmtSempre } from '../mobile/estilo'
 import React from 'react'
 import { segurarTabSeVazio } from '../../utils/campoObrigatorio'
 import type { Categoria } from '../../context/AppContext'
 import {
-  COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana, dataCompraPadrao, placeholderDataCompra,
+  COR, NOMES_MESES, parseBRL, parseDateFatura, diaSemana, dataCompraPadrao, placeholderDataCompra,
   realcarFoco, removerRealce,
   type TipoLanc, type DadosMes,
   parseValor,
@@ -354,7 +355,7 @@ export default function FcDesktopPanel({
           </div>
           {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
             <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
-              Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmt(parseBRL(fValor))})
+              Total: {fmtSempre(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmtSempre(parseBRL(fValor))})
             </div>
           )}
         </div>

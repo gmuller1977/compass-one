@@ -1,6 +1,7 @@
+import { VALOR_OCULTO, valoresOcultos } from '../../utils/valoresOcultos'
 import type { ParteDoGrupo } from './radarCores'
 
-const fmtK = (v: number) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR')
+const fmtK = (v: number) => valoresOcultos() ? VALOR_OCULTO : (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR')
 
 /**
  * Fixas e variáveis do grupo numa tabelinha com o nome de cada número:

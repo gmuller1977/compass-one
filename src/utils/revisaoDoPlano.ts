@@ -1,3 +1,4 @@
+import { VALOR_OCULTO, valoresOcultos } from './valoresOcultos'
 import type { Categoria, PlanoAnoData } from '../context/AppContext'
 import type { Deps } from './saldoConta'
 import type { LancadoAcima } from './lancadoAcimaDoPlano'
@@ -144,7 +145,7 @@ export function gravarRevisao(
 }
 
 const MESES_LONGOS = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
-const reais = (v: number) => `R$ ${Math.round(Math.abs(v)).toLocaleString('pt-BR')}`
+const reais = (v: number) => valoresOcultos() ? VALOR_OCULTO : `R$ ${Math.round(Math.abs(v)).toLocaleString('pt-BR')}`
 
 /**
  * A frase do aviso — a mesma na Início, no Radar e no Planejamento. Pedido do

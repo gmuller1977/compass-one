@@ -1,3 +1,4 @@
+import { VALOR_OCULTO, valoresOcultos } from '../../utils/valoresOcultos'
 import React, { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
@@ -95,7 +96,7 @@ export default function AcMobileView({
   // A barra julga só as linhas com plano; sem plano fica vazia (C2).
   const percE     = Math.min(percJulgadoE ?? 0, 1)
   const percS     = Math.min(percJulgadoS ?? 0, 1)
-  const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
+  const fmtK = (v: number) => valoresOcultos() ? VALOR_OCULTO : 'R$ ' + Math.round(v).toLocaleString('pt-BR')
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
 
 

@@ -1,3 +1,4 @@
+import { useValoresOcultos } from '../components/mobile/estilo'
 import { useState, useMemo, useEffect, Fragment } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -35,6 +36,8 @@ function useIsMobile() {
 }
 
 export default function RadarFinanceiro() {
+  // O olho da Início vale aqui: redesenha quando ele muda (valoresOcultos.ts).
+  useValoresOcultos()
   const hoje    = new Date()
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()

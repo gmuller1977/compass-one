@@ -1,3 +1,4 @@
+import { moedaNaTela } from '../../utils/valoresOcultos'
 import React from 'react'
 
 // ── Paleta de cores ──────────────────────────────────────────────────
@@ -172,7 +173,9 @@ export function removerRealce(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.border = '1.5px solid #bae6fd'
   e.currentTarget.style.boxShadow = 'none'
 }
-export function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+/** Valor para a tela: "R$ ••••" com o olho da Início fechado (`valoresOcultos.ts`). */
+export function fmt(v: number) { return moedaNaTela(v) }
+// Valor de verdade (campo de edição, soma do formulário): `fmt` de mobile/estilo.
 export { parseBRL, parseValor } from '../../utils/moeda'
 
 /** Realce do campo de valor quando o texto digitado nao e um numero. */

@@ -1,6 +1,7 @@
+import { VALOR_OCULTO, valoresOcultos } from '../../utils/valoresOcultos'
 import type { BalancoDoPlano } from '../../utils/balancoDoPlano'
 
-const fmt = (v: number) => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const fmt = (v: number) => valoresOcultos() ? VALOR_OCULTO : 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const ZERO = 0.005
 
 /**

@@ -1,3 +1,5 @@
+import { fmt as fmtSempre } from '../components/mobile/estilo'
+import { useValoresOcultos } from '../components/mobile/estilo'
 import { saldoInformado, saldoInformadoDaCarteira } from '../utils/saldoInformado'
 import { CARTEIRA, pedeConferencia, ultimaConferencia } from '../utils/conferirSaldos'
 import { parseValor } from '../utils/moeda'
@@ -39,6 +41,8 @@ import { fixaNaoOcorre, marcarNaoOcorre, desfazerNaoOcorre } from '../utils/fixa
 import { comValorDigitado } from '../utils/valorDigitadoFixa'
 
 export default function NovoLancamentoExtrato() {
+  // O olho da Início vale aqui: redesenha quando ele muda (valoresOcultos.ts).
+  useValoresOcultos()
   const { toast } = useToast()
   const navigate  = useNavigate()
   const location  = useLocation()
@@ -270,7 +274,7 @@ export default function NovoLancamentoExtrato() {
   // Saldo calculado formatado por conta (para sugerir no modal — sem override manual)
   const saldoSugerido = useMemo(() => {
     const m: Record<string, string> = {}
-    saldoAtualPorConta.forEach(({ conta, calculado }) => { m[conta.id] = fmt(calculado) })
+    saldoAtualPorConta.forEach(({ conta, calculado }) => { m[conta.id] = fmtSempre(calculado) })
     return m
   }, [saldoAtualPorConta])
 
