@@ -334,12 +334,8 @@ export default function AcMobileView({
             background: aberto ? 'var(--cx-azul)' : '#fff',
             border:'none', cursor:'pointer', fontFamily:'inherit' }}>
           {/* Opção A (24/10/2026, escolha do Guilherme), a mesma do computador:
-              o % num anel à esquerda, no lugar da barra. */}
+              o % num anel, no lugar da barra; à direita desde 21/11/2026 (pedido dele). */}
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
-              pago={dg.principal.startsWith('✓')}
-              cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
-              corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />
             <div style={{ flex:1, minWidth:0, display:'grid', gap:2 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
                 <IconeCat icone={grupoIcone} cor={aberto ? '#ffffff' : COR.azul} />
@@ -352,6 +348,10 @@ export default function AcMobileView({
               </span>
               {SEM_MOVIMENTO.includes(dg.principal) && <span style={{ fontSize:13, color:gRotulo }}>{dg.contexto}</span>}
             </div>
+            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
+              pago={dg.principal.startsWith('✓')}
+              cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
+              corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />
           </div>
           {!SEM_MOVIMENTO.includes(dg.principal) && (
             <div style={{ marginTop:12 }}>

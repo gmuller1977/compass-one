@@ -109,15 +109,12 @@ export default function EvolucaoGrupo({
         onClick={alternar}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
         style={{ cursor: 'pointer', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, color: texto }}>
-        {/* Opção A (24/10/2026, escolha do Guilherme): o % num ANEL à esquerda,
+        {/* Opção A (24/10/2026, escolha do Guilherme): o % num ANEL (à direita desde 21/11/2026, pedido dele: o nome do grupo à esquerda),
             no lugar da barra, e ao lado o nome, o "resta/passou" e o "gastou X
             de Y". O anel ocupa o lugar do ícone. Fechado, o anel tem
             a cor do número no trilho claro; aberto (azul), trilho branco e azul
             neon, como os gráficos em card azul. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
-            cor={aberto ? '#0891b2' : atencao ? '#b91c1c' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
-            corTexto={aberto ? '#fff' : corNumero} />
           <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <span style={{ fontSize: 16, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
@@ -137,6 +134,9 @@ export default function EvolucaoGrupo({
             </div>
             {SEM_MOVIMENTO.includes(destaque.principal) && <div style={{ fontSize: 13, color: rotulo }}>{destaque.contexto}</div>}
           </div>
+          <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
+            cor={aberto ? '#0891b2' : atencao ? '#b91c1c' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
+            corTexto={aberto ? '#fff' : corNumero} />
         </div>
         {!SEM_MOVIMENTO.includes(destaque.principal) && (
           <PartesDoGrupo partes={partesDoGrupo(linhas, isEntrada)} aberto={aberto} isEntrada={isEntrada} />
