@@ -4,7 +4,8 @@ const fmtK = (v: number) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(
 
 /**
  * Fixas e variáveis do grupo numa tabelinha com o nome de cada número:
- * Planejado · Gastou (Recebeu) · Disponível (Falta). Computador e celular usam
+ * Planejado · Gastou (Recebeu). O disponível é o número grande do card;
+ * uma coluna Disponível na tabela o repetia e saiu no mesmo dia (pedido dele). Computador e celular usam
  * este mesmo componente.
  *
  * 21/11/2026, Guilherme: os cards "têm a informação mas precisa pensar para
@@ -22,10 +23,10 @@ export default function PartesDoGrupo({ partes, aberto, isEntrada = false }: {
   const rotulo = aberto ? 'rgba(255,255,255,0.75)' : '#475569'
   const numero = aberto ? '#ffffff' : '#0f172a'
   const linha  = aberto ? 'rgba(255,255,255,0.18)' : '#e2e8f0'
-  const cols = 'minmax(0,0.95fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr)'
-  const cab = { fontSize: 'min(12px, calc(100cqi / 27))', fontWeight: 700, color: rotulo, letterSpacing: '.02em',
+  const cols = 'minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)'
+  const cab = { fontSize: 'min(12px, calc(100cqi / 22))', fontWeight: 700, color: rotulo, letterSpacing: '.02em',
     textTransform: 'uppercase' as const, textAlign: 'right' as const, whiteSpace: 'nowrap' as const }
-  const num = { fontSize: 'min(16px, calc(100cqi / 21))', fontWeight: 700, color: numero, textAlign: 'right' as const,
+  const num = { fontSize: 'min(16px, calc(100cqi / 17))', fontWeight: 700, color: numero, textAlign: 'right' as const,
     whiteSpace: 'nowrap' as const, fontVariantNumeric: 'tabular-nums' as const }
   return (
     <div style={{ containerType: 'inline-size', borderTop: `1px solid ${linha}`, paddingTop: 10 }}>
@@ -33,21 +34,13 @@ export default function PartesDoGrupo({ partes, aberto, isEntrada = false }: {
         <span />
         <span style={cab}>Planejado</span>
         <span style={cab}>{isEntrada ? 'Recebeu' : 'Gastou'}</span>
-        <span style={cab}>{isEntrada ? 'Falta' : 'Disponível'}</span>
         {partes.map(p => {
           const corEstado = aberto ? numero : p.estado === 'passou' ? '#b91c1c' : p.estado === 'pago' ? '#15803d' : numero
           const real = p.estado === 'neutro' ? p.fora : p.real
-          const resto = p.prev - p.real
-          const ultimo = p.estado === 'neutro' ? 'sem plano'
-            : p.estado === 'pago' ? '✓ pago'
-            : p.estado === 'passou' ? `passou ${fmtK(p.real - p.prev)}`
-            : isEntrada ? (resto > 0.5 ? fmtK(resto) : '✓') : fmtK(Math.max(0, resto))
           return [
-            <span key={p.rotulo + 'r'} style={{ fontSize: 'min(15px, calc(100cqi / 21))', fontWeight: 700, color: numero, whiteSpace: 'nowrap' }}>{p.rotulo}</span>,
-            <span key={p.rotulo + 'p'} style={{ ...num, color: aberto ? numero : '#334155', fontWeight: 600 }}>{p.estado === 'neutro' ? '—' : fmtK(p.prev)}</span>,
-            <span key={p.rotulo + 'g'} style={num}>{fmtK(real)}</span>,
-            <span key={p.rotulo + 'd'} style={{ ...num, color: corEstado, fontWeight: 800,
-              fontSize: p.estado === 'passou' ? 'min(14px, calc(100cqi / 24))' : num.fontSize }}>{ultimo}</span>,
+            <span key={p.rotulo + 'r'} style={{ fontSize: 'min(15px, calc(100cqi / 18))', fontWeight: 700, color: numero, whiteSpace: 'nowrap' }}>{p.rotulo}</span>,
+            <span key={p.rotulo + 'p'} style={{ ...num, color: aberto ? numero : '#334155', fontWeight: 600 }}>{p.estado === 'neutro' ? 'sem plano' : fmtK(p.prev)}</span>,
+            <span key={p.rotulo + 'g'} style={{ ...num, color: corEstado, fontWeight: 800 }}>{p.estado === 'pago' ? '✓ ' : ''}{fmtK(real)}</span>,
           ]
         })}
       </div>
