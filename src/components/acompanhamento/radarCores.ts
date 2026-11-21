@@ -219,23 +219,42 @@ export function ehFixaPaga(prev: number, real: number, isEntrada: boolean, fixa:
  * ("· R$ Z sem plano") e não pesa no julgamento (C2, 19/10/2026). Os totais
  * devolvidos são os da barra.
  */
+/**
+ * A régua do "Gastou" nos cards, no Total e na frase do topo (21/11/2026,
+ * decisão do Guilherme: "a fixa conta como gasta desde o dia 1"). Despesa
+ * FIXA com plano e ainda não paga conta pelo valor planejado; paga, pelo
+ * real; variável, pelo real. Fixa marcada "não vai ocorrer" sai das duas
+ * colunas (plano e gasto zero). Assim Planejado − Gastou = disponível ou
+ * passou, uma conta que se refaz com os números da tela.
+ */
+export function comGastoDaFixa<T extends { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }>(
+  l: T, isEntrada: boolean,
+): T {
+  if (isEntrada || !l.fixa || semPlano(l.prev)) return l
+  if (foraDoMes(l)) return { ...l, prev: 0, real: 0 }
+  if (Math.abs(l.real) <= 0.005) return { ...l, real: l.prev }
+  return l
+}
+
 export function destaqueDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
 ): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number } {
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  // A fixa ainda não paga já conta como gasta, pelo plano (21/11/2026).
+  const pagaAntes = linhas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
+  const tinhaPlano = linhas.some(l => !semPlano(l.prev))
+  const soResolvidas = tinhaPlano && linhas.every((l, i) => semPlano(l.prev) || pagaAntes[i])
+  linhas = linhas.map(l => comGastoDaFixa(l, isEntrada))
   const t = totaisJulgados(linhas)
   // Grupo sem nenhuma linha com plano: só o realizado, como a linha.
-  if (semPlano(t.prev)) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t }
+  if (semPlano(t.prev) && !soResolvidas) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t }
   // Julga só as linhas com plano; o gasto sem plano aparece ao lado, sem peso.
-  const planejadas = linhas.filter(l => !semPlano(l.prev))
   const base = destaqueRadar(t.prev, t.real, isEntrada).contexto
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
   // A fixa que não ocorre neste mês está resolvida como a paga: não fica "a
   // pagar" nem vira "resta" (entra pelo realizado, zero).
-  const pagas = planejadas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
-  if (pagas.every(Boolean)) return { principal: '✓ pago', contexto, julgado: true, ...t }
-  const prevEfetivo = planejadas.reduce((s, l, i) => s + (pagas[i] ? l.real : l.prev), 0)
-  return { principal: destaqueRadar(prevEfetivo, t.real, isEntrada).principal, contexto, julgado: true, ...t }
+  if (soResolvidas) return { principal: '✓ pago', contexto, julgado: true, ...t }
+  return { principal: destaqueRadar(t.prev, t.real, isEntrada).principal, contexto, julgado: true, ...t }
 }
 
 /**
@@ -254,12 +273,14 @@ export function partesDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
 ): ParteDoGrupo[] {
   return (['Fixas', 'Variáveis'] as const).flatMap(rotulo => {
-    const doLado = linhas.filter(l => l.fixa === (rotulo === 'Fixas'))
+    const doLadoCru = linhas.filter(l => l.fixa === (rotulo === 'Fixas'))
+    const doLado = doLadoCru.map(l => comGastoDaFixa(l, isEntrada))
     if (doLado.length === 0) return []
     const t = totaisJulgados(doLado)
-    const planejadas = doLado.filter(l => !semPlano(l.prev))
-    const estado: ParteDoGrupo['estado'] = semPlano(t.prev) ? 'neutro'
-      : !isEntrada && rotulo === 'Fixas' && planejadas.every(l => ehFixaPaga(l.prev, l.real, isEntrada, true) || foraDoMes(l)) ? 'pago'
+    const planejadas = doLadoCru.filter(l => !semPlano(l.prev))
+    const estado: ParteDoGrupo['estado'] =
+      !isEntrada && rotulo === 'Fixas' && planejadas.length > 0 && planejadas.every(l => ehFixaPaga(l.prev, l.real, isEntrada, true) || foraDoMes(l)) ? 'pago'
+      : semPlano(t.prev) ? 'neutro'
       : !isEntrada && Math.round(t.real / t.prev * 100) / 100 > 1 ? 'passou'
       : 'ok'
     return [{ rotulo, ...t, estado }]

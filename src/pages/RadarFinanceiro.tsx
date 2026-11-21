@@ -490,7 +490,7 @@ export default function RadarFinanceiro() {
             </div>
             {balanco && (dadosAno.saidas ?? []).length > 0 && (
               <div style={{ marginTop: 16, maxWidth: 640 }}>
-                <TotalDasDespesas balanco={balanco} mesFechado={mesFechado} />
+                <TotalDasDespesas balanco={balanco} />
               </div>
             )}
           </AjustePlanoContexto.Provider>

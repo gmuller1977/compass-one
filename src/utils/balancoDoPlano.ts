@@ -1,6 +1,6 @@
 import type { Categoria } from '../context/AppContext'
 import { cadastroDaLinha, type LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
-import { ehFixaPaga, semPlano } from '../components/acompanhamento/radarCores'
+import { semPlano } from '../components/acompanhamento/radarCores'
 
 /**
  * O balanço do plano de despesas do mês, por GRUPO — o quadro "Plano do mês"
@@ -12,10 +12,11 @@ import { ehFixaPaga, semPlano } from '../components/acompanhamento/radarCores'
  * grupo é julgado como o cabeçalho dele (`destaqueDoGrupo`):
  *
  * - só linhas COM plano (sem plano não há julgamento, C2 de 19/10/2026);
- * - fixa paga até o previsto entra pelo valor pago: os centavos que sobram
- *   dela não são economia;
- * - fixa ainda não paga não "sobra", VENCE: ela não entra no que falta.
- *   Paga acima do previsto, o excesso entra como qualquer estouro.
+ * - fixa ainda não paga conta como GASTA desde o dia 1, pelo valor
+ *   planejado (21/11/2026, decisão do Guilherme: a frase do Radar dizia "R$
+ *   388 a mais" e o Total "disponível R$ 456", e planejado − gastou tem de
+ *   dar o número da frase); paga, conta pelo valor pago. Antes a fixa paga
+ *   abaixo do plano não sobrava; hoje a diferença aparece, como na conta.
  *
  * Um grupo vai para um lado só, pelo saldo dele: o estouro de uma categoria
  * compensado por outra do MESMO grupo não aparece, como no cabeçalho do Radar.
@@ -31,18 +32,11 @@ export type BalancoDoPlano = {
   falta: number
   /** falta − passou: positivo, economizando; negativo, gastou a mais. */
   diferenca: number
-  /** O que as fixas com plano e ainda não pagas vão levar (prev − real). Fica
-   *  FORA do "falta": explica por que planejado − gasto não dá a diferença. */
-  fixasAVencer: number
-  /** Os mesmos números por tipo, para o Total das despesas do Radar (21/11/2026,
-   *  Guilherme: a conta tem de se refazer com o que está na tela). Só linhas com
-   *  plano. Vale: diferenca = (varPrev − varReal) − fixasPassou. */
-  varPrev: number
-  varReal: number
-  fixaPrev: number
-  fixaReal: number
-  /** Quanto as fixas pagas passaram do plano. */
-  fixasPassou: number
+  /** Totais das linhas com plano, na régua da tela (21/11/2026, Guilherme: "a
+   *  fixa conta como gasta desde o dia 1"): planejado e gastou, com a fixa
+   *  ainda não paga pelo valor planejado. diferenca = prev − gasto. */
+  prev: number
+  gasto: number
   /** Gasto em linhas sem plano (fora do julgamento). */
   semPlano: number
 }
@@ -51,16 +45,13 @@ const MEIO_CENTAVO = 0.005
 
 export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): BalancoDoPlano | null {
   const porGrupo = new Map<string, { saldo: number; primeira: string }>()
-  let fixasAVencer = 0, varPrev = 0, varReal = 0, fixaPrev = 0, fixaReal = 0, fixasPassou = 0, foraDoPlano = 0
+  let prevTotal = 0, gastoTotal = 0, foraDoPlano = 0
   for (const l of linhas) {
     if (semPlano(l.prev)) { foraDoPlano += l.real; continue }
     const fixa = !!cadastroDaLinha(l, categorias)?.fixa
-    if (fixa) { fixaPrev += l.prev; fixaReal += l.real } else { varPrev += l.prev; varReal += l.real }
-    if (fixa && !ehFixaPaga(l.prev, l.real, false, true)) fixasPassou += Math.max(0, l.real - l.prev)
-    const saldo = !fixa ? l.real - l.prev
-      : ehFixaPaga(l.prev, l.real, false, true) ? 0
-      : Math.max(0, l.real - l.prev)
-    if (fixa && !ehFixaPaga(l.prev, l.real, false, true)) fixasAVencer += Math.max(0, l.prev - l.real)
+    const gasto = fixa && Math.abs(l.real) <= MEIO_CENTAVO ? l.prev : l.real
+    prevTotal += l.prev; gastoTotal += gasto
+    const saldo = gasto - l.prev
     const g = porGrupo.get(l.grupo) ?? { saldo: 0, primeira: l.nome }
     g.saldo += saldo
     porGrupo.set(l.grupo, g)
@@ -77,6 +68,6 @@ export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): B
   abaixo.sort((a, b) => b.valor - a.valor)
   const passou = passaram.reduce((s, g) => s + g.valor, 0)
   const falta = abaixo.reduce((s, g) => s + g.valor, 0)
-  return { passaram, abaixo, passou, falta, diferenca: falta - passou, fixasAVencer,
-    varPrev, varReal, fixaPrev, fixaReal, fixasPassou, semPlano: foraDoPlano }
+  return { passaram, abaixo, passou, falta, diferenca: falta - passou,
+    prev: prevTotal, gasto: gastoTotal, semPlano: foraDoPlano }
 }

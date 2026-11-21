@@ -97,7 +97,6 @@ export default function AcMobileView({
   const percS     = Math.min(percJulgadoS ?? 0, 1)
   const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
-  const mesFechado = ano < new Date().getFullYear() || (ano === new Date().getFullYear() && mes < new Date().getMonth())
 
 
   const renderMobileCatRow = (
@@ -594,7 +593,7 @@ export default function AcMobileView({
                 </div>
               </div>
               {renderMobileSecao('saida', gruposSaida, dadosAno.saidas ?? [], saidasMap)}
-              {balanco && <TotalDasDespesas balanco={balanco} mesFechado={mesFechado} />}
+              {balanco && <TotalDasDespesas balanco={balanco} />}
             </div>
           )}
 
