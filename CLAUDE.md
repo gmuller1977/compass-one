@@ -3297,6 +3297,18 @@ de cada abertura do app (e o destravar da `TelaBloqueio`) vai para
 ao destravar (`ocultarValores`); a escolha fica só na memória, não mais no
 localStorage. No computador a "/" segue na Início, com o mesmo olho fechado.
 
+**O olho da Início vale em Lançamentos e no Radar** (21/11/2026, Guilherme:
+"todas as telas que têm saldo, quando o início estiver oculto, devem ser
+ocultadas"). O estado mora em [`valoresOcultos.ts`](src/utils/valoresOcultos.ts),
+sem React; os `fmt` de `NleShared`, `FcShared`, `AcShared`, os de
+`radarCores`, `TotalDasDespesas`, `PartesDoGrupo`, `AcMobileView` e o aviso
+de `revisaoDoPlano` devolvem "R$ ••••" com o olho fechado, e as páginas
+assinam `useValoresOcultos` para redesenhar. Campos de edição e somas do
+formulário usam o valor de verdade (`fmt` de `mobile/estilo`). Percentuais
+dos anéis ficam à vista. Essas telas não têm olho próprio: abre-se na Início.
+Fora do navegador (provas) nada se esconde. Prints em
+`analises/ocultar-valores/`.
+
 **Lembrete diário fica para depois**: notificação com o app fechado exige
 push (chaves VAPID + um envio agendado no servidor).
 
