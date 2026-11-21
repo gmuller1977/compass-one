@@ -31,18 +31,23 @@ export type BalancoDoPlano = {
   falta: number
   /** falta − passou: positivo, economizando; negativo, gastou a mais. */
   diferenca: number
+  /** O que as fixas com plano e ainda não pagas vão levar (prev − real). Fica
+   *  FORA do "falta": explica por que planejado − gasto não dá a diferença. */
+  fixasAVencer: number
 }
 
 const MEIO_CENTAVO = 0.005
 
 export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): BalancoDoPlano | null {
   const porGrupo = new Map<string, { saldo: number; primeira: string }>()
+  let fixasAVencer = 0
   for (const l of linhas) {
     if (semPlano(l.prev)) continue
     const fixa = !!cadastroDaLinha(l, categorias)?.fixa
     const saldo = !fixa ? l.real - l.prev
       : ehFixaPaga(l.prev, l.real, false, true) ? 0
       : Math.max(0, l.real - l.prev)
+    if (fixa && !ehFixaPaga(l.prev, l.real, false, true)) fixasAVencer += Math.max(0, l.prev - l.real)
     const g = porGrupo.get(l.grupo) ?? { saldo: 0, primeira: l.nome }
     g.saldo += saldo
     porGrupo.set(l.grupo, g)
@@ -59,5 +64,5 @@ export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): B
   abaixo.sort((a, b) => b.valor - a.valor)
   const passou = passaram.reduce((s, g) => s + g.valor, 0)
   const falta = abaixo.reduce((s, g) => s + g.valor, 0)
-  return { passaram, abaixo, passou, falta, diferenca: falta - passou }
+  return { passaram, abaixo, passou, falta, diferenca: falta - passou, fixasAVencer }
 }

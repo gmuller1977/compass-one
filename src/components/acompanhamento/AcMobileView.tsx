@@ -19,6 +19,7 @@ import { IconeCat } from '../IconeCat'
 import { OndasTopo, RotuloTopo } from '../mobile/ui'
 import { FONTE_SITE, FONTE_TITULO } from '../mobile/estilo'
 import { corDoIcone } from '../../utils/iconeDesenhado'
+import type { BalancoDoPlano } from '../../utils/balancoDoPlano'
 
 interface AcMobileViewProps {
   mes: number
@@ -53,6 +54,8 @@ interface AcMobileViewProps {
   saldoInicial: number
   /** A frase "você está economizando" do computador; null sem plano. */
   fraseEconomia: React.ReactNode
+  /** O balanço da frase de economia: o Total das despesas usa o MESMO número. */
+  balanco: BalancoDoPlano | null
   /** A frase embaixo do realizado, a mesma do computador. */
   subRealizado: string
   resumo: ResumoRadar | null
@@ -73,7 +76,7 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
-  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado, saldoInicial, fraseEconomia,
+  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado, saldoInicial, fraseEconomia, balanco,
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
@@ -595,7 +598,14 @@ export default function AcMobileView({
                 boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
                 <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
                 <div style={{ display:'flex', gap:10, minWidth:0 }}>
-                  {([['Planejado','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],['Disponível','#16a34a',fmt(totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
+                  {([['Planejado','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],
+                    // A terceira coluna é a da frase "No total, você está economizando /
+                    // gastando a mais" (balancoDoPlano), para as duas contarem a mesma
+                    // história (21/11/2026, relatado pelo Guilherme: frase "R$ 388 a
+                    // mais" e Disponível R$ 456 — a conta antiga contava as fixas a vencer).
+                    balanco && balanco.diferenca < -0.005
+                      ? ['Passou', '#b91c1c', fmt(-balanco.diferenca)]
+                      : ['Disponível','#15803d',fmt(balanco ? Math.max(0, balanco.diferenca) : totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
                     <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
                       <span style={{ fontSize:12, fontWeight:600, color:COR.textoSuave, marginBottom:1 }}>{lbl}</span>
                       <span style={{ fontSize:14, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{val}</span>
@@ -603,6 +613,11 @@ export default function AcMobileView({
                   ))}
                 </div>
               </div>
+              {balanco && balanco.fixasAVencer > 0.005 && (
+                <div style={{ fontSize:13, color:COR.textoSuave, padding:'0 6px', lineHeight:1.4 }}>
+                  Além disso, {fmt(balanco.fixasAVencer)} ficam para as contas fixas que ainda vão vencer.
+                </div>
+              )}
             </div>
           )}
 

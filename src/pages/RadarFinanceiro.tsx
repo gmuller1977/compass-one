@@ -278,6 +278,7 @@ export default function RadarFinanceiro() {
         subRealizado={subRealizado}
         saldoInicial={saldoInicial}
         fraseEconomia={fraseEconomia}
+        balanco={balanco}
         resumo={resumo}
         memoria={memoria}
         cenario={cenarioPrevisao}
