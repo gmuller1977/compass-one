@@ -47,6 +47,10 @@ interface AcMobileViewProps {
   /** Os mesmos números do Radar no computador — ver RadarFinanceiro. */
   saldoAtual: number
   saldoPrevisto: number
+  /** Com quanto o mês termina pelo plano (o do Planejamento); null sem plano. */
+  saldoPlanejado: number | null
+  /** A frase embaixo do realizado, a mesma do computador. */
+  subRealizado: string
   resumo: ResumoRadar | null
   /** A memória de cálculo do saldo final previsto — a mesma do rodapé do Radar. */
   memoria: React.ComponentProps<typeof MemoriaSaldo>['m']
@@ -65,7 +69,7 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
-  saldoAtual, saldoPrevisto,
+  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado,
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
@@ -426,15 +430,32 @@ export default function AcMobileView({
             fim"). Antes ficava numa caixa no pé da tela, e o mês fora do
             corrente mostrava "Saldo do mês" no topo. Cabe −R$ 999.999,99 em
             375px. */}
-        {ehMesAtual && (
-          <div style={{ marginTop:18 }}>
-            <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{`Quanto tenho hoje · dia ${diaHoje} de ${totalDias}`}</div>
-            <div style={{ fontFamily:FONTE_TITULO, fontSize:46, fontWeight:700, lineHeight:1.1, fontVariantNumeric:'tabular-nums',
-              color: '#fff' }}>{fmt(saldoReal)}</div>
-          </div>
-        )}
+        {/* Planejado × Realizado lado a lado, como no computador (21/11/2026,
+            pedido do Guilherme). Cabe −R$ 999.999,99 em 375px: a letra
+            encolhe pela largura da caixa (cqi). */}
+        <div style={{ ...CAIXA_TOPO, padding:0, marginTop:18, display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)' }}>
+          {([
+            ['ti-calendar-stats', 'Planejado', `Termina ${MESES_FULL[mes].toLowerCase()} com`, saldoPlanejado, 'se o plano se cumprir'],
+            ['ti-wallet', 'Realizado', ehMesAtual ? `Hoje · dia ${diaHoje} de ${totalDias}` : `Fim de ${MESES_FULL[mes].toLowerCase()}`, saldoReal, subRealizado],
+          ] as [string, string, string, number | null, string][]).map(([ic, rot, sub, v, pe], i) => (
+            <div key={rot} style={{ padding:'12px 12px', minWidth:0, containerType:'inline-size',
+              borderLeft: i ? '1px solid rgba(255,255,255,.16)' : 'none' }}>
+              <div style={{ fontSize:14, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', gap:5 }}>
+                <i className={`ti ${ic}`} aria-hidden style={{ fontSize:16 }} />{rot}
+              </div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{sub}</div>
+              {v === null ? (
+                <div style={{ fontSize:15, fontWeight:600, color:'#fff', marginTop:6, lineHeight:1.2 }}>Sem plano neste mês</div>
+              ) : (
+                <div style={{ fontFamily:FONTE_TITULO, fontSize:'min(30px, calc(100cqi / 6.6))', fontWeight:700, lineHeight:1.15,
+                  fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', color:'#fff', marginTop:2 }}>{fmt(v)}</div>
+              )}
+              <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', lineHeight:1.3, marginTop:2 }}>{pe}</div>
+            </div>
+          ))}
+        </div>
         <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
-          ...CAIXA_TOPO, width:'100%', marginTop: ehMesAtual ? 14 : 18, cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+          ...CAIXA_TOPO, width:'100%', marginTop: 10, cursor:'pointer', fontFamily:'inherit', textAlign:'left',
           display:'flex', alignItems:'center', justifyContent:'space-between', gap:10,
           ...(saldoPrev < 0 ? { background:'linear-gradient(135deg,#7f1d1d,#991b1b)', borderColor:'rgba(255,255,255,.3)' } : {}),
         }}>

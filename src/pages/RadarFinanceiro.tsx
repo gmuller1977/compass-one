@@ -26,6 +26,7 @@ import { ForaDoMesContexto } from '../components/acompanhamento/foraDoMesContext
 import { dadosBancariosDoMes, fixaNaoOcorre } from '../utils/fixasDoMes'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { previstoDoAno } from '../components/planejamento/previstoDoAno'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -144,6 +145,7 @@ export default function RadarFinanceiro() {
   // Já lançado acima do plano dos próximos meses — só olhando o mês corrente,
   // como o aviso da Início. Ver utils/lancadoAcimaDoPlano.
   const ehMesCorrente = ano === anoHoje && mes === mesHoje
+  const mesFechado = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
   // "Revisar agora": a tabela da revisão do plano (RevisaoPlanoDialog).
   const [revisando, setRevisando] = useState(false)
   const lancadoAcima = useMemo(
@@ -156,6 +158,31 @@ export default function RadarFinanceiro() {
     [ano, mes, depsSaldo],
   )
   const saldoPrevisto = memoria.fechamento
+
+  // O saldo do fim do mês PELO PLANO (21/11/2026, pedido do Guilherme: "falta
+  // o saldo previsto com base no planejado e o saldo atual com base no
+  // realizado"). É o MESMO número do cartão do mês no Planejamento ("termina
+  // com"): a passagem dele, previstoDoAno — saldo com que o mês abriu +
+  // receitas planejadas − despesas planejadas. Sem plano no ano, null: o Radar
+  // não julga mês sem plano.
+  const saldoPlanejado = useMemo(() => {
+    if (!planos[ano]) return null
+    const hoje = new Date()
+    const p = previstoDoAno(ano, {
+      anoCorrente: hoje.getFullYear(), mesAtual: hoje.getMonth(), categorias, contas, faturaData,
+      planos: planos as Record<number, unknown>,
+      saldoInicialFixo: contas.filter(c => c.tipo === 'corrente' && c.incluirNoSaldoInicial !== false)
+        .reduce((t, c) => t + c.saldoInicial, 0),
+      depsSaldo,
+    })
+    if (p.totalEntradas[mes] === 0 && p.totalSaidas[mes] === 0) return null
+    return p.saldoFinal[mes]
+  }, [ano, mes, planos, categorias, contas, faturaData, depsSaldo])
+
+  // Embaixo do realizado: no mês fechado, a distância até o planejado; nos
+  // outros, a frase do resumo (a "Ainda dá para gastar" saiu em 24/10/2026).
+  const subRealizado = saldoPlanejado !== null && mesFechado ? diferencaDoPlano(saldoAtual, saldoPlanejado)
+    : !ritmo && resumo ? `${resumo.titulo}${resumo.detalhe ? ` · ${resumo.detalhe}` : ''}` : 'o que já aconteceu'
 
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
   const percE = perc(julgE.real, julgE.prev)
@@ -239,6 +266,8 @@ export default function RadarFinanceiro() {
         navigate={navigate}
         saldoAtual={saldoAtual}
         saldoPrevisto={saldoPrevisto}
+        saldoPlanejado={saldoPlanejado}
+        subRealizado={subRealizado}
         resumo={resumo}
         memoria={memoria}
         cenario={cenarioPrevisao}
@@ -313,17 +342,40 @@ export default function RadarFinanceiro() {
                 </div>
               </button>
             ))}
-            <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-              style={{ flex: '1 1 260px', minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
-                background: 'none', border: 'none', padding: '0 0 0 8px', containerType: 'inline-size' }}>
-              <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
-                {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
+            {/* Planejado × Realizado lado a lado (21/11/2026, pedido do
+                Guilherme): à esquerda, com quanto o mês termina PELO PLANO (o
+                "termina com" do Planejamento); à direita, o saldo de hoje em
+                bancos e dinheiro. Cada número cabe −R$ 999.999,99. */}
+            <div style={{ flex: '2 1 420px', minWidth: 0, display: 'flex', borderRadius: 14,
+              background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)' }}>
+              <div style={{ flex: 1, minWidth: 0, padding: '12px 16px', containerType: 'inline-size',
+                borderRight: '1px solid rgba(255,255,255,.16)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="ti ti-calendar-stats" aria-hidden style={{ fontSize: 16 }} />Planejado
+                </div>
+                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>{`Termina ${MESES_FULL[mes].toLowerCase()} com`}</div>
+                {saldoPlanejado === null ? (
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginTop: 6 }}>Sem plano neste mês</div>
+                ) : (
+                  <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(40px, calc(100cqi / 7.2))', fontWeight: 700, lineHeight: 1.1,
+                    color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoPlanejado)}</div>
+                )}
+                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>se o plano se cumprir</div>
               </div>
-              <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(48px, calc(100cqi / 7.4))', fontWeight: 700, lineHeight: 1.1,
-                color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
-              {/* A frase "Ainda dá para gastar" saiu do topo (24/10/2026, pedido do Guilherme). */}
-              {!ritmo && resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
-            </button>
+              <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
+                style={{ flex: 1, minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
+                  background: 'none', border: 'none', padding: '12px 16px', containerType: 'inline-size' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="ti ti-wallet" aria-hidden style={{ fontSize: 16 }} />Realizado
+                </div>
+                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>
+                  {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
+                </div>
+                <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(40px, calc(100cqi / 7.2))', fontWeight: 700, lineHeight: 1.1,
+                  color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
+                <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subRealizado}</div>
+              </button>
+            </div>
           </div>
         </PageHeader>
       </div>
@@ -463,6 +515,13 @@ export default function RadarFinanceiro() {
       })()}
     </div>
   )
+}
+
+/** Mês fechado: a distância do fechamento real até o saldo planejado, em palavras. */
+function diferencaDoPlano(real: number, plano: number) {
+  const d = Math.round((real - plano) * 100) / 100
+  if (d === 0) return 'igual ao planejado'
+  return d > 0 ? `${fmt(d)} acima do planejado` : `${fmt(-d)} abaixo do planejado`
 }
 
 /** Anel pequeno dos cards do topo: trilho branco, azul neon até 100%; o texto é o % real. */
