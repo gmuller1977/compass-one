@@ -3308,6 +3308,9 @@ formulário usam o valor de verdade (`fmt` de `mobile/estilo`). Percentuais
 dos anéis ficam à vista. Essas telas não têm olho próprio: abre-se na Início.
 Fora do navegador (provas) nada se esconde. Prints em
 `analises/ocultar-valores/`.
+No Radar do CELULAR os três saldos do topo (inicial, final planejado,
+realizado) moram dentro do "Ver detalhes" (mesmo dia, pedido dele); o topo
+fica com a frase do plano e o botão. O computador segue com eles à vista.
 
 **Lembrete diário fica para depois**: notificação com o app fechado exige
 push (chaves VAPID + um envio agendado no servidor).
