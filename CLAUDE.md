@@ -659,6 +659,24 @@ número"), no BRANCO a barra tem a cor do número (`RADAR_BARRA_CLARO`):
 (`#e2e8f0`, borda `#64748b`): verde 4,1, laranja 4,2. O verde foi junto,
 porque o `#4ade80` no trilho claro some. No azul nada mudou.
 
+**O topo do Radar são TRÊS saldos e a economia do plano** (21/11/2026,
+Guilherme: "falta o saldo previsto com base no planejado e o saldo atual com
+base no realizado"; "o que o usuário realmente precisa saber?"). Computador e
+celular: Saldo inicial, Saldo final planejado (o "termina com" do
+Planejamento, `previstoDoAno`: abertura + receitas − despesas planejadas;
+sem plano, "Sem plano neste mês") e Saldo realizado (hoje; mês fechado diz
+quanto ficou acima/abaixo do planejado), e a frase do "Plano do mês" da
+Início (`balancoDoPlano`): "No total, você está economizando R$ X no plano".
+"Ver detalhes" (ou tocar num saldo) abre receitas e despesas, o "Mês termina
+com" com o "ver cálculo" e o saldo por conta. A barra do saldo final previsto
+no pé da tela SAIU. Planejado é fixo, realizado é hoje, "Mês termina com" é a
+visão de futuro. No mesmo dia: o card do grupo tem o anel À DIREITA e o nome
+à esquerda, e embaixo uma tabelinha Planejado · Gastou (Recebeu) por Fixas e
+Variáveis (`PartesDoGrupo`); uma coluna Disponível repetia o número grande e
+saiu. "resta R$ X" virou "disponível R$ X" e "usou tudo" virou "no limite do
+plano" (`destaqueRadar`). As notas sobre a barra do pé e o topo em uma linha
+são histórico.
+
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
 cada parte na sua caixa branca, na ordem de sempre. Fixa pelo cadastro
