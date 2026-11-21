@@ -11,6 +11,7 @@ import { marcarSaida } from '../utils/digital'
 import { limparUltimaAtividade } from '../utils/inatividade'
 import { marcarQueEntrouAqui } from '../utils/acessoRapido'
 import { ajustarDiasDasFaturas } from '../utils/diasDaFatura'
+import { propagarConferidasDasCompras } from '../utils/serieDeParcelas'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
 import { lerTudo } from '../utils/lerTudo'
@@ -737,7 +738,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Parcela num dia que o mês não tem (29/02, 31/04) vai para o último dia
     // e é gravada assim — utils/diasDaFatura. Membro não grava: fica com o
     // que o administrador ajustar.
-    const faturaAjustada = ehMembro() ? faturaLoaded : ajustarDiasDasFaturas(faturaLoaded)
+    // Bolinha de conferida de antes de 06/11 vale para a compra inteira
+    // (utils/serieDeParcelas). Membro também marca a bolinha, então vale para todos.
+    const faturaAjustada = propagarConferidasDasCompras(ehMembro() ? faturaLoaded : ajustarDiasDasFaturas(faturaLoaded))
     faturaAGravarRef.current = faturaLoaded
     setFaturaState(faturaAjustada)
 
@@ -1118,7 +1121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return true
     }))
     setExtratoState(extrato)
-    setFaturaState(ehMembro() ? fatura : ajustarDiasDasFaturas(fatura))
+    setFaturaState(propagarConferidasDasCompras(ehMembro() ? fatura : ajustarDiasDasFaturas(fatura)))
     setPlanosState(planosLidos)
   }
 
