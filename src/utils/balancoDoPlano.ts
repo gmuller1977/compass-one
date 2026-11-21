@@ -34,16 +34,29 @@ export type BalancoDoPlano = {
   /** O que as fixas com plano e ainda não pagas vão levar (prev − real). Fica
    *  FORA do "falta": explica por que planejado − gasto não dá a diferença. */
   fixasAVencer: number
+  /** Os mesmos números por tipo, para o Total das despesas do Radar (21/11/2026,
+   *  Guilherme: a conta tem de se refazer com o que está na tela). Só linhas com
+   *  plano. Vale: diferenca = (varPrev − varReal) − fixasPassou. */
+  varPrev: number
+  varReal: number
+  fixaPrev: number
+  fixaReal: number
+  /** Quanto as fixas pagas passaram do plano. */
+  fixasPassou: number
+  /** Gasto em linhas sem plano (fora do julgamento). */
+  semPlano: number
 }
 
 const MEIO_CENTAVO = 0.005
 
 export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): BalancoDoPlano | null {
   const porGrupo = new Map<string, { saldo: number; primeira: string }>()
-  let fixasAVencer = 0
+  let fixasAVencer = 0, varPrev = 0, varReal = 0, fixaPrev = 0, fixaReal = 0, fixasPassou = 0, foraDoPlano = 0
   for (const l of linhas) {
-    if (semPlano(l.prev)) continue
+    if (semPlano(l.prev)) { foraDoPlano += l.real; continue }
     const fixa = !!cadastroDaLinha(l, categorias)?.fixa
+    if (fixa) { fixaPrev += l.prev; fixaReal += l.real } else { varPrev += l.prev; varReal += l.real }
+    if (fixa && !ehFixaPaga(l.prev, l.real, false, true)) fixasPassou += Math.max(0, l.real - l.prev)
     const saldo = !fixa ? l.real - l.prev
       : ehFixaPaga(l.prev, l.real, false, true) ? 0
       : Math.max(0, l.real - l.prev)
@@ -64,5 +77,6 @@ export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): B
   abaixo.sort((a, b) => b.valor - a.valor)
   const passou = passaram.reduce((s, g) => s + g.valor, 0)
   const falta = abaixo.reduce((s, g) => s + g.valor, 0)
-  return { passaram, abaixo, passou, falta, diferenca: falta - passou, fixasAVencer }
+  return { passaram, abaixo, passou, falta, diferenca: falta - passou, fixasAVencer,
+    varPrev, varReal, fixaPrev, fixaReal, fixasPassou, semPlano: foraDoPlano }
 }

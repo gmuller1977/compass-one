@@ -31,6 +31,15 @@ conf(perto(b.diferenca, -388.6), `frase: gastou 388,60 a mais (veio ${b.diferenc
 conf(perto(b.fixasAVencer, 1200), `fixas a vencer = 1.200 (veio ${b.fixasAVencer})`)
 conf(perto(prevTotal - realTotal, b.diferenca + b.fixasAVencer), 'planejado − gasto = diferença + fixas a vencer')
 
+// A conta da tela (Total das despesas, 21/11/2026): variáveis planejado −
+// gastou, menos o que as fixas passaram, é o número da frase.
+conf(perto(b.varPrev - b.varReal - b.fixasPassou, b.diferenca), 'variáveis − fixas que passaram = frase')
+conf(perto(b.varPrev, 1300) && perto(b.varReal, 1688.6), 'variáveis: 1.300 planejado, 1.688,60 gastou')
+const b4 = balancoDoPlano(linhas.map(l => l.nome === 'Luz' ? { ...l, real: 260 } : l), categorias)!
+conf(perto(b4.fixasPassou, 60) && perto(b4.varPrev - b4.varReal - b4.fixasPassou, b4.diferenca), 'fixa paga acima: entra pelo que passou')
+const b5 = balancoDoPlano([...linhas, { nome: 'Presente', descricao: '', grupo: 'Outras', prev: 0, real: 80 }], categorias)!
+conf(perto(b5.semPlano, 80) && perto(b5.diferenca, b.diferenca), 'sem plano fica fora da frase')
+
 // Fixa paga: nada a vencer.
 const b2 = balancoDoPlano(linhas.map(l => l.nome === 'Aluguel' ? { ...l, real: 1200 } : l), categorias)!
 conf(perto(b2.fixasAVencer, 0), 'fixa paga não fica a vencer')

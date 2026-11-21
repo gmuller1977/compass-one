@@ -11,6 +11,7 @@ import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
 import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, partesDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import PartesDoGrupo from './PartesDoGrupo'
+import TotalDasDespesas from './TotalDasDespesas'
 import { useForaDoMes } from './foraDoMesContexto'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
@@ -96,7 +97,7 @@ export default function AcMobileView({
   const percS     = Math.min(percJulgadoS ?? 0, 1)
   const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
-  const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)
+  const mesFechado = ano < new Date().getFullYear() || (ano === new Date().getFullYear() && mes < new Date().getMonth())
 
 
   const renderMobileCatRow = (
@@ -593,31 +594,7 @@ export default function AcMobileView({
                 </div>
               </div>
               {renderMobileSecao('saida', gruposSaida, dadosAno.saidas ?? [], saidasMap)}
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'14px 16px', background:'#fff', borderRadius:20, gap:8,
-                boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
-                <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
-                <div style={{ display:'flex', gap:10, minWidth:0 }}>
-                  {([['Planejado','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],
-                    // A terceira coluna é a da frase "No total, você está economizando /
-                    // gastando a mais" (balancoDoPlano), para as duas contarem a mesma
-                    // história (21/11/2026, relatado pelo Guilherme: frase "R$ 388 a
-                    // mais" e Disponível R$ 456 — a conta antiga contava as fixas a vencer).
-                    balanco && balanco.diferenca < -0.005
-                      ? ['Passou', '#b91c1c', fmt(-balanco.diferenca)]
-                      : ['Disponível','#15803d',fmt(balanco ? Math.max(0, balanco.diferenca) : totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
-                    <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                      <span style={{ fontSize:12, fontWeight:600, color:COR.textoSuave, marginBottom:1 }}>{lbl}</span>
-                      <span style={{ fontSize:14, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {balanco && balanco.fixasAVencer > 0.005 && (
-                <div style={{ fontSize:13, color:COR.textoSuave, padding:'0 6px', lineHeight:1.4 }}>
-                  Além disso, {fmt(balanco.fixasAVencer)} ficam para as contas fixas que ainda vão vencer.
-                </div>
-              )}
+              {balanco && <TotalDasDespesas balanco={balanco} mesFechado={mesFechado} />}
             </div>
           )}
 
