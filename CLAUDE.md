@@ -3317,6 +3317,10 @@ nome era cortado ao lado do número): nome · variante com o selo
 Fixa/Variável ao lado, embaixo o destaque (disponível / passou / a pagar) e
 depois o "gastou X de Y". Nome nunca leva reticências, quebra a linha; no
 computador também.
+**Os quadros "Total" de Receitas e de Despesas SAÍRAM do Radar** (mesmo
+dia, Guilherme: "já temos isso no mais detalhes"), no computador e no
+celular; `TotalDasDespesas.tsx` foi apagado. As notas acima sobre o Total
+das despesas são histórico; a régua (`balancoDoPlano`) segue na frase do topo.
 No Radar do CELULAR os três saldos do topo (inicial, final planejado,
 realizado) moram dentro do "Ver detalhes" (mesmo dia, pedido dele); o topo
 fica com a frase do plano e o botão. O computador segue com eles à vista.

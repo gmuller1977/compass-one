@@ -12,7 +12,6 @@ import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
 import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, partesDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import PartesDoGrupo from './PartesDoGrupo'
-import TotalDasDespesas from './TotalDasDespesas'
 import { useForaDoMes } from './foraDoMesContexto'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
@@ -21,7 +20,6 @@ import { IconeCat } from '../IconeCat'
 import { BotaoOlho, OndasTopo, RotuloTopo } from '../mobile/ui'
 import { FONTE_SITE, FONTE_TITULO } from '../mobile/estilo'
 import { corDoIcone } from '../../utils/iconeDesenhado'
-import type { BalancoDoPlano } from '../../utils/balancoDoPlano'
 
 interface AcMobileViewProps {
   mes: number
@@ -56,8 +54,6 @@ interface AcMobileViewProps {
   saldoInicial: number
   /** A frase "você está economizando" do computador; null sem plano. */
   fraseEconomia: React.ReactNode
-  /** O balanço da frase de economia: o Total das despesas usa o MESMO número. */
-  balanco: BalancoDoPlano | null
   /** A frase embaixo do realizado, a mesma do computador. */
   subRealizado: string
   resumo: ResumoRadar | null
@@ -78,7 +74,7 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
-  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado, saldoInicial, fraseEconomia, balanco,
+  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado, saldoInicial, fraseEconomia,
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
@@ -97,7 +93,6 @@ export default function AcMobileView({
   const percE     = Math.min(percJulgadoE ?? 0, 1)
   const percS     = Math.min(percJulgadoS ?? 0, 1)
   const fmtK = (v: number) => valoresOcultos() ? VALOR_OCULTO : 'R$ ' + Math.round(v).toLocaleString('pt-BR')
-  const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
 
 
   const renderMobileCatRow = (
@@ -565,19 +560,6 @@ export default function AcMobileView({
               {renderMobileSecao('entrada',
                 gruposEntrada.includes('__sem_grupo__') ? gruposEntrada : [...gruposEntrada, '__sem_grupo__'],
                 dadosAno.entradas ?? [], entradasMap)}
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'14px 16px', background:'#fff', borderRadius:20, gap:8,
-                boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
-                <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
-                <div style={{ display:'flex', gap:10, minWidth:0 }}>
-                  {([['Planejado','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#b45309',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
-                    <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                      <span style={{ fontSize:12, fontWeight:600, color:COR.textoSuave, marginBottom:1 }}>{lbl}</span>
-                      <span style={{ fontSize:14, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
@@ -598,7 +580,6 @@ export default function AcMobileView({
                 </div>
               </div>
               {renderMobileSecao('saida', gruposSaida, dadosAno.saidas ?? [], saidasMap)}
-              {balanco && <TotalDasDespesas balanco={balanco} />}
             </div>
           )}
 

@@ -18,7 +18,6 @@ import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../comp
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
-import TotalDasDespesas from '../components/acompanhamento/TotalDasDespesas'
 import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
@@ -283,7 +282,6 @@ export default function RadarFinanceiro() {
         subRealizado={subRealizado}
         saldoInicial={saldoInicial}
         fraseEconomia={fraseEconomia}
-        balanco={balanco}
         resumo={resumo}
         memoria={memoria}
         cenario={cenarioPrevisao}
@@ -495,11 +493,6 @@ export default function RadarFinanceiro() {
               })
             })()}
             </div>
-            {balanco && (dadosAno.saidas ?? []).length > 0 && (
-              <div style={{ marginTop: 16, maxWidth: 640 }}>
-                <TotalDasDespesas balanco={balanco} />
-              </div>
-            )}
           </AjustePlanoContexto.Provider>
       </ForaDoMesContexto.Provider>
         )}
