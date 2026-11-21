@@ -2,7 +2,7 @@ import type { Conta } from '../../context/AppContext'
 import { NOMES_MESES } from './NleShared'
 import AjudaTela from '../AjudaTela'
 import SeletorMesAno from '../SeletorMesAno'
-import { OndasTopo, RotuloTopo } from '../mobile/ui'
+import { BotaoOlho, OndasTopo, RotuloTopo } from '../mobile/ui'
 import { FONTE_TITULO } from '../mobile/estilo'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
@@ -39,6 +39,8 @@ const STATUS_FATURA = {
 /** Como o BTN_ANO do Planejamento do celular. */
 const SETA = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.15)',
   color:'#fff', fontSize:22, fontWeight:700, cursor:'pointer', fontFamily:'inherit', lineHeight:1 } as const
+// Com o olho ao lado (21/11/2026), setas de 36 para caber em 360px.
+const SETA_OLHO = { ...SETA, width:36, height:36 }
 
 export default function NleHeader({
   isMobile,
@@ -102,6 +104,7 @@ export default function NleHeader({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             {isCartao ? cartaoNav : bancoNav}
+            <BotaoOlho tamanho={44} />
             <AjudaTela tela="lancamentos" />
           </div>
         </div>
@@ -126,7 +129,7 @@ export default function NleHeader({
           <RotuloTopo icone={tabPrincipal === 'cartao' ? 'ti-credit-card' : tabPrincipal === 'dinheiro' ? 'ti-cash' : 'ti-building-bank'}>
             {tabPrincipal === 'cartao' ? 'Cartão' : tabPrincipal === 'dinheiro' ? 'Dinheiro' : 'Banco'}
           </RotuloTopo>
-          <h1 style={{margin:'4px 0 0',fontFamily:FONTE_TITULO,fontSize:32,fontWeight:700,lineHeight:1,color:'#fff'}}>Lançamentos</h1>
+          <h1 style={{margin:'4px 0 0',fontFamily:FONTE_TITULO,fontSize:'min(32px, 8.4vw)',fontWeight:700,lineHeight:1,color:'#fff'}}>Lançamentos</h1>
         </div>
         {(() => {
           const m = tabPrincipal === 'cartao' ? cartaoMes : mes
@@ -139,14 +142,15 @@ export default function NleHeader({
           }
           return (
             <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
-              <button onClick={() => ir(-1)} aria-label="Mês anterior" style={SETA}>‹</button>
-              <span style={{minWidth:58,textAlign:'center',color:'#fff',lineHeight:1.15}}>
+              <button onClick={() => ir(-1)} aria-label="Mês anterior" style={SETA_OLHO}>‹</button>
+              <span style={{minWidth:46,textAlign:'center',color:'#fff',lineHeight:1.15}}>
                 <span style={{display:'block',fontSize:17,fontWeight:800}}>{NOMES_MESES[m].slice(0,3)}</span>
                 <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)',whiteSpace:'nowrap'}}>
                   {a}
                 </span>
               </span>
-              <button onClick={() => ir(1)} aria-label="Próximo mês" style={SETA}>›</button>
+              <button onClick={() => ir(1)} aria-label="Próximo mês" style={SETA_OLHO}>›</button>
+              <BotaoOlho tamanho={36} />
             </div>
           )
         })()}

@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
-import { AMBAR, AMBAR_ESCURO, BOLINHA_AZUL, BORDA_CLARA, FONTE_TITULO, M, NOITE, TINTA, TINTA2, mostrar } from './estilo'
+import { AMBAR, AMBAR_ESCURO, BOLINHA_AZUL, BORDA_CLARA, FONTE_TITULO, M, NOITE, TINTA, TINTA2, mostrar, useValoresOcultos } from './estilo'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 
@@ -409,5 +409,20 @@ function Velocimetro({ pct, claro }: { pct: number; claro?: boolean }) {
           strokeDasharray={`${arco} ${c}`} />
       )}
     </svg>
+  )
+}
+
+/** O olho da Início, para as telas que escondem os valores junto com ela
+ *  (Lançamentos e Radar, 21/11/2026, pedido do Guilherme: "precisa ter o olho
+ *  para desocultar"). É o mesmo estado: abrir aqui abre na Início também. */
+export function BotaoOlho({ tamanho = 40 }: { tamanho?: number }) {
+  const [oculto, alternar] = useValoresOcultos()
+  return (
+    <button onClick={alternar} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}
+      style={{ width: tamanho, height: tamanho, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
+        background: 'rgba(255,255,255,.15)', color: '#fff', padding: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <OlhoIcone fechado={oculto} />
+    </button>
   )
 }

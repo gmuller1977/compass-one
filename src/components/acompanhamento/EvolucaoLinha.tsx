@@ -199,7 +199,7 @@ export default function EvolucaoLinha({
               8,0; variável #475569 sobre #f1f5f9: 6,9. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
             <span title={displayName} style={{ fontSize: 12, fontWeight: 600, minWidth: 0,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              overflowWrap: 'anywhere' }}>
               {displayName}
             </span>
             {cadastro && (

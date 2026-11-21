@@ -3308,6 +3308,15 @@ formulário usam o valor de verdade (`fmt` de `mobile/estilo`). Percentuais
 dos anéis ficam à vista. Essas telas não têm olho próprio: abre-se na Início.
 Fora do navegador (provas) nada se esconde. Prints em
 `analises/ocultar-valores/`.
+No mesmo dia (pedido dele: "precisa ter o olho para desocultar") as duas
+telas ganharam o olho ao lado das setas do mês (`BotaoOlho` em
+`mobile/ui.tsx`, o mesmo estado da Início), no computador e no celular; no
+celular as setas desses topos têm 36px para caber em 360px.
+**A linha da categoria no Radar do celular** (21/11/2026, pedido dele: o
+nome era cortado ao lado do número): nome · variante com o selo
+Fixa/Variável ao lado, embaixo o destaque (disponível / passou / a pagar) e
+depois o "gastou X de Y". Nome nunca leva reticências, quebra a linha; no
+computador também.
 No Radar do CELULAR os três saldos do topo (inicial, final planejado,
 realizado) moram dentro do "Ver detalhes" (mesmo dia, pedido dele); o topo
 fica com a frase do plano e o botão. O computador segue com eles à vista.

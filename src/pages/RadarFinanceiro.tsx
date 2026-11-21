@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import { BotaoOlho } from '../components/mobile/ui'
 import PageHeader from '../components/PageHeader'
 import { M, ROTULO_TOPO, FONTE_SITE, FONTE_TITULO } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
@@ -325,10 +326,13 @@ export default function RadarFinanceiro() {
           title="Radar financeiro"
           mb={0}
           rightContent={
-            <SeletorMesAno
-              mes={mes} ano={ano}
-              onSelect={(m, a) => { setMes(m); setAno(a) }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <SeletorMesAno
+                mes={mes} ano={ano}
+                onSelect={(m, a) => { setMes(m); setAno(a) }}
+              />
+              <BotaoOlho tamanho={44} />
+            </div>
           }
         >
           {/* Topo enxuto (21/11/2026, Guilherme: "o que ele realmente precisa

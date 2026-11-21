@@ -18,7 +18,7 @@ import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
 import { IconeCat } from '../IconeCat'
-import { OndasTopo, RotuloTopo } from '../mobile/ui'
+import { BotaoOlho, OndasTopo, RotuloTopo } from '../mobile/ui'
 import { FONTE_SITE, FONTE_TITULO } from '../mobile/estilo'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 import type { BalancoDoPlano } from '../../utils/balancoDoPlano'
@@ -173,23 +173,23 @@ export default function AcMobileView({
             background:corIcone+'1f', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
             <IconeCat icone={icone} cor={corDoIcone(corIcone)} />
           </div>
-          {/* Nome e o número que importa na mesma linha; o "gastou X de Y"
-              embaixo, na largura toda — ao lado do número ele era cortado. */}
+          {/* Nome e variante, com Fixa/Variável ao lado, e embaixo o
+              disponível ou passou (21/11/2026, pedido do Guilherme: ao lado
+              do número o nome era cortado, "Cuidados Pes..."). O nome quebra
+              a linha se precisar; o "gastou X de Y" fica por último. */}
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
-              <div style={{ fontSize:14, fontWeight:600, color:'#0f172a', minWidth:0,
-                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
-              <div style={{ flexShrink:0, fontSize:16, fontWeight:800, color:dispColor, whiteSpace:'nowrap',
-                fontVariantNumeric:'tabular-nums' }}>{destaque.principal}</div>
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3, minWidth:0 }}>
+            <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', columnGap:8, rowGap:3 }}>
+              <span style={{ fontSize:14, fontWeight:600, color:'#0f172a', minWidth:0, overflowWrap:'anywhere' }}>
+                {nome}{descricao && <span style={{ fontWeight:500, color:COR.textoSuave }}> · {descricao}</span>}
+              </span>
               <span style={{ fontSize:12, padding:'1px 8px', borderRadius:999, fontWeight:700, flexShrink:0,
                 background:catInfo?.fixa?'#e0f2fe':'#f1f5f9',
                 color:catInfo?.fixa?'#0369a1':'#64748b' }}>
                 {catInfo?.fixa ? 'Fixa' : 'Variável'}
               </span>
-              {descricao && <span style={{ fontSize:13, color:COR.textoSuave, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>· {descricao}</span>}
             </div>
+            <div style={{ fontSize:16, fontWeight:800, color:dispColor, marginTop:4,
+              fontVariantNumeric:'tabular-nums' }}>{destaque.principal}</div>
             <div style={{ fontSize:13, color:COR.textoSuave, marginTop:3, fontVariantNumeric:'tabular-nums' }}>{destaque.contexto}</div>
           </div>
         </div>
@@ -425,12 +425,13 @@ export default function AcMobileView({
             <h1 style={{ margin:'4px 0 0', fontFamily:FONTE_TITULO, fontSize:32, fontWeight:700, lineHeight:1, color:'#fff' }}>Radar</h1>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-            <button aria-label="Mês anterior" onClick={() => { if(mes===0){setMes(11);setAno(a=>a-1)}else setMes(m=>m-1) }} style={SETA}>‹</button>
-            <span style={{ minWidth:58, textAlign:'center', color:'#fff', lineHeight:1.15 }}>
+            <button aria-label="Mês anterior" onClick={() => { if(mes===0){setMes(11);setAno(a=>a-1)}else setMes(m=>m-1) }} style={SETA_OLHO}>‹</button>
+            <span style={{ minWidth:46, textAlign:'center', color:'#fff', lineHeight:1.15 }}>
               <span style={{ display:'block', fontSize:17, fontWeight:800 }}>{MESES_FULL[mes].slice(0,3)}</span>
               <span style={{ display:'block', fontSize:12, fontWeight:600, color:'rgba(255,255,255,.75)' }}>{ano}</span>
             </span>
-            <button aria-label="Próximo mês" onClick={() => { if(mes===11){setMes(0);setAno(a=>a+1)}else setMes(m=>m+1) }} style={SETA}>›</button>
+            <button aria-label="Próximo mês" onClick={() => { if(mes===11){setMes(0);setAno(a=>a+1)}else setMes(m=>m+1) }} style={SETA_OLHO}>›</button>
+            <BotaoOlho tamanho={36} />
           </div>
         </div>
 
@@ -616,3 +617,5 @@ const CAIXA_TOPO = { background:'rgba(255,255,255,.12)', border:'1px solid rgba(
 /** Como o BTN_ANO do Planejamento do celular. */
 const SETA = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.15)',
   color:'#fff', fontSize:22, fontWeight:700, cursor:'pointer', fontFamily:'inherit', lineHeight:1 } as const
+// Com o olho ao lado (21/11/2026), setas de 36 para caber em 360px.
+const SETA_OLHO = { ...SETA, width:36, height:36 }
