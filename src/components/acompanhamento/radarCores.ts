@@ -184,8 +184,10 @@ export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   if (opts.fixaPaga) return { principal: '✓ pago', contexto }
   if (opts.fixa && Math.abs(real) <= 0.005 && prev > 0.005) return { principal: `a pagar ${fmt(prev)}`, contexto }
   if (real - prev > 0.005) return { principal: `passou ${fmt(real - prev)}`, contexto }
-  if (prev - real > 0.005) return { principal: `resta ${fmt(prev - real)}`, contexto }
-  return { principal: 'usou tudo', contexto }
+  // "disponível" e "no limite do plano", e não "resta" / "usou tudo"
+  // (21/11/2026: a palavra das outras telas, regra de 06/11/2026).
+  if (prev - real > 0.005) return { principal: `disponível ${fmt(prev - real)}`, contexto }
+  return { principal: 'no limite do plano', contexto }
 }
 
 /**

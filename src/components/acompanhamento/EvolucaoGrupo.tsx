@@ -139,7 +139,7 @@ export default function EvolucaoGrupo({
           </div>
         </div>
         {!SEM_MOVIMENTO.includes(destaque.principal) && (
-          <PartesDoGrupo partes={partesDoGrupo(linhas, isEntrada)} aberto={aberto} />
+          <PartesDoGrupo partes={partesDoGrupo(linhas, isEntrada)} aberto={aberto} isEntrada={isEntrada} />
         )}
       </div>
 

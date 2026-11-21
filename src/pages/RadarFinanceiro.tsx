@@ -377,6 +377,31 @@ export default function RadarFinanceiro() {
               </button>
             </div>
           </div>
+          {/* "Mês termina com" logo abaixo de Planejado × Realizado, como no
+              celular (21/11/2026, pedido do Guilherme): a barra do pé da tela
+              saiu. Clicar abre a memória de cálculo ali mesmo. */}
+          <div style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,.16)',
+            background: saldoPrevisto >= 0 ? 'rgba(255,255,255,.12)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
+            <button type="button" aria-expanded={memoriaAberta} onClick={() => setMemoriaAberta(v => !v)}
+              style={{ width: '100%', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                gap: 12, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', color: '#fff', background: 'none', border: 'none' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Mês termina com</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                  <span>o que já aconteceu + o que ainda falta do plano</span>
+                  <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontWeight: 600 }}>{memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}</span>
+                  <ChipCenario cenario={cenarioPrevisao} />
+                </div>
+              </div>
+              <span style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                color: NUMERO_NO_AZUL }}>{fmt(saldoPrevisto)}</span>
+            </button>
+            {memoriaAberta && (
+              <MemoriaSaldo m={memoria} positivo={saldoPrevisto >= 0}
+                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+            )}
+          </div>
         </PageHeader>
       </div>
 
@@ -465,54 +490,6 @@ export default function RadarFinanceiro() {
           ano={ano} mes={mes} categorias={categorias} deps={depsSaldo} />
       )}
 
-      {/* Saldo final previsto — a mesma barra de Lancamentos, no pe da tela.
-          Saiu do cartao do saldo atual: la ele era um numero sem explicacao;
-          aqui ele abre a memoria de calculo. */}
-      {(() => {
-        const positivo = saldoPrevisto >= 0
-        return (
-          <div style={{ padding: '10px 24px 14px', flexShrink: 0, background: M.fundo }}>
-            <div style={{ borderRadius: 18, boxShadow: positivo ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.12)',
-              background: positivo ? 'var(--cx-azul)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
-              <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
-                onClick={() => setMemoriaAberta(v => !v)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMemoriaAberta(v => !v) } }}
-                style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between',
-                  alignItems: 'center', cursor: 'pointer' }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    Saldo final previsto
-                    <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
-                      background: 'rgba(255,255,255,.15)', color: 'rgba(255,255,255,.9)' }}>
-                      {memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,.75)', marginTop: 3,
-                    display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span>{MESES_FULL[mes]} {ano} · todas as contas</span>
-                    <ChipCenario cenario={cenarioPrevisao} />
-                  </div>
-                </div>
-                <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', fontVariantNumeric: 'tabular-nums',
-                  // Negativo, a barra do rodapé é VERMELHA e o número fica
-                  // BRANCO (8,9): o laranja #c2410c some no #991b1b (24/10/2026).
-                  color: NUMERO_NO_AZUL }}>
-                  {fmt(saldoPrevisto)}
-                </span>
-              </div>
-              {/* A barra é fixa no pé da tela (flexShrink 0). Aberta, a memória passava da
-                  altura livre: espremia o conteúdo até zero e o fim dela sumia abaixo da
-                  borda. Limitada a 35% da tela, rola por dentro. Corrigido em 05/10/2026. */}
-              {memoriaAberta && (
-                <div style={{ maxHeight: '35vh', overflowY: 'auto', borderRadius: '0 0 18px 18px' }}>
-                  <MemoriaSaldo m={memoria} positivo={positivo}
-                    cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })()}
     </div>
   )
 }

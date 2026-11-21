@@ -350,7 +350,7 @@ export default function AcMobileView({
           </div>
           {!SEM_MOVIMENTO.includes(dg.principal) && (
             <div style={{ marginTop:12 }}>
-              <PartesDoGrupo partes={partesDoGrupo(linhasGrupo, isEntrada)} aberto={aberto} />
+              <PartesDoGrupo partes={partesDoGrupo(linhasGrupo, isEntrada)} aberto={aberto} isEntrada={isEntrada} />
             </div>
           )}
         </button>
@@ -461,8 +461,9 @@ export default function AcMobileView({
         }}>
           <div style={{ minWidth:0 }}>
             <div style={{ fontSize:14, color:'#fff', fontWeight:700 }}>Mês termina com</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:3 }}>
-              <span style={{ textDecoration:'underline', textUnderlineOffset:3 }}>{memoriaAberta ? 'fechar' : 'como cheguei'}</span>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', marginTop:2, lineHeight:1.3 }}>o que já aconteceu + o que ainda falta do plano</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:4 }}>
+              <span style={{ textDecoration:'underline', textUnderlineOffset:3, fontWeight:600 }}>{memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}</span>
               <ChipCenario cenario={cenario} />
             </div>
           </div>
@@ -542,7 +543,7 @@ export default function AcMobileView({
                 boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
                 <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
                 <div style={{ display:'flex', gap:10, minWidth:0 }}>
-                  {([['Previsto','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#b45309',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
+                  {([['Planejado','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#b45309',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
                     <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
                       <span style={{ fontSize:12, fontWeight:600, color:COR.textoSuave, marginBottom:1 }}>{lbl}</span>
                       <span style={{ fontSize:14, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{val}</span>
@@ -575,7 +576,7 @@ export default function AcMobileView({
                 boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
                 <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
                 <div style={{ display:'flex', gap:10, minWidth:0 }}>
-                  {([['Previsto','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],['Disponível','#16a34a',fmt(totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
+                  {([['Planejado','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],['Disponível','#16a34a',fmt(totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
                     <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
                       <span style={{ fontSize:12, fontWeight:600, color:COR.textoSuave, marginBottom:1 }}>{lbl}</span>
                       <span style={{ fontSize:14, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{val}</span>
