@@ -443,7 +443,22 @@ export default function AcMobileView({
             os três saldos numa caixa, a frase do quanto está economizando no
             plano, e "Ver detalhes" com o "Mês termina com" e receitas e
             despesas. Cabe −R$ 999.999,99 em 375px (a letra encolhe, cqi). */}
-        <div style={{ ...CAIXA_TOPO, padding:'4px 14px', marginTop:18 }}>
+        {fraseEconomia && (
+          <div style={{ marginTop:18, fontSize:15, color:'#fff', display:'flex', alignItems:'center', gap:8, lineHeight:1.35 }}>
+            <i className="ti ti-pig-money" aria-hidden style={{ fontSize:20, flexShrink:0 }} />{fraseEconomia}
+          </div>
+        )}
+        <button type="button" onClick={() => setDetalhes(v => !v)} aria-expanded={detalhes}
+          style={{ marginTop:12, background:'none', border:'1px solid rgba(255,255,255,.4)', borderRadius:999, color:'#fff', cursor:'pointer',
+            fontFamily:'inherit', fontSize:14, fontWeight:600, padding:'8px 16px', display:'inline-flex', alignItems:'center', gap:6, minHeight:40 }}>
+          {detalhes ? 'Ocultar detalhes' : 'Ver detalhes'}
+          <i className={`ti ${detalhes ? 'ti-chevron-up' : 'ti-chevron-down'}`} aria-hidden />
+        </button>
+        {detalhes && (<>
+        {/* Os três saldos moram dentro do "Ver detalhes" (21/11/2026,
+            Guilherme: "no celular, os 3 cards podem ficar dentro do ver
+            detalhes"). O computador segue com eles à vista. */}
+        <div style={{ ...CAIXA_TOPO, padding:'4px 14px', marginTop:12 }}>
           {([
             ['ti-flag', 'Saldo inicial', `${MESES_FULL[mes]} começou com`, saldoInicial],
             ['ti-calendar-stats', 'Saldo final planejado', 'se o plano se cumprir', saldoPlanejado],
@@ -464,18 +479,6 @@ export default function AcMobileView({
             </div>
           ))}
         </div>
-        {fraseEconomia && (
-          <div style={{ marginTop:12, fontSize:15, color:'#fff', display:'flex', alignItems:'center', gap:8, lineHeight:1.35 }}>
-            <i className="ti ti-pig-money" aria-hidden style={{ fontSize:20, flexShrink:0 }} />{fraseEconomia}
-          </div>
-        )}
-        <button type="button" onClick={() => setDetalhes(v => !v)} aria-expanded={detalhes}
-          style={{ marginTop:12, background:'none', border:'1px solid rgba(255,255,255,.4)', borderRadius:999, color:'#fff', cursor:'pointer',
-            fontFamily:'inherit', fontSize:14, fontWeight:600, padding:'8px 16px', display:'inline-flex', alignItems:'center', gap:6, minHeight:40 }}>
-          {detalhes ? 'Ocultar detalhes' : 'Ver detalhes'}
-          <i className={`ti ${detalhes ? 'ti-chevron-up' : 'ti-chevron-down'}`} aria-hidden />
-        </button>
-        {detalhes && (<>
         <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
           ...CAIXA_TOPO, width:'100%', marginTop: 12, cursor:'pointer', fontFamily:'inherit', textAlign:'left',
           display:'flex', alignItems:'center', justifyContent:'space-between', gap:10,
