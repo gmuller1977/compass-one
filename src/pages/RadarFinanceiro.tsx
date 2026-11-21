@@ -26,6 +26,7 @@ import { ForaDoMesContexto } from '../components/acompanhamento/foraDoMesContext
 import { dadosBancariosDoMes, fixaNaoOcorre } from '../utils/fixasDoMes'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { balancoDoPlano } from '../utils/balancoDoPlano'
 import { previstoDoAno } from '../components/planejamento/previstoDoAno'
 
 function useIsMobile() {
@@ -56,7 +57,7 @@ export default function RadarFinanceiro() {
     ro.observe(grade)
     return () => ro.disconnect()
   }, [grade])
-  const [detalheContas, setDetalheContas] = useState(false)
+  const [detalhes, setDetalhes] = useState(false)
   const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   const { pathname } = useLocation()
@@ -184,6 +185,15 @@ export default function RadarFinanceiro() {
   const subRealizado = saldoPlanejado !== null && mesFechado ? diferencaDoPlano(saldoAtual, saldoPlanejado)
     : !ritmo && resumo ? `${resumo.titulo}${resumo.detalhe ? ` · ${resumo.detalhe}` : ''}` : 'o que já aconteceu'
 
+  // A frase do "Plano do mês" da Início, sobre as mesmas linhas
+  // (balancoDoPlano): quanto os grupos ainda estão abaixo do plano menos o
+  // quanto passaram. Sem plano de despesa no mês, nada (o Radar não julga).
+  const balanco = useMemo(() => (dadosAno ? balancoDoPlano(linhasSaida, categorias) : null), [dadosAno, linhasSaida, categorias])
+  const fraseEconomia = !balanco ? null
+    : balanco.diferenca > 0.005 ? <span>No total, você {mesFechado ? 'economizou' : 'está economizando'} <b>{fmt(balanco.diferenca)}</b> no plano</span>
+    : balanco.diferenca < -0.005 ? <span>No total, você {mesFechado ? 'gastou' : 'está gastando'} <b>{fmt(-balanco.diferenca)}</b> a mais do que o plano</span>
+    : <span>No total, está exatamente no plano</span>
+
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
   const percE = perc(julgE.real, julgE.prev)
   const percS = perc(julgS.real, julgS.prev)
@@ -196,7 +206,6 @@ export default function RadarFinanceiro() {
   // branco usamos o verde e laranja") todo número no azul é BRANCO, saldos
   // e rodapé inclusive. Receitas e Despesas levam verde e laranja pelo TIPO
   // só na BARRA. Quem diz se passou do plano são os grupos.
-  const corSaldo = (_v: number) => NUMERO_NO_AZUL
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
@@ -206,7 +215,6 @@ export default function RadarFinanceiro() {
   )
 
 
-  const alternarDetalhe = () => setDetalheContas(v => !v)
 
   // Grupo é um por vez (21/10/2026, pedido do Guilherme): abrir um fecha o
   // anterior, como no computador. Categoria segue abrindo à vontade.
@@ -268,6 +276,8 @@ export default function RadarFinanceiro() {
         saldoPrevisto={saldoPrevisto}
         saldoPlanejado={saldoPlanejado}
         subRealizado={subRealizado}
+        saldoInicial={saldoInicial}
+        fraseEconomia={fraseEconomia}
         resumo={resumo}
         memoria={memoria}
         cenario={cenarioPrevisao}
@@ -316,96 +326,96 @@ export default function RadarFinanceiro() {
             />
           }
         >
-          {/* Uma linha só (24/10/2026, pedido do Guilherme, para o topo ocupar
-              menos): Saldo inicial, Receitas e Despesas em cards à esquerda e,
-              ao lado, o saldo de hoje em bancos e dinheiro, fora de card, em
-              letra grande. Mês fechado: o saldo no fim do mês. */}
-          <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {[
-              { rot: 'Saldo inicial', v: fmt(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
-              { rot: '↑ Receitas', v: fmt(totalRealE), sub: deQuanto(totalPrevE), p: percE },
-              { rot: '↓ Despesas', v: fmt(totalRealS), sub: deQuanto(totalPrevS), p: percS },
-            ].map(k => (
-              <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                style={{ flex: '1 1 220px', maxWidth: 300, background: 'rgba(255,255,255,.12)', borderRadius: 14,
-                  border: '1px solid rgba(255,255,255,.16)',
-                  padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
-                  display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
-                {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
-                {/* A letra encolhe com a largura (cqi): cabe −R$ 999.999,99 (24/10/2026,
-                    regra do Guilherme: todo número pode chegar a isso). */}
-                <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
-                  <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(24px, calc(100cqi / 7))', fontWeight: 700, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
-                    whiteSpace: 'nowrap' }}>{k.v}</div>
-                  <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
+          {/* Topo enxuto (21/11/2026, Guilherme: "o que ele realmente precisa
+              saber?"): três saldos — inicial, final planejado e realizado — e
+              a frase do quanto está economizando no plano (a do "Plano do mês"
+              da Início). Receitas, despesas, o "Mês termina com" com o
+              cálculo e o saldo por conta ficam em "Ver detalhes". Cada número
+              cabe −R$ 999.999,99 (a letra encolhe pela largura, cqi). */}
+          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+            {([
+              { ic: 'ti-flag', rot: 'Saldo inicial', sub: `${MESES_FULL[mes]} começou com`, v: saldoInicial as number | null, pe: 'em bancos e dinheiro' },
+              { ic: 'ti-calendar-stats', rot: 'Saldo final planejado', sub: `${MESES_FULL[mes]} termina com`, v: saldoPlanejado, pe: 'se o plano se cumprir' },
+              { ic: 'ti-wallet', rot: 'Saldo realizado', sub: ehMesCorrente ? 'Hoje no banco e no dinheiro' : `No fim de ${MESES_FULL[mes].toLowerCase()}`, v: saldoAtual as number | null, pe: subRealizado },
+            ]).map(k => (
+              <button key={k.rot} type="button" onClick={() => setDetalhes(v => !v)} aria-expanded={detalhes}
+                style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14, border: '1px solid rgba(255,255,255,.16)',
+                  padding: '14px 18px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
+                  color: '#fff', containerType: 'inline-size' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className={`ti ${k.ic}`} aria-hidden style={{ fontSize: 17 }} />{k.rot}
                 </div>
+                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>{k.sub}</div>
+                {k.v === null ? (
+                  <div style={{ fontSize: 18, fontWeight: 600, margin: '8px 0 4px' }}>Sem plano neste mês</div>
+                ) : (
+                  <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(40px, calc(100cqi / 7.2))', fontWeight: 700, lineHeight: 1.15,
+                    color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(k.v)}</div>
+                )}
+                <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.pe}</div>
               </button>
             ))}
-            {/* Planejado × Realizado lado a lado (21/11/2026, pedido do
-                Guilherme): à esquerda, com quanto o mês termina PELO PLANO (o
-                "termina com" do Planejamento); à direita, o saldo de hoje em
-                bancos e dinheiro. Cada número cabe −R$ 999.999,99. */}
-            <div style={{ flex: '2 1 420px', minWidth: 0, display: 'flex', borderRadius: 14,
-              background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)' }}>
-              <div style={{ flex: 1, minWidth: 0, padding: '12px 16px', containerType: 'inline-size',
-                borderRight: '1px solid rgba(255,255,255,.16)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <i className="ti ti-calendar-stats" aria-hidden style={{ fontSize: 16 }} />Planejado
-                </div>
-                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>{`Termina ${MESES_FULL[mes].toLowerCase()} com`}</div>
-                {saldoPlanejado === null ? (
-                  <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginTop: 6 }}>Sem plano neste mês</div>
-                ) : (
-                  <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(40px, calc(100cqi / 7.2))', fontWeight: 700, lineHeight: 1.1,
-                    color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoPlanejado)}</div>
-                )}
-                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>se o plano se cumprir</div>
-              </div>
-              <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                style={{ flex: 1, minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
-                  background: 'none', border: 'none', padding: '12px 16px', containerType: 'inline-size' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <i className="ti ti-wallet" aria-hidden style={{ fontSize: 16 }} />Realizado
-                </div>
-                <div style={{ fontSize: 13, color: ROTULO_TOPO }}>
-                  {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
-                </div>
-                <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(40px, calc(100cqi / 7.2))', fontWeight: 700, lineHeight: 1.1,
-                  color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
-                <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subRealizado}</div>
-              </button>
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 16, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {fraseEconomia && <><i className="ti ti-pig-money" aria-hidden style={{ fontSize: 20 }} />{fraseEconomia}</>}
             </div>
-          </div>
-          {/* "Mês termina com" logo abaixo de Planejado × Realizado, como no
-              celular (21/11/2026, pedido do Guilherme): a barra do pé da tela
-              saiu. Clicar abre a memória de cálculo ali mesmo. */}
-          <div style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden',
-            border: '1px solid rgba(255,255,255,.16)',
-            background: saldoPrevisto >= 0 ? 'rgba(255,255,255,.12)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
-            <button type="button" aria-expanded={memoriaAberta} onClick={() => setMemoriaAberta(v => !v)}
-              style={{ width: '100%', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                gap: 12, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', color: '#fff', background: 'none', border: 'none' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Mês termina com</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span>o que já aconteceu + o que ainda falta do plano</span>
-                  <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontWeight: 600 }}>{memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}</span>
-                  <ChipCenario cenario={cenarioPrevisao} />
-                </div>
-              </div>
-              <span style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-                color: NUMERO_NO_AZUL }}>{fmt(saldoPrevisto)}</span>
+            <button type="button" onClick={() => setDetalhes(v => !v)} aria-expanded={detalhes}
+              style={{ background: 'none', border: '1px solid rgba(255,255,255,.4)', borderRadius: 999, color: '#fff', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 14, fontWeight: 600, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {detalhes ? 'Ocultar detalhes' : 'Ver detalhes'}
+              <i className={`ti ${detalhes ? 'ti-chevron-up' : 'ti-chevron-down'}`} aria-hidden />
             </button>
-            {memoriaAberta && (
-              <MemoriaSaldo m={memoria} positivo={saldoPrevisto >= 0}
-                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
-            )}
           </div>
+          {detalhes && (
+            <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                {[
+                  { rot: '↑ Receitas', v: totalRealE, prev: totalPrevE, p: percE, cor: '#0891b2', verbo: 'recebeu' },
+                  { rot: '↓ Despesas', v: totalRealS, prev: totalPrevS, p: percS, cor: '#2563eb', verbo: 'gastou' },
+                ].map(k => (
+                  <div key={k.rot} style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14, border: '1px solid rgba(255,255,255,.16)',
+                    padding: '12px 16px', minWidth: 0, display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
+                    {k.p !== null && <AnelTopo pct={k.p} cor={k.cor} />}
+                    <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
+                      <div style={{ fontFamily: FONTE_TITULO, fontSize: 'min(26px, calc(100cqi / 7))', fontWeight: 700, color: NUMERO_NO_AZUL,
+                        fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(k.v)}</div>
+                      <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {k.verbo} · {deQuanto(k.prev)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* "Mês termina com": o que já aconteceu + o que falta do plano,
+                  com a memória de cálculo. A barra do pé da tela saiu. */}
+              <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,.16)',
+                background: saldoPrevisto >= 0 ? 'rgba(255,255,255,.12)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
+                <button type="button" aria-expanded={memoriaAberta} onClick={() => setMemoriaAberta(v => !v)}
+                  style={{ width: '100%', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    gap: 12, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', color: '#fff', background: 'none', border: 'none' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>Mês termina com</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                      <span>o que já aconteceu + o que ainda falta do plano</span>
+                      <span style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontWeight: 600 }}>{memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}</span>
+                      <ChipCenario cenario={cenarioPrevisao} />
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: FONTE_TITULO, fontSize: 30, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                    color: NUMERO_NO_AZUL }}>{fmt(saldoPrevisto)}</span>
+                </button>
+                {memoriaAberta && (
+                  <MemoriaSaldo m={memoria} positivo={saldoPrevisto >= 0}
+                    cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+                )}
+              </div>
+            </div>
+          )}
         </PageHeader>
       </div>
 
-      {detalheContas && (
+      {detalhes && (
         <div style={{ flexShrink: 0 }}>
           <RadarDetalheContas linhas={linhasContas} />
         </div>

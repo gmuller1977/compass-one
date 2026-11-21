@@ -49,6 +49,10 @@ interface AcMobileViewProps {
   saldoPrevisto: number
   /** Com quanto o mês termina pelo plano (o do Planejamento); null sem plano. */
   saldoPlanejado: number | null
+  /** Com quanto o mês abriu (o Saldo inicial do computador). */
+  saldoInicial: number
+  /** A frase "você está economizando" do computador; null sem plano. */
+  fraseEconomia: React.ReactNode
   /** A frase embaixo do realizado, a mesma do computador. */
   subRealizado: string
   resumo: ResumoRadar | null
@@ -69,12 +73,13 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
-  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado,
+  saldoAtual, saldoPrevisto, saldoPlanejado, subRealizado, saldoInicial, fraseEconomia,
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
   const foraDoMesIds = useForaDoMes()
   const [memoriaAberta, setMemoriaAberta] = useState(false)
+  const [detalhes, setDetalhes] = useState(false)
   const diaHoje   = new Date().getDate()
   const ehMesAtual = ano === new Date().getFullYear() && mes === new Date().getMonth()
   // "Quanto tenho" é o saldo das contas (bancos + dinheiro) e o previsto é o
@@ -430,32 +435,45 @@ export default function AcMobileView({
             fim"). Antes ficava numa caixa no pé da tela, e o mês fora do
             corrente mostrava "Saldo do mês" no topo. Cabe −R$ 999.999,99 em
             375px. */}
-        {/* Planejado × Realizado lado a lado, como no computador (21/11/2026,
-            pedido do Guilherme). Cabe −R$ 999.999,99 em 375px: a letra
-            encolhe pela largura da caixa (cqi). */}
-        <div style={{ ...CAIXA_TOPO, padding:0, marginTop:18, display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)' }}>
+        {/* Topo enxuto, como no computador (21/11/2026, pedido do Guilherme):
+            os três saldos numa caixa, a frase do quanto está economizando no
+            plano, e "Ver detalhes" com o "Mês termina com" e receitas e
+            despesas. Cabe −R$ 999.999,99 em 375px (a letra encolhe, cqi). */}
+        <div style={{ ...CAIXA_TOPO, padding:'4px 14px', marginTop:18 }}>
           {([
-            ['ti-calendar-stats', 'Planejado', `Termina ${MESES_FULL[mes].toLowerCase()} com`, saldoPlanejado, 'se o plano se cumprir'],
-            ['ti-wallet', 'Realizado', ehMesAtual ? `Hoje · dia ${diaHoje} de ${totalDias}` : `Fim de ${MESES_FULL[mes].toLowerCase()}`, saldoReal, subRealizado],
-          ] as [string, string, string, number | null, string][]).map(([ic, rot, sub, v, pe], i) => (
-            <div key={rot} style={{ padding:'12px 12px', minWidth:0, containerType:'inline-size',
-              borderLeft: i ? '1px solid rgba(255,255,255,.16)' : 'none' }}>
-              <div style={{ fontSize:14, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', gap:5 }}>
-                <i className={`ti ${ic}`} aria-hidden style={{ fontSize:16 }} />{rot}
+            ['ti-flag', 'Saldo inicial', `${MESES_FULL[mes]} começou com`, saldoInicial],
+            ['ti-calendar-stats', 'Saldo final planejado', 'se o plano se cumprir', saldoPlanejado],
+            ['ti-wallet', 'Saldo realizado', ehMesAtual ? `Hoje · dia ${diaHoje} de ${totalDias}` : subRealizado, saldoReal],
+          ] as [string, string, string, number | null][]).map(([ic, rot, sub, v], i) => (
+            <div key={rot} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', containerType:'inline-size',
+              borderTop: i ? '1px solid rgba(255,255,255,.16)' : 'none' }}>
+              <div style={{ minWidth:0, flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', gap:5, whiteSpace:'nowrap', overflow:'hidden' }}>
+                  <i className={`ti ${ic}`} aria-hidden style={{ fontSize:16, flexShrink:0 }} /><span style={{ overflow:'hidden', textOverflow:'ellipsis' }}>{rot}</span>
+                </div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{sub}</div>
               </div>
-              <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{sub}</div>
-              {v === null ? (
-                <div style={{ fontSize:15, fontWeight:600, color:'#fff', marginTop:6, lineHeight:1.2 }}>Sem plano neste mês</div>
-              ) : (
-                <div style={{ fontFamily:FONTE_TITULO, fontSize:'min(30px, calc(100cqi / 6.6))', fontWeight:700, lineHeight:1.15,
-                  fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', color:'#fff', marginTop:2 }}>{fmt(v)}</div>
-              )}
-              <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', lineHeight:1.3, marginTop:2 }}>{pe}</div>
+              {v === null
+                ? <div style={{ fontSize:14, fontWeight:600, color:'#fff', textAlign:'right' }}>Sem plano neste mês</div>
+                : <div style={{ fontFamily:FONTE_TITULO, fontSize:'min(28px, calc(100cqi / 13))', fontWeight:700, fontVariantNumeric:'tabular-nums',
+                    whiteSpace:'nowrap', color:'#fff', flexShrink:0 }}>{fmt(v)}</div>}
             </div>
           ))}
         </div>
+        {fraseEconomia && (
+          <div style={{ marginTop:12, fontSize:15, color:'#fff', display:'flex', alignItems:'center', gap:8, lineHeight:1.35 }}>
+            <i className="ti ti-pig-money" aria-hidden style={{ fontSize:20, flexShrink:0 }} />{fraseEconomia}
+          </div>
+        )}
+        <button type="button" onClick={() => setDetalhes(v => !v)} aria-expanded={detalhes}
+          style={{ marginTop:12, background:'none', border:'1px solid rgba(255,255,255,.4)', borderRadius:999, color:'#fff', cursor:'pointer',
+            fontFamily:'inherit', fontSize:14, fontWeight:600, padding:'8px 16px', display:'inline-flex', alignItems:'center', gap:6, minHeight:40 }}>
+          {detalhes ? 'Ocultar detalhes' : 'Ver detalhes'}
+          <i className={`ti ${detalhes ? 'ti-chevron-up' : 'ti-chevron-down'}`} aria-hidden />
+        </button>
+        {detalhes && (<>
         <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
-          ...CAIXA_TOPO, width:'100%', marginTop: 10, cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+          ...CAIXA_TOPO, width:'100%', marginTop: 12, cursor:'pointer', fontFamily:'inherit', textAlign:'left',
           display:'flex', alignItems:'center', justifyContent:'space-between', gap:10,
           ...(saldoPrev < 0 ? { background:'linear-gradient(135deg,#7f1d1d,#991b1b)', borderColor:'rgba(255,255,255,.3)' } : {}),
         }}>
@@ -499,6 +517,7 @@ export default function AcMobileView({
             </div>
           ))}
         </div>
+        </>)}
         </div>
       </div>
 
