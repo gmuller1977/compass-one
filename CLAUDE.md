@@ -677,6 +677,20 @@ saiu. "resta R$ X" virou "disponível R$ X" e "usou tudo" virou "no limite do
 plano" (`destaqueRadar`). As notas sobre a barra do pé e o topo em uma linha
 são histórico.
 
+**No Radar, a fixa não paga conta como GASTA desde o dia 1** (21/11/2026,
+relatado pelo Guilherme: a frase dizia "gastei R$ 388 a mais do plano" e o
+Total "disponível R$ 456"; "se a pessoa pegar o plano menos realizado não
+chega no 388"). Uma conta só, refeita com os números da tela: **Planejado −
+Gastou = Disponível ou Passou**, com a fixa ainda não paga no Gastou pelo
+valor planejado e a paga pelo valor real (`comGastoDaFixa` em `radarCores.ts`,
+lida por `destaqueDoGrupo` e `partesDoGrupo`; `balancoDoPlano` usa a mesma
+régua, então a frase do topo e o "Plano do mês" da Início concordam). O Total
+das despesas (`TotalDasDespesas`, computador e celular) é Planejado · Gastou ·
+Disponível/Passou, com a nota de que as fixas não pagas já contam. Revê o
+"fixa paga até o previsto não sobra" do balanço: a fixa paga abaixo do plano
+agora aparece como disponível. Uma versão com duas linhas e "a pagar" foi
+mostrada e trocada no mesmo dia. `prova125` (12).
+
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
 cada parte na sua caixa branca, na ordem de sempre. Fixa pelo cadastro
