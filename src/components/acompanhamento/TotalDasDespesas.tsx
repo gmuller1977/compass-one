@@ -20,14 +20,14 @@ export default function TotalDasDespesas({ balanco }: { balanco: BalancoDoPlano 
   const passou = b.diferenca < -ZERO
   const col = (rotulo: string, valor: string, cor: string) => (
     <div style={{ display: 'grid', justifyItems: 'end', minWidth: 0 }}>
-      <span style={{ fontSize: 'min(12px, calc(100cqi / 26))', fontWeight: 700, color: '#475569', letterSpacing: '.02em', textTransform: 'uppercase' }}>{rotulo}</span>
-      <span style={{ fontSize: 'min(16px, calc(100cqi / 24))', fontWeight: 800, color: cor, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{valor}</span>
+      <span style={{ fontSize: 'min(12px, calc(100cqi / 30))', fontWeight: 700, color: '#475569', letterSpacing: '.02em', textTransform: 'uppercase' }}>{rotulo}</span>
+      <span style={{ fontSize: 'min(16px, calc(100cqi / 28))', fontWeight: 800, color: cor, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{valor}</span>
     </div>
   )
   return (
     <div style={{ containerType: 'inline-size', background: '#fff', borderRadius: 20, padding: '14px 16px',
       border: '1px solid var(--cx-borda)', boxShadow: '0 2px 14px rgba(15,40,120,.07)', display: 'grid', gap: 8 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)', columnGap: 10, alignItems: 'end' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)', columnGap: 8, alignItems: 'end' }}>
         <span style={{ fontSize: 'min(16px, calc(100cqi / 22))', fontWeight: 800, color: '#0f172a', alignSelf: 'center' }}>Total</span>
         {col('Planejado', fmt(b.prev), '#334155')}
         {col('Gastou', fmt(b.gasto), '#0f172a')}
