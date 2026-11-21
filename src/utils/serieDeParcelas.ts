@@ -177,3 +177,42 @@ export function alternarConferidaDaCompra<L extends Lanc, M extends Mes<L>>(
   }
   return result
 }
+
+/**
+ * Marcas de antes da regra acima (21/11/2026, relatado pelo Guilherme: "na
+ * conferência da parcela 1, as outras já deveriam ficar marcadas"). A
+ * parcela conferida ANTES de 06/11 ficou com a bolinha sozinha, e as
+ * seguintes seguiam sem ela. Ao carregar, a compra parcelada com alguma
+ * parcela conferida passa a ter TODAS conferidas, cada uma no mês dela, e
+ * isso volta ao banco na gravação. Desmarcar segue tirando de todas, então
+ * na carga seguinte nada volta. Devolve o MESMO mapa quando nada muda (a
+ * gravação por mês compara por identidade). Chave `<conta>-AAAA-MM`.
+ */
+export function propagarConferidasDasCompras<M>(mapa: Record<string, M>): Record<string, M> {
+  type MesC = { lancamentos?: Record<string, Array<{ id: string; parcelas?: number; parcelaAtual?: number }> | undefined>; conferidos?: Record<string, boolean> }
+  const serieDe = (k: string, l: { id: string; parcelas?: number; parcelaAtual?: number }) =>
+    emSerie(l) ? `${k.slice(0, -8)}|${l.id.replace(/-\d+$/, '')}|${l.parcelas}` : null
+  const conferidas = new Set<string>()
+  for (const [k, dm] of Object.entries(mapa)) {
+    const m = dm as unknown as MesC
+    if (!m?.lancamentos || !m.conferidos) continue
+    for (const lista of Object.values(m.lancamentos)) for (const l of lista ?? []) {
+      const s = m.conferidos[l.id] === true ? serieDe(k, l) : null
+      if (s) conferidas.add(s)
+    }
+  }
+  if (conferidas.size === 0) return mapa
+  let out: Record<string, M> | null = null
+  for (const [k, dm] of Object.entries(mapa)) {
+    const m = dm as unknown as MesC
+    if (!m?.lancamentos) continue
+    let novos: Record<string, boolean> | null = null
+    for (const lista of Object.values(m.lancamentos)) for (const l of lista ?? []) {
+      if (m.conferidos?.[l.id] === true) continue
+      const s = serieDe(k, l)
+      if (s && conferidas.has(s)) { novos ??= { ...(m.conferidos ?? {}) }; novos[l.id] = true }
+    }
+    if (novos) { out ??= { ...mapa }; out[k] = { ...(m as object), conferidos: novos } as unknown as M }
+  }
+  return out ?? mapa
+}

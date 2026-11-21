@@ -3616,6 +3616,9 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   (`alternarConferidaDaCompra`). No mesmo dia: mudar a quantidade de
   parcelas na 1ª, ao editar, refaz a série (`refazerSerieDeParcelas`; antes
   ficava "de 6" sem número e sem as seguintes). `serieDeParcelas.ts`; `prova118`.
+  A bolinha marcada ANTES dessa regra ficava só naquela parcela; desde
+  21/11/2026 (relatado por ele) a carga marca a compra inteira e grava
+  (`propagarConferidasDasCompras`); desmarcar segue tirando de todas. `prova124`.
   **O quadro do banco diz de onde vem o valor** (06/11/2026, Guilherme: um
   valor digitado antes de uma compra nova lia como "a mais no Compass").
   Título "Fatura no [cartão]" e embaixo "valor manual" (digitado em
