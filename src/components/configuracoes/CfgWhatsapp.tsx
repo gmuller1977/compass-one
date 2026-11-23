@@ -13,7 +13,7 @@ import { textoDoCodigo, telefoneMascarado } from '../../utils/whatsapp'
  * abre a conversa com o texto pronto): só quem tem o celular liga o número.
  * O app não grava o número; quem grava é a função, ao receber o código.
  * Sem VITE_WHATSAPP_NUMERO (o número do Compass na API da Meta), ou sem a
- * migração 028, o cartão não aparece.
+ * migração 029, o cartão não aparece.
  */
 const NUMERO = ((import.meta.env.VITE_WHATSAPP_NUMERO as string | undefined) ?? '').replace(/\D/g, '')
 

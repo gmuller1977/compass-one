@@ -1,5 +1,5 @@
 -- ============================================================
--- 028 — WhatsApp (23/11/2026, pedido do Guilherme: Z-API + n8n).
+-- 029 — WhatsApp (23/11/2026, pedido do Guilherme: API oficial da Meta + n8n).
 -- Só CRIA; nada existente muda. Idempotente. Rodar ANTES de publicar o
 -- app e a função `whatsapp`.
 --

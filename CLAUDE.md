@@ -3215,7 +3215,7 @@ A frase é lida pelo `interpretarLancamento` (sem IA) e vira PROPOSTA; só o
 Lançar do celular), com o fechamento do mês, a trava da data do saldo e o
 `autor`. O número se liga por código gerado no Perfil (`CfgWhatsapp`) e
 mandado DO PRÓPRIO WhatsApp; o app não grava número (só RPCs). Sem
-`VITE_WHATSAPP_NUMERO` ou sem a migração 028, o cartão não aparece. Regras em
+`VITE_WHATSAPP_NUMERO` ou sem a migração 029, o cartão não aparece. Regras em
 [`whatsapp.ts`](src/utils/whatsapp.ts); a função é `fonte.ts`, e o
 `index.ts` é GERADO por `node scripts/empacotar-whatsapp.mjs` (um arquivo só,
 para o editor do painel). Passo a passo em `/mnt/project-files/whatsapp/`.
