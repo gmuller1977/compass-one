@@ -1,3 +1,4 @@
+-- (Era 027_lista_espera.sql; renumerada em 23/11/2026 porque havia duas 027.)
 -- Lista de espera do "Fale com o Educador" (18/11/2026, pedido do Guilherme:
 -- "quem clicar na lista de espera, precisamos ter este controle para poder
 -- enviar notificação"). A página fica no www e quem se inscreve pode não ter
