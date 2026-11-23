@@ -1,10 +1,11 @@
-// prova126 (23/11/2026): lançar pelo WhatsApp (Z-API + n8n). A frase vira
+// prova126 (23/11/2026): lançar pelo WhatsApp (API oficial da Meta + n8n; a Z-API segue lida). A frase vira
 // uma PROPOSTA, e só o SIM grava, pelo MESMO caminho do Lançar do celular
 // (lancarNoExtrato / lancarNaFatura, valor = total, dividirParcelas), com o
 // fechamento do mês, a trava da data do saldo e o autor carimbado.
 import {
   classificar, normalizarTelefone, lerLancamento, aplicarLancamento, mesesDaAcao, chaveDoMes, hojeEmSaoPaulo,
   textoDoCodigo, telefoneMascarado, type ContaWa, type CategoriaWa,
+  lerEntrada,
 } from '../src/utils/whatsapp'
 import { lancarNaFatura, lancarNoExtrato, dividirParcelas } from '../src/utils/lancamentoRapido'
 let ok = 0, falha = 0
@@ -99,6 +100,22 @@ if (a3.ok) {
   // Fechamento do mês adiado para o dia 25 (fechamentoOverride): a compra do dia 23 fica em novembro.
   const comOverride = aplicarLancamento(a3.acao, { 'nu-2026-11': { lancamentos: {}, fechamentoOverride: 25 } }, { baseId: 'w-4', autor: 'eu' })
   t('fatura: respeita o fechamento do mês', 'nu-2026-11' in comOverride && !('nu-2027-02' in comOverride))
+}
+
+// Entrada: API oficial da Meta (escolhida no mesmo dia) e Z-API.
+{
+  const meta = (m: unknown) => ({ object: 'whatsapp_business_account', entry: [{ id: '1', changes: [{ field: 'messages', value: { messaging_product: 'whatsapp', metadata: { phone_number_id: '9' }, contacts: [{ wa_id: '554788231323' }], ...(m ? { messages: [m] } : { statuses: [{ id: 'wamid.s', status: 'delivered' }] }) } }] }] })
+  const e1 = lerEntrada(meta({ from: '554788231323', id: 'wamid.A', type: 'text', text: { body: '47 mercado' } }))
+  t('meta: texto, número e id', e1.telefone === '554788231323' && e1.messageId === 'wamid.A' && e1.texto === '47 mercado' && !e1.ignorar && !e1.midia)
+  t('meta: status de entrega é ignorado', lerEntrada(meta(null)).ignorar)
+  const e2 = lerEntrada(meta({ from: '554788231323', id: 'wamid.B', type: 'audio', audio: { id: 'x' } }))
+  t('meta: áudio é mídia, sem texto', e2.midia && e2.texto === '' && !e2.ignorar)
+  t('meta: embrulhado pelo n8n em body', lerEntrada({ headers: {}, body: meta({ from: '5547988231323', id: 'wamid.C', type: 'text', text: { body: 'SIM' } }) }).texto === 'SIM')
+  const z = lerEntrada({ type: 'ReceivedCallback', phone: '5547988231323', messageId: 'Z1', text: { message: 'oi' } })
+  t('z-api: continua lida', z.telefone === '5547988231323' && z.texto === 'oi' && z.messageId === 'Z1' && !z.ignorar)
+  t('z-api: enviada por mim é ignorada', lerEntrada({ type: 'ReceivedCallback', phone: '5547988231323', fromMe: true, text: { message: 'x' } }).ignorar)
+  t('z-api: grupo é ignorado', lerEntrada({ type: 'ReceivedCallback', phone: '1203-group', isGroup: true, text: { message: 'x' } }).ignorar)
+  t('lixo é ignorado', lerEntrada('x').ignorar && lerEntrada(null).ignorar)
 }
 
 console.log(`prova126: ${ok} ok, ${falha} falhas`)

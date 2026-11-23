@@ -4,7 +4,7 @@ import { COR } from '../../utils/cores'
 import { textoDoCodigo, telefoneMascarado } from '../../utils/whatsapp'
 
 /**
- * "WhatsApp", no Perfil (23/11/2026, pedido do Guilherme: Z-API + n8n).
+ * "WhatsApp", no Perfil (23/11/2026, pedido do Guilherme: API oficial da Meta + n8n).
  * Lançar mandando "47 mercado" para o número do Compass One; ele responde o
  * que entendeu e só lança com o SIM. Regras em utils/whatsapp.ts e na
  * função `whatsapp`.
@@ -12,7 +12,7 @@ import { textoDoCodigo, telefoneMascarado } from '../../utils/whatsapp'
  * Ligar = gerar um código aqui e mandá-lo DO PRÓPRIO WhatsApp (o link já
  * abre a conversa com o texto pronto): só quem tem o celular liga o número.
  * O app não grava o número; quem grava é a função, ao receber o código.
- * Sem VITE_WHATSAPP_NUMERO (o número do Compass na Z-API), ou sem a
+ * Sem VITE_WHATSAPP_NUMERO (o número do Compass na API da Meta), ou sem a
  * migração 028, o cartão não aparece.
  */
 const NUMERO = ((import.meta.env.VITE_WHATSAPP_NUMERO as string | undefined) ?? '').replace(/\D/g, '')

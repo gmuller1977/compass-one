@@ -6,9 +6,11 @@ import { carimbarAutor } from './autorDoLancamento'
 import { nomeDaConta } from './nomeDaConta'
 
 /**
- * Lançar pelo WhatsApp (23/11/2026, pedido do Guilherme: Z-API + n8n).
+ * Lançar pelo WhatsApp (23/11/2026, pedido do Guilherme: n8n e a API
+ * oficial da Meta, escolhida no mesmo dia no lugar da Z-API; a Z-API
+ * continua sendo lida).
  *
- * O caminho: a mensagem chega na Z-API, o n8n repassa para a função
+ * O caminho: a mensagem chega na Meta, o n8n repassa para a função
  * `whatsapp` do Supabase, e ela responde o texto que o n8n devolve à pessoa.
  * Tudo o que DECIDE mora aqui, sem banco e sem rede, para a prova testar e a
  * função só ler e gravar:
@@ -57,6 +59,55 @@ export function normalizarTelefone(bruto: unknown): string | null {
   if (typeof bruto !== 'string' || /group|broadcast|newsletter/i.test(bruto)) return null
   const d = bruto.replace(/\D/g, '')
   return d.length >= 10 && d.length <= 15 ? d : null
+}
+
+/** A mensagem recebida, venha da API oficial da Meta ou da Z-API.
+ *  `ignorar`: não é mensagem de uma pessoa (status de entrega, grupo, a
+ *  própria conta) e não se responde nada. */
+export type EntradaWa = {
+  telefone: string | null
+  messageId: string | null
+  texto: string
+  midia: boolean
+  ignorar: boolean
+}
+
+const MIDIAS = ['audio', 'image', 'video', 'document', 'sticker']
+const obj = (v: unknown): Record<string, unknown> | null =>
+  v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : null
+
+export function lerEntrada(bruto: unknown): EntradaWa {
+  const vazio: EntradaWa = { telefone: null, messageId: null, texto: '', midia: false, ignorar: true }
+  let p = obj(bruto)
+  if (!p) return vazio
+  // n8n às vezes embrulha o webhook em { body: ... }
+  const corpo = obj(p.body)
+  if (corpo && (corpo.entry || corpo.phone)) p = corpo
+
+  // API oficial (WhatsApp Cloud API): entry[].changes[].value.messages[]
+  if (Array.isArray(p.entry)) {
+    const entrada = obj((p.entry as unknown[])[0])
+    const mudanca = obj(Array.isArray(entrada?.changes) ? (entrada!.changes as unknown[])[0] : null)
+    const value = obj(mudanca?.value)
+    const m = obj(Array.isArray(value?.messages) ? (value!.messages as unknown[])[0] : null)
+    if (!m) return vazio // statuses (entregue, lida) e afins
+    const tipo = typeof m.type === 'string' ? m.type : ''
+    const texto = tipo === 'text' && typeof obj(m.text)?.body === 'string' ? obj(m.text)!.body as string
+      : tipo === 'button' && typeof obj(m.button)?.text === 'string' ? obj(m.button)!.text as string
+      : ''
+    const telefone = normalizarTelefone(m.from)
+    return { telefone, messageId: typeof m.id === 'string' ? m.id : null, texto, midia: MIDIAS.includes(tipo), ignorar: !telefone }
+  }
+
+  // Z-API ("Ao receber")
+  const telefone = normalizarTelefone(p.phone)
+  if (typeof p.type === 'string' && p.type !== 'ReceivedCallback') return { ...vazio, telefone }
+  if (!telefone || p.fromMe === true || p.isGroup === true || p.isNewsletter === true) return { ...vazio, telefone }
+  const texto = typeof obj(p.text)?.message === 'string' ? obj(p.text)!.message as string : ''
+  return {
+    telefone, messageId: typeof p.messageId === 'string' ? p.messageId : null,
+    texto, midia: MIDIAS.some(k => p![k]), ignorar: false,
+  }
 }
 
 /** "+55 47 9****-1323": o bastante para reconhecer, sem expor o número na tela. */

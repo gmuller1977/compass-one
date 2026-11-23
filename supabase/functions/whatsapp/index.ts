@@ -352,6 +352,61 @@ function normalizarTelefone(bruto) {
 	const d = bruto.replace(/\D/g, "");
 	return d.length >= 10 && d.length <= 15 ? d : null;
 }
+const MIDIAS = [
+	"audio",
+	"image",
+	"video",
+	"document",
+	"sticker"
+];
+const obj = (v) => v && typeof v === "object" && !Array.isArray(v) ? v : null;
+function lerEntrada(bruto) {
+	const vazio = {
+		telefone: null,
+		messageId: null,
+		texto: "",
+		midia: false,
+		ignorar: true
+	};
+	let p = obj(bruto);
+	if (!p) return vazio;
+	const corpo = obj(p.body);
+	if (corpo && (corpo.entry || corpo.phone)) p = corpo;
+	if (Array.isArray(p.entry)) {
+		const entrada = obj(p.entry[0]);
+		const mudanca = obj(Array.isArray(entrada?.changes) ? entrada.changes[0] : null);
+		const value = obj(mudanca?.value);
+		const m = obj(Array.isArray(value?.messages) ? value.messages[0] : null);
+		if (!m) return vazio;
+		const tipo = typeof m.type === "string" ? m.type : "";
+		const texto = tipo === "text" && typeof obj(m.text)?.body === "string" ? obj(m.text).body : tipo === "button" && typeof obj(m.button)?.text === "string" ? obj(m.button).text : "";
+		const telefone = normalizarTelefone(m.from);
+		return {
+			telefone,
+			messageId: typeof m.id === "string" ? m.id : null,
+			texto,
+			midia: MIDIAS.includes(tipo),
+			ignorar: !telefone
+		};
+	}
+	const telefone = normalizarTelefone(p.phone);
+	if (typeof p.type === "string" && p.type !== "ReceivedCallback") return {
+		...vazio,
+		telefone
+	};
+	if (!telefone || p.fromMe === true || p.isGroup === true || p.isNewsletter === true) return {
+		...vazio,
+		telefone
+	};
+	const texto = typeof obj(p.text)?.message === "string" ? obj(p.text).message : "";
+	return {
+		telefone,
+		messageId: typeof p.messageId === "string" ? p.messageId : null,
+		texto,
+		midia: MIDIAS.some((k) => p[k]),
+		ignorar: false
+	};
+}
 const semAcento = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 function classificar(texto) {
 	const t = semAcento(texto).replace(/[.!?,;]+$/g, "").trim();
@@ -607,19 +662,14 @@ const json = (corpo, status = 200) => new Response(JSON.stringify(corpo), {
 Deno.serve(async (req) => {
 	const segredo = Deno.env.get("WHATSAPP_SECRET");
 	if (!segredo || req.headers.get("x-whatsapp-secret") !== segredo) return new Response("Não autorizado", { status: 401 });
-	let p;
+	let bruto;
 	try {
-		p = await req.json();
+		bruto = await req.json();
 	} catch {
 		return json({ erro: "corpo inválido" }, 400);
 	}
-	if (p && typeof p.body === "object" && p.body && !p.phone) p = p.body;
-	const telefone = normalizarTelefone(p.phone);
-	if (typeof p.type === "string" && p.type !== "ReceivedCallback") return json({
-		telefone,
-		resposta: null
-	});
-	if (!telefone || p.fromMe === true || p.isGroup === true || p.isNewsletter === true) return json({
+	const { telefone, messageId, texto, midia, ignorar } = lerEntrada(bruto);
+	if (ignorar || !telefone) return json({
 		telefone,
 		resposta: null
 	});
@@ -628,20 +678,12 @@ Deno.serve(async (req) => {
 		resposta
 	});
 	const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
-	const messageId = typeof p.messageId === "string" ? p.messageId : null;
 	if (messageId) {
 		const { error } = await db.from("whatsapp_processadas").insert({ message_id: messageId });
 		if (error?.code === "23505") return responder(null);
 		if (Math.random() < .02) await db.from("whatsapp_processadas").delete().lt("criado_em", (/* @__PURE__ */ new Date(Date.now() - 6048e5)).toISOString());
 	}
-	const texto = typeof p.text?.message === "string" ? p.text.message : "";
-	if (!texto.trim()) return responder([
-		"audio",
-		"image",
-		"video",
-		"document",
-		"sticker"
-	].some((k) => p[k]) ? TEXTO_SO_TEXTO : null);
+	if (!texto.trim()) return responder(midia ? TEXTO_SO_TEXTO : null);
 	const cmd = classificar(texto);
 	if (cmd.tipo === "codigo") {
 		const { data: v } = await db.from("whatsapp_vinculos").select("user_id, codigo_expira").eq("codigo", cmd.codigo).maybeSingle();

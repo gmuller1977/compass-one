@@ -67,7 +67,7 @@ Compartilhamos dados apenas com:
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
 - **Vercel e Cloudflare (hospedagem):** hospedagem da aplicação web
 - **Resend (e-mail):** envio de e-mails (confirmação de conta, recuperação de senha, convites, avisos de mensagens do suporte e, para quem aceitou, novidades e ofertas)
-- **Z-API e n8n (WhatsApp):** só para quem ligou o WhatsApp. A Z-API recebe e entrega as mensagens trocadas com o número do Compass One, e o n8n as repassa à Plataforma. Recebem o seu número e o texto das mensagens, não o resto dos seus dados financeiros. O WhatsApp é um serviço da Meta, com política de privacidade própria
+- **Meta (API do WhatsApp) e n8n:** só para quem ligou o WhatsApp. A Meta, pela API oficial do WhatsApp, recebe e entrega as mensagens trocadas com o número do Compass One, e o n8n as repassa à Plataforma. Recebem o seu número e o texto das mensagens, não o resto dos seus dados financeiros. O WhatsApp é um serviço da Meta, com política de privacidade própria
 - **Sentry (monitor de erros):** quando uma tela apresenta um erro, recebe a mensagem técnica do erro, o endereço da tela e o tipo de navegador e aparelho. Não recebe dados financeiros, seu nome, seu e-mail nem identificação da sua conta. Servidores nos Estados Unidos.
 - **Google (Gemini, inteligência artificial):** **o assistente Norte está desativado no momento, e nenhum dado é enviado ao Google.** Antes de ele voltar, esta política será atualizada para dizer o que é enviado e em que condições.
 

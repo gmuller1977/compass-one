@@ -1,14 +1,15 @@
 // ============================================================
-// whatsapp — lançar pelo WhatsApp (Z-API → n8n → aqui → n8n → Z-API)
+// whatsapp — lançar pelo WhatsApp (Meta → n8n → aqui → n8n → Meta)
 // ============================================================
 // FONTE. O arquivo publicado é o index.ts AO LADO, gerado por
 //   node scripts/empacotar-whatsapp.mjs
 // (junta as regras de src/utils/whatsapp.ts num arquivo só, para colar no
 // editor de funções do painel do Supabase). Não edite o index.ts à mão.
 //
-// O n8n repassa o corpo que a Z-API manda em "Ao receber" e recebe
+// O n8n repassa o corpo do webhook da API oficial da Meta (ou da Z-API,
+// que continua sendo lida) e recebe
 //   { telefone, resposta }   resposta null = não responder nada
-// e manda `resposta` para `telefone` pela Z-API (send-text).
+// e manda `resposta` para `telefone` pela API da Meta (/messages).
 //
 // Sem JWT: protegida pelo segredo do cabeçalho x-whatsapp-secret.
 // Deploy (uma vez):
@@ -19,7 +20,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
-  classificar, normalizarTelefone, hojeEmSaoPaulo, lerLancamento, aplicarLancamento, mesesDaAcao, chaveDoMes,
+  classificar, lerEntrada, hojeEmSaoPaulo, lerLancamento, aplicarLancamento, mesesDaAcao, chaveDoMes,
   textoLigado, textoLancado, TEXTO_AJUDA, TEXTO_SEM_VINCULO, TEXTO_SO_TEXTO, TEXTO_CODIGO_INVALIDO,
   TEXTO_DESLIGADO, TEXTO_NADA_PENDENTE, TEXTO_CANCELADO, MINUTOS_DA_PROPOSTA,
   type AcaoLancar, type ContaWa, type CategoriaWa,
@@ -32,20 +33,16 @@ Deno.serve(async (req) => {
   const segredo = Deno.env.get('WHATSAPP_SECRET')
   if (!segredo || req.headers.get('x-whatsapp-secret') !== segredo) return new Response('Não autorizado', { status: 401 })
 
-  let p: Record<string, unknown>
-  try { p = await req.json() } catch { return json({ erro: 'corpo inválido' }, 400) }
-  // n8n às vezes embrulha o webhook em { body: ... }
-  if (p && typeof p.body === 'object' && p.body && !p.phone) p = p.body as Record<string, unknown>
-
-  const telefone = normalizarTelefone(p.phone)
-  if (typeof p.type === 'string' && p.type !== 'ReceivedCallback') return json({ telefone, resposta: null })
-  if (!telefone || p.fromMe === true || p.isGroup === true || p.isNewsletter === true) return json({ telefone, resposta: null })
+  let bruto: unknown
+  try { bruto = await req.json() } catch { return json({ erro: 'corpo inválido' }, 400) }
+  const { telefone, messageId, texto, midia, ignorar } = lerEntrada(bruto)
+  if (ignorar || !telefone) return json({ telefone, resposta: null })
   const responder = (resposta: string | null) => json({ telefone, resposta })
 
   const db = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
 
-  // A mesma mensagem duas vezes (reenvio da Z-API) não lança duas vezes.
-  const messageId = typeof p.messageId === 'string' ? p.messageId : null
+  // A mesma mensagem duas vezes (a Meta reenvia se não recebe o 200 a
+  // tempo) não lança duas vezes.
   if (messageId) {
     const { error } = await db.from('whatsapp_processadas').insert({ message_id: messageId })
     if (error?.code === '23505') return responder(null)
@@ -53,13 +50,8 @@ Deno.serve(async (req) => {
       await db.from('whatsapp_processadas').delete().lt('criado_em', new Date(Date.now() - 7 * 864e5).toISOString())
   }
 
-  const texto = typeof (p.text as { message?: unknown } | undefined)?.message === 'string'
-    ? ((p.text as { message: string }).message) : ''
-  if (!texto.trim()) {
-    // Áudio, foto, documento: explica. Reação, aviso de sistema e afins: silêncio.
-    const midia = ['audio', 'image', 'video', 'document', 'sticker'].some(k => p[k])
-    return responder(midia ? TEXTO_SO_TEXTO : null)
-  }
+  // Áudio, foto, documento: explica. Reação, aviso de sistema e afins: silêncio.
+  if (!texto.trim()) return responder(midia ? TEXTO_SO_TEXTO : null)
   const cmd = classificar(texto)
 
   // Ligar: o código gerado no Perfil, mandado DESTE número.

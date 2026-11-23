@@ -3204,9 +3204,12 @@ primeiro acesso para quem entrou pelo Google ou nunca respondeu), com a data,
 em `user_metadata.ofertas_email` / `ofertas_email_em`; muda no Perfil
 (`CfgOfertas`). Está na política de privacidade.
 
-**Lançar pelo WhatsApp** (23/11/2026, pedido do Guilherme: Z-API + n8n;
-fase 1, os avisos ficam para a fase 2). Mensagem → Z-API → n8n → função
-`whatsapp` (Supabase, sem JWT, segredo `x-whatsapp-secret`) → n8n → Z-API.
+**Lançar pelo WhatsApp** (23/11/2026, pedido do Guilherme: n8n e a API
+OFICIAL da Meta, escolhida no mesmo dia no lugar da Z-API, que segue lida
+por `lerEntrada`; fase 1, os avisos ficam para a fase 2). Mensagem → Meta →
+n8n → função `whatsapp` (Supabase, sem JWT, segredo `x-whatsapp-secret`) →
+n8n → Graph API `/messages`. No futuro deve ser um recurso PAGO (Guilherme,
+mesmo dia): a liberação entra no gerar o código.
 A frase é lida pelo `interpretarLancamento` (sem IA) e vira PROPOSTA; só o
 "SIM" grava, por `lancarNoExtrato`/`lancarNaFatura` (valor = total, como o
 Lançar do celular), com o fechamento do mês, a trava da data do saldo e o
