@@ -3204,6 +3204,20 @@ primeiro acesso para quem entrou pelo Google ou nunca respondeu), com a data,
 em `user_metadata.ofertas_email` / `ofertas_email_em`; muda no Perfil
 (`CfgOfertas`). Está na política de privacidade.
 
+**Lançar pelo WhatsApp** (23/11/2026, pedido do Guilherme: Z-API + n8n;
+fase 1, os avisos ficam para a fase 2). Mensagem → Z-API → n8n → função
+`whatsapp` (Supabase, sem JWT, segredo `x-whatsapp-secret`) → n8n → Z-API.
+A frase é lida pelo `interpretarLancamento` (sem IA) e vira PROPOSTA; só o
+"SIM" grava, por `lancarNoExtrato`/`lancarNaFatura` (valor = total, como o
+Lançar do celular), com o fechamento do mês, a trava da data do saldo e o
+`autor`. O número se liga por código gerado no Perfil (`CfgWhatsapp`) e
+mandado DO PRÓPRIO WhatsApp; o app não grava número (só RPCs). Sem
+`VITE_WHATSAPP_NUMERO` ou sem a migração 028, o cartão não aparece. Regras em
+[`whatsapp.ts`](src/utils/whatsapp.ts); a função é `fonte.ts`, e o
+`index.ts` é GERADO por `node scripts/empacotar-whatsapp.mjs` (um arquivo só,
+para o editor do painel). Passo a passo em `/mnt/project-files/whatsapp/`.
+`prova126`.
+
 ---
 
 ## Mobile

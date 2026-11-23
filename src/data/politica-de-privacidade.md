@@ -14,6 +14,7 @@ Esta Política de Privacidade descreve como o Compass One ("Plataforma", "nós")
 - **Preferências:** configurações pessoais da Plataforma
 - **Mensagens ao suporte:** o que você escreve na caixa de Mensagens, com data e hora, e quais comunicados você já leu
 - **Aceite de novidades e ofertas por e-mail:** se você marcou ou não essa opção, e quando
+- **Lançamentos pelo WhatsApp (só se você ligar):** o número do seu WhatsApp, quando foi ligado, e o texto das mensagens que você manda para o número do Compass One. A mensagem é usada só para montar o lançamento; o que fica guardado é o lançamento confirmado por você, e a mensagem pendente é apagada depois do SIM ou do NÃO
 - **Lista de espera:** nome, e-mail e, se quiser, WhatsApp, quando você entra na lista de espera do grupo de estudos na página Fale com o Educador
 
 ### 1.2. Dados coletados automaticamente
@@ -37,6 +38,7 @@ Utilizamos seus dados exclusivamente para:
 - Enviar comunicações essenciais (recuperação de senha, atualizações de segurança)
 - Responder às suas mensagens ao suporte e avisar por e-mail quando houver resposta
 - Enviar novidades, comunicados e ofertas do próprio Compass One por e-mail, **somente se você marcou essa opção** no cadastro ou no Perfil. A opção vem desmarcada, e você pode desmarcá-la a qualquer momento em Configurações › Perfil
+- Fazer os lançamentos que você manda pelo WhatsApp, **somente se você ligou o seu número** em Configurações › Perfil. Você desliga ali ou mandando SAIR na conversa, e o número é apagado
 - Avisar quem entrou na lista de espera, por e-mail ou WhatsApp, quando o grupo de estudos abrir
 - Melhorar a experiência do usuário e corrigir problemas técnicos
 
@@ -51,6 +53,7 @@ Utilizamos seus dados exclusivamente para:
 | Comunicações essenciais | Legítimo interesse (Art. 7º, IX) |
 | Atendimento pelo suporte (Mensagens) | Execução de contrato (Art. 7º, V) |
 | Novidades e ofertas por e-mail | Consentimento (Art. 7º, I), que pode ser retirado a qualquer momento |
+| Lançamentos pelo WhatsApp | Consentimento (Art. 7º, I), que pode ser retirado a qualquer momento |
 | Lista de espera do grupo de estudos | Consentimento (Art. 7º, I), que pode ser retirado a qualquer momento pelo suporte |
 | Segurança e prevenção de fraude | Legítimo interesse (Art. 7º, IX) |
 | Cumprimento de obrigações legais | Obrigação legal (Art. 7º, II) |
@@ -64,6 +67,7 @@ Compartilhamos dados apenas com:
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
 - **Vercel e Cloudflare (hospedagem):** hospedagem da aplicação web
 - **Resend (e-mail):** envio de e-mails (confirmação de conta, recuperação de senha, convites, avisos de mensagens do suporte e, para quem aceitou, novidades e ofertas)
+- **Z-API e n8n (WhatsApp):** só para quem ligou o WhatsApp. A Z-API recebe e entrega as mensagens trocadas com o número do Compass One, e o n8n as repassa à Plataforma. Recebem o seu número e o texto das mensagens, não o resto dos seus dados financeiros. O WhatsApp é um serviço da Meta, com política de privacidade própria
 - **Sentry (monitor de erros):** quando uma tela apresenta um erro, recebe a mensagem técnica do erro, o endereço da tela e o tipo de navegador e aparelho. Não recebe dados financeiros, seu nome, seu e-mail nem identificação da sua conta. Servidores nos Estados Unidos.
 - **Google (Gemini, inteligência artificial):** **o assistente Norte está desativado no momento, e nenhum dado é enviado ao Google.** Antes de ele voltar, esta política será atualizada para dizer o que é enviado e em que condições.
 

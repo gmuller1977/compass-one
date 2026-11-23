@@ -28,6 +28,7 @@ export const TABELAS_EXPORTADAS: Tabela[] = [
   { nome: 'indicacoes', filtro: { ou: id => `indicador_id.eq.${id},indicado_id.eq.${id}` }, ordem: ['id'] },
   { nome: 'mensagens_suporte', filtro: { coluna: 'user_id' }, ordem: ['id'] },
   { nome: 'comunicados_lidos', filtro: { coluna: 'user_id' }, ordem: ['comunicado_id'] },
+  { nome: 'whatsapp_vinculos', filtro: { coluna: 'user_id' }, ordem: ['user_id'] },
 ]
 
 export type MeusDados = {

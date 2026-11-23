@@ -4,6 +4,7 @@ import type { Conta, Categoria, Perfil } from '../../context/AppContext'
 import CfgCompartilhar from '../compartilhar/CfgCompartilhar'
 import CfgDigital from './CfgDigital'
 import CfgOfertas from './CfgOfertas'
+import CfgWhatsapp from './CfgWhatsapp'
 import CfgMeusDados from './CfgMeusDados'
 import { COR, EmBreve, inputSt, labelSt } from './CfgShared'
 
@@ -86,6 +87,8 @@ export default function CfgPerfil({
         <CfgCompartilhar />
 
         <CfgDigital />
+
+        <CfgWhatsapp />
 
         <CfgOfertas />
 
