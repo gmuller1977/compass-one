@@ -3219,7 +3219,7 @@ mandado DO PRÓPRIO WhatsApp; o app não grava número (só RPCs). Sem
 [`whatsapp.ts`](src/utils/whatsapp.ts); a função é `fonte.ts`, e o
 `index.ts` é GERADO por `node scripts/empacotar-whatsapp.mjs` (um arquivo só,
 para o editor do painel). Passo a passo em `/mnt/project-files/whatsapp/`.
-`prova126`.
+`prova127`.
 
 ---
 

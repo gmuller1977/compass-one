@@ -1,4 +1,4 @@
-// prova126 (23/11/2026): lançar pelo WhatsApp (API oficial da Meta + n8n; a Z-API segue lida). A frase vira
+// prova127 (23/11/2026): lançar pelo WhatsApp (API oficial da Meta + n8n; a Z-API segue lida). A frase vira
 // uma PROPOSTA, e só o SIM grava, pelo MESMO caminho do Lançar do celular
 // (lancarNoExtrato / lancarNaFatura, valor = total, dividirParcelas), com o
 // fechamento do mês, a trava da data do saldo e o autor carimbado.
@@ -118,5 +118,5 @@ if (a3.ok) {
   t('lixo é ignorado', lerEntrada('x').ignorar && lerEntrada(null).ignorar)
 }
 
-console.log(`prova126: ${ok} ok, ${falha} falhas`)
+console.log(`prova127: ${ok} ok, ${falha} falhas`)
 if (falha) process.exit(1)
