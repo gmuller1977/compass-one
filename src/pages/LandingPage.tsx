@@ -828,7 +828,7 @@ export default function LandingPage() {
             </div>
             <div className="lp-ajuda">
               <div><b>Ainda com dúvidas?</b><p>Escreva para o nosso suporte.</p></div>
-              <a href="mailto:suporte@compassone.app" className="lp-btn lp-btn-claro" style={{ padding: '11px 20px', fontSize: 15 }}>Falar com o suporte</a>
+              <a href="mailto:suporte@compass-one.com.br" className="lp-btn lp-btn-claro" style={{ padding: '11px 20px', fontSize: 15 }}>Falar com o suporte</a>
             </div>
           </div>
         </section>

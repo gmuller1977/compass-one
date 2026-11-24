@@ -31,7 +31,7 @@ import { diaEmSaoPaulo, lancouNoDia, mensagemDoDia, type ContaProxima } from './
 Deno.serve(async (req) => {
   if (req.headers.get('x-cron-secret') !== Deno.env.get('CRON_SECRET')) return new Response('Não autorizado', { status: 401 })
 
-  webpush.setVapidDetails('mailto:contato@compassone.app',
+  webpush.setVapidDetails('mailto:suporte@compass-one.com.br',
     Deno.env.get('VAPID_PUBLIC_KEY') ?? '', Deno.env.get('VAPID_PRIVATE_KEY') ?? '')
   const db = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
 

@@ -1181,7 +1181,7 @@ export default function LandingPageV2() {
             </div>
             <div className="v2-suporte">
               <div><b>Ainda com dúvidas?</b><p>Escreva para o nosso suporte.</p></div>
-              <a href="mailto:suporte@compassone.app" className="v2-btn v2-btn-escuro" style={{ minHeight: 44, padding: '10px 20px', fontSize: 15 }}>Falar com o suporte</a>
+              <a href="mailto:suporte@compass-one.com.br" className="v2-btn v2-btn-escuro" style={{ minHeight: 44, padding: '10px 20px', fontSize: 15 }}>Falar com o suporte</a>
             </div>
           </div>
         </section>
