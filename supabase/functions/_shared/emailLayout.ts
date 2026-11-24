@@ -6,8 +6,12 @@
 // Authentication → Emails → Templates. Mudou aqui, rodar o gerador de novo.
 //
 // E-mail não é página: tabela, estilo inline, nada de fonte externa nem
-// SVG (Gmail e Outlook descartam). O logo é o PNG publicado no site.
-// Topo #0f2878 → #1e40af só com branco (a regra do #1e40af); botão #1a56db
+// SVG (Gmail e Outlook descartam). O logo é o PNG publicado no site, a rosa
+// dos ventos dourada (19/11/2026), com o ?v= dos ícones do index.html: o
+// Gmail guarda a imagem pelo endereço, e sem trocar o ?v= segue mostrando a
+// logo antiga. Regerou os ícones, subir LOGO_VERSAO junto.
+// Topo no degradê "noite" do app (#070c18 → #111c3f), com "Compass" branco
+// (16,6:1) e "One" em #fcd34d (11,5:1), medidos no #111c3f, o NomeCompass; botão #1a56db
 // com texto branco, 6,2:1; corpo #1e293b no branco, 14,6:1; apoio #475569,
 // 7,6:1.
 // ============================================================
@@ -15,6 +19,8 @@
 export const SITE = 'https://www.compass-one.com.br'
 /** Login e cadastro moram no app. desde 11/11/2026 (src/utils/site.ts). */
 export const APP = 'https://app.compass-one.com.br'
+/** O mesmo ?v= dos ícones no index.html. */
+export const LOGO_VERSAO = '5'
 
 export type Email = {
   preview: string       // a linha cinza que a caixa de entrada mostra
@@ -44,11 +50,11 @@ export function emailHtml(e: Email): string {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${e.preview}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef2fb;">
 <tr><td align="center" style="padding:32px 16px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(15,40,120,.10);">
-<tr><td bgcolor="#0f2878" style="background:#0f2878;background-image:linear-gradient(135deg,#0f2878,#1e40af);padding:28px 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(7,12,24,.12);">
+<tr><td bgcolor="#070c18" style="background:#070c18;background-image:linear-gradient(180deg,#070c18,#111c3f);padding:28px 32px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="vertical-align:middle;"><img src="${SITE}/icone-192.png" width="44" height="44" alt="" style="display:block;border-radius:12px;"></td>
-<td style="vertical-align:middle;padding-left:12px;font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-.3px;">Compass One</td>
+<td style="vertical-align:middle;"><img src="${SITE}/icone-192.png?v=${LOGO_VERSAO}" width="48" height="48" alt="Compass One" style="display:block;border-radius:12px;"></td>
+<td style="vertical-align:middle;padding-left:12px;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-.3px;">Compass <span style="font-weight:400;color:#fcd34d;">One</span></td>
 </tr></table>
 </td></tr>
 <tr><td style="padding:32px 32px 8px;">
