@@ -34,7 +34,8 @@ export async function listarMembros(donoId: string) {
 
 export async function convidar(p: { donoId: string; donoNome: string; donoEmail: string; email: string }) {
   const { data, error } = await supabase.from('compartilhamentos').insert({
-    dono_id: p.donoId, dono_nome: p.donoNome, dono_email: p.donoEmail, email: p.email.trim().toLowerCase(),
+    // Migração 030: o banco exige dono_email = o do login e nome até 80 letras.
+    dono_id: p.donoId, dono_nome: p.donoNome.trim().slice(0, 80), dono_email: p.donoEmail, email: p.email.trim().toLowerCase(),
   }).select('id').single()
   if (error) return { erro: motivoDoErro(error), envio: 'falha' as EnvioConvite }
   return { erro: '', envio: await enviarEmailDoConvite(data.id as string) }
