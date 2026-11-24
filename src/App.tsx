@@ -21,9 +21,9 @@ import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import FaleComEducador     from './pages/FaleComEducador'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
-import LandingPage         from './pages/LandingPage'
-// A prévia da apresentação nova (o voo) só baixa quem abre /v2.
-const LandingPageV2 = lazy(() => import('./pages/LandingPageV2'))
+import LandingPageV2       from './pages/LandingPageV2'
+// A apresentação antiga fica arquivada em /v1 (24/11/2026): só baixa quem a abre.
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 import { temApresentacaoEstatica, tirarApresentacaoEstatica } from './utils/apresentacaoEstatica'
 import Indicar             from './pages/Indicar'
 import Mensagens           from './pages/Mensagens'
@@ -135,7 +135,7 @@ function HomeRoute() {
   if (carregando) return temApresentacaoEstatica() ? null : <LoadingSpinner />
   // No app.compass-one.com.br a apresentação não existe: sem login, é o login
   // (11/11/2026). No celular, quem já usa o app quer entrar.
-  if (!user) return ehHostDoApp() || (isMobile && pulaApresentacao()) ? <Navigate to="/login" replace /> : <LandingPage />
+  if (!user) return ehHostDoApp() || (isMobile && pulaApresentacao()) ? <Navigate to="/login" replace /> : <LandingPageV2 />
   if (!onboardingCompleto) return <Navigate to={inicioDoNovo} replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
   if (!lancarJaAbriu) return <AbrirNoLancar />
@@ -200,7 +200,8 @@ export default function App() {
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
           <Route path="/educador"        element={<FaleComEducador />} />
-          <Route path="/v2"              element={<Suspense fallback={null}><LandingPageV2 /></Suspense>} />
+          <Route path="/v1"              element={<Suspense fallback={null}><LandingPage /></Suspense>} />
+          <Route path="/v2"              element={<Navigate to="/" replace />} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
           <Route path="/norte"           element={NORTE_ATIVO ? <Protegido><Norte /></Protegido> : <Navigate to="/" replace />} />

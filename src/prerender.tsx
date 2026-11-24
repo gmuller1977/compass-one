@@ -2,11 +2,11 @@
 // (scripts/prerender.mjs). Não entra no app: só no Node, durante o build.
 import { renderToString } from 'react-dom/server'
 import { StaticRouter } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
+import LandingPageV2 from './pages/LandingPageV2'
 import { PERGUNTAS_FREQUENTES } from './utils/perguntasFrequentes'
 
 export function apresentacao(): string {
-  return renderToString(<StaticRouter location="/"><LandingPage /></StaticRouter>)
+  return renderToString(<StaticRouter location="/"><LandingPageV2 /></StaticRouter>)
 }
 
 export function perguntasEmDadosEstruturados(): string {

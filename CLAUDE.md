@@ -4250,6 +4250,11 @@ o localStorage de cada endereço é separado. Consequência aceita: quem usava o
 www entra de novo uma vez, e o ícone instalado pelo www deve ser reinstalado.
 Regras em [`site.ts`](src/utils/site.ts); `prova120` (18).
 
+**A apresentação do voo é a página oficial** (24/11/2026, Guilherme: "coloque
+o v2 como site oficial"). `LandingPageV2` é a "/" do www e é ela que o
+`prerender.tsx` escreve no `dist/index.html`. A antiga (`LandingPage`) fica
+arquivada em `/v1`, no ar e com `noindex`; `/v2` leva à "/". Não apagar a v1.
+
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
 grava em produção**. Há mais de um usuário real na base.
 
