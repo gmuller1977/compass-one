@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 import { tirarApresentacaoEstatica } from '../utils/apresentacaoEstatica'
@@ -610,6 +610,15 @@ export default function LandingPage() {
   const ano = new Date().getFullYear()
   // A versão pré-renderizada sai de cena no mesmo quadro em que esta entra.
   useLayoutEffect(() => { tirarApresentacaoEstatica() }, [])
+  // Arquivada em /v1 desde 24/11/2026, quando a v2 (o voo) virou a "/":
+  // continua no ar, fora do Google.
+  useEffect(() => {
+    const existente = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    const meta = existente ?? document.head.appendChild(Object.assign(document.createElement('meta'), { name: 'robots' }))
+    const antes = existente?.content
+    meta.content = 'noindex, nofollow'
+    return () => { if (antes !== undefined) meta.content = antes; else meta.remove() }
+  }, [])
 
   return (
     <div className="lp">

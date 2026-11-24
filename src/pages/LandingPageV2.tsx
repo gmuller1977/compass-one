@@ -16,8 +16,8 @@ import { codigoRecebido } from '../utils/indicacaoLocal'
  * Apresentação v2, "o voo" (16/11/2026, pedido do Guilherme: "elementos da
  * aviação: o ponto de partida é a decolagem, no início turbulência e nuvens,
  * aos poucos ganha altitude, passa os momentos ruins e fica acima das nuvens
- * numa viagem tranquila"). Prévia em /v2, fora do Google, enquanto a v1 segue
- * na "/". Rolar é subir: o céu clareia por faixa e o altímetro acompanha.
+ * numa viagem tranquila"). É a página oficial na "/" desde 24/11/2026 (antes
+ * era a prévia em /v2; a v1 ficou arquivada em /v1, fora do Google). Rolar é subir: o céu clareia por faixa e o altímetro acompanha.
  * As telas de exemplo usam números fictícios, nunca dado de alguém.
  */
 
@@ -976,22 +976,8 @@ export default function LandingPageV2() {
   const login = hrefDoApp('/login', codigoRecebido())
   const raiz = useRef<HTMLDivElement>(null)
 
-  // O index.html traz a v1 pré-renderizada; aqui ela sai de cena.
+  // O index.html traz esta página pré-renderizada; o React a substitui.
   useLayoutEffect(() => { tirarApresentacaoEstatica() }, [])
-  // Prévia: fora do Google enquanto a v1 é a página principal.
-  useEffect(() => {
-    const existente = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
-    const meta = existente ?? document.head.appendChild(Object.assign(document.createElement('meta'), { name: 'robots' }))
-    const antes = existente?.content
-    meta.content = 'noindex, nofollow'
-    const titulo = document.title
-    document.title = 'Compass One · Planejamento e educação financeira'
-    return () => {
-      if (antes !== undefined) meta.content = antes
-      else meta.remove()
-      document.title = titulo
-    }
-  }, [])
 
   const altTexto = alt.toLocaleString('pt-BR')
   return (

@@ -12,14 +12,14 @@
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content="Compass One" />
     <meta property="og:url" content="https://www.compass-one.com.br/" />
-    <meta property="og:title" content="Saiba hoje como o seu mês vai fechar." />
+    <meta property="og:title" content="Sua vida financeira parece uma tempestade antes da decolagem?" />
     <meta property="og:description" content="O Compass One mostra, em qualquer dia, com quanto você termina o mês. Sem surpresa na fatura. App grátis, sem mensalidade." />
     <meta property="og:image" content="https://www.compass-one.com.br/og-imagem.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Compass One, app de planejamento financeiro, com a previsão do saldo no celular e no computador" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Saiba hoje como o seu mês vai fechar." />
+    <meta name="twitter:title" content="Sua vida financeira parece uma tempestade antes da decolagem?" />
     <meta name="twitter:description" content="Veja hoje com quanto cada um dos próximos meses vai terminar, decida melhor e faça sobrar. Grátis." />
     <meta name="twitter:image" content="https://www.compass-one.com.br/og-imagem.png" />
 
@@ -73,8 +73,9 @@
       // Dois endereços, um app (11/11/2026, src/utils/site.ts): o www é a
       // apresentação; login, cadastro e o app moram no app.compass-one.com.br.
       // /ajuda e /aulas ficam reservados no www para a central de ajuda
-      // (pedido do Guilherme, 11/11/2026: matéria para aulas futuras). /v2 é a
-      // prévia da apresentação nova, o voo (16/11/2026). /educador é o
+      // (pedido do Guilherme, 11/11/2026: matéria para aulas futuras). A "/" é a
+      // apresentação do voo desde 24/11/2026; /v1 é a antiga, arquivada, e /v2
+      // (o endereço da prévia) leva à "/". /educador é o
       // "Fale com o Educador" (18/11/2026): e-book, grupo e sessão.
       // Quem abre outra tela no www, ou já tem sessão, já entrou neste celular
       // ou abre pelo ícone instalado, vai para o app. no mesmo caminho.
@@ -102,7 +103,7 @@
         } catch (e) { /* sem armazenamento: fica a apresentação */ }
         if (sessao || jaUsa) esconder = true
         if (site && !pendente) {
-          var fica = p === '/termos' || p === '/privacidade' || /^\/(i|ajuda|aulas|v2|educador)(\/|$)/.test(p) || (p === '/' && !sessao && !jaUsa)
+          var fica = p === '/termos' || p === '/privacidade' || /^\/(i|ajuda|aulas|v1|v2|educador)(\/|$)/.test(p) || (p === '/' && !sessao && !jaUsa)
           if (!fica) {
             document.documentElement.classList.add('sem-apresentacao')
             location.replace('https://app.compass-one.com.br' + p + location.search + location.hash)
