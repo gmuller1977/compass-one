@@ -1,7 +1,7 @@
 import { fmt as fmtSempre } from '../components/mobile/estilo'
 import { useValoresOcultos } from '../components/mobile/estilo'
 import { saldoInformado, saldoInformadoDaCarteira } from '../utils/saldoInformado'
-import { CARTEIRA, pedeConferencia, ultimaConferencia } from '../utils/conferirSaldos'
+import { CARTEIRA, dataDeHoje, pedeConferencia, ultimaConferencia } from '../utils/conferirSaldos'
 import { parseValor } from '../utils/moeda'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { tipoNaFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
@@ -50,7 +50,7 @@ export default function NovoLancamentoExtrato() {
   const diaHoje   = hoje.getDate()
   const mesHoje   = hoje.getMonth()
   const anoHoje   = hoje.getFullYear()
-  const hojeStr   = hoje.toISOString().slice(0,10)
+  const hojeStr   = dataDeHoje(hoje)
 
   const [contaId, setContaId] = useState('consolidado')
   const [cartaoNavId,   setCartaoNavId]   = useState<string|undefined>(undefined)

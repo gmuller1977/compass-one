@@ -102,7 +102,7 @@ Você tem direito a:
 - **Informação:** saber com quem seus dados são compartilhados
 - **Revogação do consentimento:** revogar o consentimento a qualquer momento
 
-Para exercer qualquer direito, entre em contato pelo e-mail: **privacidade@compassone.com.br**
+Para exercer qualquer direito, entre em contato pelo e-mail: **suporte@compass-one.com.br**
 
 Responderemos em até 15 dias úteis, conforme a LGPD.
 
@@ -129,7 +129,7 @@ Esta Política pode ser atualizada periodicamente. Alterações significativas s
 
 Para questões relacionadas à proteção de dados pessoais:
 
-**E-mail:** privacidade@compassone.com.br
+**E-mail:** suporte@compass-one.com.br
 
 ## 12. Autoridade Nacional
 

@@ -87,7 +87,7 @@ A Plataforma **não** realiza transações financeiras, movimentações bancári
 
 Para dúvidas, solicitações ou reclamações relacionadas a estes Termos:
 
-**E-mail:** suporte@compassone.com.br
+**E-mail:** suporte@compass-one.com.br
 
 ## 12. Legislação Aplicável
 

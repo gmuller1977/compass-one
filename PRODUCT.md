@@ -28,7 +28,7 @@ App web instalável (PWA), pt-BR, React + Vite + Supabase, hospedado na Cloudfla
 - Primeiro acesso com seis perguntas monta um plano inicial de 12 meses.
 - Automáticos (salário, débito automático) NÃO se marcam sozinhos desde 05/11/2026: aparecem para a pessoa conferir.
 - Pacotes de ajuda do educador (curso, grupo, individual) existem como oferta "sob consulta", sem preço publicado.
-- E-mail de suporte ainda indefinido (há `suporte@compassone.app` e `suporte@compassone.com.br` em uso).
+- E-mail de suporte: `suporte@compass-one.com.br` (encaminhado pela Cloudflare Email Routing para o Gmail do projeto, 23/11/2026).
 
 ## Brand Commitments
 

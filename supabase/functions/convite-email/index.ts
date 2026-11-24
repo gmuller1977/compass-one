@@ -68,8 +68,17 @@ Deno.serve(async (req) => {
   if ((envios ?? []).some(e => e.convite_id === id && new Date(e.enviado_em).getTime() > recente))
     return responder(429, { erro: 'limite', motivo: 'reenvio' })
 
-  const quem = escapar(String(c.dono_nome || c.dono_email || 'Uma pessoa'))
-  const emailDono = c.dono_nome && c.dono_email ? ` (${escapar(String(c.dono_email))})` : ''
+  // Quem convida sai do PRÓPRIO login, nunca da linha do convite: dono_nome e
+  // dono_email são gravados pelo aparelho e podiam ser qualquer texto ("Banco
+  // X", com a resposta indo para outro endereço). Revisão de 24/11/2026, A2.
+  const emailReal = String(eu.user.email ?? '').trim()
+  const { data: prefs } = await adm.from('user_preferences')
+    .select('perfil_nome, perfil_apelido').eq('user_id', eu.user.id).maybeSingle()
+  const nomeReal = String(prefs?.perfil_apelido || prefs?.perfil_nome
+    || eu.user.user_metadata?.nome || eu.user.user_metadata?.full_name || '').trim().slice(0, 80)
+  const quemTexto = nomeReal || emailReal || 'Uma pessoa'
+  const quem = escapar(quemTexto)
+  const emailDono = nomeReal && emailReal ? ` (${escapar(emailReal)})` : ''
   const para = String(c.email)
   const url = `${APP}/cadastro?email=${encodeURIComponent(para)}`
   const html = emailHtml({
@@ -94,8 +103,8 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from: 'Compass One <nao-responda@compass-one.com.br>',
       to: [para],
-      reply_to: c.dono_email || undefined,
-      subject: `${c.dono_nome || c.dono_email || 'Alguém'} convidou você para o Compass One`,
+      reply_to: emailReal || undefined,
+      subject: `${quemTexto} convidou você para o Compass One`,
       html,
     }),
   })

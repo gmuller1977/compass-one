@@ -1,5 +1,6 @@
 import { useValoresOcultos } from '../components/mobile/estilo'
 import { diaNoMes } from '../utils/diasDaFatura'
+import { dataDeHoje } from '../utils/conferirSaldos'
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -49,7 +50,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
-  const hojeStr = hoje.toISOString().slice(0,10)
+  const hojeStr = dataDeHoje(hoje)
   const isMobile = useIsMobile()
   const { toast } = useToast()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
