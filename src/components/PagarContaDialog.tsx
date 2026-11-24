@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import type { ContaAVencer } from '../utils/contasAVencer'
-import { contaDoPagamento, confirmarPagamento } from '../utils/pagarConta'
+import { contaDoPagamento, confirmarPagamento, ehFatura } from '../utils/pagarConta'
+import { faltouPagar, levarParaProximaFatura, vencimentoDaSeguinte } from '../utils/saldoDaFatura'
 import { nomeDaContaAVencer, quandoVence } from '../utils/quandoVence'
 import { parseBRL } from '../utils/moeda'
 import { COR } from '../utils/cores'
@@ -26,7 +27,7 @@ export default function PagarContaDialog({ conta: pagando, onFechar, central = f
   onFechar: () => void
   central?: boolean
 }) {
-  const { contas, categorias, extratoData, updateExtratoMes } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, setFaturaData } = useApp()
   const destinos = useMemo(() => [
     ...contas.filter(ehContaDisponivel).map(c => ({ id: c.id, nome: nomeDaConta(c, contas) })),
     { id: 'dinheiro', nome: 'Dinheiro' },
@@ -36,11 +37,18 @@ export default function PagarContaDialog({ conta: pagando, onFechar, central = f
     contaDoPagamento(pagando.id, pagando.ano, pagando.mes, contas, categorias, extratoData as Record<string, DadosMes>)
       ?? destinos[0]?.id ?? '')
 
+  // Fatura paga em parte: o que faltou vai para a fatura seguinte, se a
+  // pessoa quiser (utils/saldoDaFatura, 24/11/2026).
+  const cartao = ehFatura(pagando.id) ? contas.find(c => c.id === pagando.id.slice(7)) : undefined
+  const faltou = cartao ? faltouPagar(pagando.valor, parseBRL(valor)) : 0
+  const [levar, setLevar] = useState(true)
+
   function confirmar() {
     if (!conta) return
     const v = parseBRL(valor)
     if (v <= 0) return
     updateExtratoMes(chave(conta, pagando.ano, pagando.mes), dm => confirmarPagamento(dm, pagando.id, v, pagando.valor))
+    if (cartao) setFaturaData(prev => levarParaProximaFatura(prev, cartao, pagando.ano, pagando.mes, levar ? faltou : 0))
     onFechar()
   }
 
@@ -73,6 +81,25 @@ export default function PagarContaDialog({ conta: pagando, onFechar, central = f
               {destinos.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>
           </label>
+          {faltou > 0 && (
+            <div style={{ background: COR.avisoFundo, borderRadius: 14, padding: '12px 14px', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: COR.avisoTexto }}>Faltaram {fmt(faltou)} desta fatura</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                {([[true, `Levar para a fatura de ${vencimentoDaSeguinte(pagando.ano, pagando.mes)}`], [false, 'Não levar']] as const).map(([v, rotulo]) => (
+                  <button key={String(v)} onClick={() => setLevar(v)} aria-pressed={levar === v} style={{
+                    flex: v ? '1 1 auto' : '0 0 auto', padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 14, fontWeight: 700, border: `2px solid ${COR.avisoTexto}`,
+                    background: levar === v ? COR.avisoTexto : '#fff', color: levar === v ? '#fff' : COR.avisoTexto,
+                  }}>{rotulo}</button>
+                ))}
+              </div>
+              <div style={{ fontSize: 13, color: COR.avisoTexto, marginTop: 8, lineHeight: 1.4 }}>
+                {levar
+                  ? 'Entra no total da próxima fatura, sem contar de novo como gasto. Os juros aparecem quando você informar o valor da fatura do banco.'
+                  : 'A diferença fica fora do Compass. Use quando a fatura foi negociada ou parcelada com o banco.'}
+              </div>
+            </div>
+          )}
           <button onClick={confirmar} style={{
             width: '100%', padding: 16, border: 'none', borderRadius: 16, cursor: 'pointer',
             background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`, color: '#fff',

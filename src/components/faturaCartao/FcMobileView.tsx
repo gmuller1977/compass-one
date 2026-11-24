@@ -23,7 +23,7 @@ import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
 import { textoQtdCompras, estaConferido, type LadoCompass, type LadoBanco } from '../../utils/conferirFatura'
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
-import { BlocoProgramadas, EtiquetaTipo } from './FcProgramadas'
+import { BlocoProgramadas, BlocoSaldoAnterior, EtiquetaTipo } from './FcProgramadas'
 
 /** As duas caixas lado a lado do topo da fatura: o translúcido da caixa do
  *  saldo final da Início. Branco 9,5 · rótulo a 75% 6,1 · #86efac 7,0 no
@@ -651,6 +651,7 @@ export default function FcMobileView({
       {/* EXTRATO VIEW: lista única, a compra mais recente no topo */}
       {mobileView === 'extrato' && (
         <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
+          <BlocoSaldoAnterior saldo={mesDados.saldoAnterior} />
           <BlocoProgramadas programadas={programadas} categorias={categorias}
             onAbrir={(dia, l) => { editarLancamento(dia, l); setMobileView('form') }} onConferir={conferir} />
           {/* O botão grande "Nova compra" saiu (29/10/2026, pedido do Guilherme:

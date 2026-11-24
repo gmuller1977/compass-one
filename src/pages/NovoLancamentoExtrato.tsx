@@ -12,7 +12,9 @@ import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import { ehAutomaticoCategoria, ehFixaDeCartao } from '../utils/categoriaIcone'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { valorFixaNoMes } from '../utils/valorFixa'
-import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
+import { faltaVariavelDoMes, saldoRealizadoConta, totalFatura, type Deps as DepsSaldo } from '../utils/saldoConta'
+import { comValorDaFaturaPaga, ehFatura } from '../utils/pagarConta'
+import { saldoAnteriorDe, levarParaProximaFatura } from '../utils/saldoDaFatura'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
 import { M, FONTE_SITE } from '../components/mobile/estilo'
@@ -226,7 +228,7 @@ export default function NovoLancamentoExtrato() {
       if (pMes < 0) { pMes += 12; pAno-- }
       const fatKey = mesKey(c.id, pAno, pMes)
       const dm = faturasDados[fatKey]
-      let total = 0
+      let total = saldoAnteriorDe(dm)
       if (dm) {
         const nDias = new Date(pAno, pMes + 1, 0).getDate()
         for (let d = 1; d <= nDias; d++) {
@@ -593,9 +595,16 @@ export default function NovoLancamentoExtrato() {
       updateMes(prev => ({ ...prev, fixasConsolidadas: Object.fromEntries(Object.entries(prev.fixasConsolidadas ?? {}).filter(([k]) => k !== fixaId)) }))
       return
     }
+    // Fatura desmarcada: o que tinha ido para a fatura seguinte volta.
+    const cartaoDaFatura = ehFatura(fixaId) ? contas.find(c => c.id === fixaId.slice(7)) : undefined
+    if (cartaoDaFatura) setFaturaData(prev => levarParaProximaFatura(prev, cartaoDaFatura, ano, mes, 0))
     updateMes(prev => ({
       ...prev,
       fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: false },
+      // Fatura desmarcada perde o valor gravado: marcar de novo grava o total de então.
+      ...(ehFatura(fixaId) && prev.fixasValorOverride?.[fixaId] !== undefined
+        ? { fixasValorOverride: Object.fromEntries(Object.entries(prev.fixasValorOverride).filter(([k]) => k !== fixaId)) }
+        : {}),
     }))
   }
 
@@ -618,10 +627,13 @@ export default function NovoLancamentoExtrato() {
       && !cat?.contaDebitoId
       && contasExtrato.length > 1
     if (precisaEscolher) { setEscolherContaFixa(fixaId); return }
-    updateMes(prev => ({
+    // A fatura grava o valor pago (revisão M1, 24/11/2026): mexer nela depois
+    // não muda o que saiu do banco.
+    const totalAgora = ehFatura(fixaId) ? totalFatura(fixaId.slice(7), ano, mes, contas, faturaData as Parameters<typeof totalFatura>[4]) : 0
+    updateMes(prev => comValorDaFaturaPaga({
       ...prev,
       fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: true },
-    }))
+    }, fixaId, totalAgora))
   }
 
   function confirmarFixaEm(fixaId: string, contaAlvo: string) {
@@ -738,7 +750,7 @@ export default function NovoLancamentoExtrato() {
         let pM = m - bOff, pA = a
         if (pM < 0) { pM += 12; pA-- }
         const dmFat = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[mesKey(c.id, pA, pM)]
-        let total = 0
+        let total = saldoAnteriorDe(dmFat)
         for (const itens of Object.values(dmFat?.lancamentos ?? {}))
           for (const l of itens) total += l.tipo === 'entrada' ? l.valor : -l.valor
         const fp = c.formaPagamentoFatura

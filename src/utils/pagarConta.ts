@@ -40,13 +40,26 @@ export function contaDoPagamento(
   return extratoData[chave(origem, ano, mes)]?.fixasContaOverride?.[cat.id] ?? origem
 }
 
+export const ehFatura = (id: string) => id.startsWith('cartao-')
+
+/** A fatura marcada como paga na bolinha de Lançamentos: grava o total daquele momento, se ninguém digitou outro. */
+export function comValorDaFaturaPaga<T extends { fixasValorOverride?: Record<string, number> }>(dm: T, id: string, totalAgora: number): T {
+  if (!ehFatura(id) || totalAgora <= 0.004 || dm.fixasValorOverride?.[id] !== undefined) return dm
+  return { ...dm, fixasValorOverride: { ...dm.fixasValorOverride, [id]: Math.round(totalAgora * 100) / 100 } }
+}
+
 /**
  * Marca a conta como paga no mês. Valor diferente do previsto vira
  * `fixasValorOverride` — o mesmo campo que Lançamentos grava ao digitar o
  * valor real na linha da fixa, e que o motor lê para o saldo.
+ *
+ * A FATURA grava o valor pago SEMPRE (24/11/2026, revisão M1, aprovado pelo
+ * Guilherme). Sem ele o motor lia o pagamento do total ATUAL da fatura: paga
+ * com 700, apagar depois uma compra de 200 fazia o app achar que saíram 500
+ * do banco, e o saldo mudava desde aquele mês sem aviso. `prova137`.
  */
 export function confirmarPagamento(dm: DadosMes, id: string, valorPago: number, previsto: number): DadosMes {
-  const mudou = Math.abs(valorPago - previsto) > 0.004
+  const mudou = Math.abs(valorPago - previsto) > 0.004 || (ehFatura(id) && valorPago > 0.004)
   return {
     ...dm,
     fixasConsolidadas: { ...dm.fixasConsolidadas, [id]: true },

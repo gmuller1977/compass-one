@@ -13,7 +13,7 @@ import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
 import { FONTE_TITULO } from '../mobile/estilo'
-import { BlocoProgramadas, EtiquetaTipo } from './FcProgramadas'
+import { BlocoProgramadas, BlocoSaldoAnterior, EtiquetaTipo } from './FcProgramadas'
 
 type Props = {
   mesDados: DadosMes
@@ -55,6 +55,7 @@ export default function FcDesktopLeft({
       {/* Por data da compra, a mais recente no topo, agrupada por dia (sem acordeão:
           tudo à vista para conferir contra a fatura do banco). */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
+        <BlocoSaldoAnterior saldo={mesDados.saldoAnterior} />
         <BlocoProgramadas programadas={programadas} categorias={categorias}
           onAbrir={(dia, l) => { editarLancamento(dia, l); setDiaSel(dia) }} onConferir={conferir} />
         {(() => {

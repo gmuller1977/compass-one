@@ -15,6 +15,7 @@
 type MesComConferidos = {
   lancamentos: Record<number, Array<{ id: string; tipo?: string; valor?: number }>>
   conferidos?: Record<string, boolean>
+  saldoAnterior?: { valor: number }
 }
 
 /** "1 compra", "3 compras". */
@@ -70,7 +71,8 @@ export type Conferencia =
   | { estado: 'banco'; diferenca: number; igual: boolean }
 
 export function valorConferido(dm: MesComConferidos, totalDias: number): number {
-  let v = 0
+  // O saldo trazido da fatura anterior já é sabido: conta como conferido.
+  let v = dm.saldoAnterior?.valor ?? 0
   for (let d = 1; d <= totalDias; d++) {
     for (const l of dm.lancamentos[d] ?? []) {
       if (!estaConferido(dm, l.id)) continue

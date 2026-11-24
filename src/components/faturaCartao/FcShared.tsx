@@ -1,3 +1,4 @@
+import type { SaldoAnterior } from '../../utils/saldoDaFatura'
 import { moedaNaTela } from '../../utils/valoresOcultos'
 import React from 'react'
 
@@ -47,6 +48,9 @@ export type DadosMes = {
   /** Fixas de cartão já lançadas sozinhas neste mês de fatura, por categoria
    *  (utils/fixaNoCartao): apagada pela pessoa, não volta. */
   fixasLancadas?: Record<string, boolean>
+  /** O que faltou pagar da fatura anterior (utils/saldoDaFatura). Soma no
+   *  total, nunca numa categoria. */
+  saldoAnterior?: SaldoAnterior
 }
 
 // ── Categoria + variante ──────────────────────────────────────────────

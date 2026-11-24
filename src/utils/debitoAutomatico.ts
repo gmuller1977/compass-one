@@ -194,7 +194,11 @@ export function automaticasPagasNoFuturo(deps: Deps, hoje = new Date()): { id: s
 
 /** Tira só a marca de paga e o "conferido" (o valor digitado fica). */
 export function tirarPagamento(dm: DadosMes, id: string): DadosMes {
-  return { ...dm, fixasConsolidadas: semId(dm.fixasConsolidadas, id), debitosConferidos: semId(dm.debitosConferidos, id) }
+  return {
+    ...dm, fixasConsolidadas: semId(dm.fixasConsolidadas, id), debitosConferidos: semId(dm.debitosConferidos, id),
+    // A fatura grava o valor pago (revisão M1): desfeita, o valor sai junto.
+    ...(id.startsWith('cartao-') ? { fixasValorOverride: semId(dm.fixasValorOverride, id) } : {}),
+  }
 }
 
 const semId = <T,>(r: Record<string, T> | undefined, id: string) => {

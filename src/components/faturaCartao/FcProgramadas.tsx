@@ -5,6 +5,7 @@ import { fixaOuVariavel } from '../../utils/fixaNoCartao'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { IconeRedondo } from '../mobile/ui'
 import { BolinhaConferido } from './FcConferir'
+import { rotuloDoSaldoAnterior, type SaldoAnterior } from '../../utils/saldoDaFatura'
 
 /**
  * Etiqueta "Fixa" / "Variável" em cada compra da fatura (05/11/2026, pedido do
@@ -89,5 +90,28 @@ export function BlocoProgramadas({ programadas, categorias, onAbrir, onConferir 
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * "Saldo da fatura de outubro": o que faltou pagar da fatura anterior e a
+ * pessoa escolheu levar (utils/saldoDaFatura, 24/11/2026). Soma no total da
+ * fatura e conta como conferido; não é compra, então não tem categoria nem
+ * entra no Radar. Desfaz-se tirando a marca de paga da fatura anterior.
+ */
+export function BlocoSaldoAnterior({ saldo }: { saldo?: SaldoAnterior }) {
+  if (!saldo || saldo.valor <= 0.004) return null
+  return (
+    <div style={{ background: '#fff', border: '2px solid #93c5fd', borderRadius: 16, padding: '12px 14px',
+      marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <IconeRedondo icone={<i className="ti ti-arrow-back-up" style={{ color: COR.azul }} />} tamanho={36} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto }}>{rotuloDoSaldoAnterior(saldo)}</div>
+        <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.35 }}>
+          O que faltou pagar. Soma nesta fatura, não é gasto novo.
+        </div>
+      </div>
+      <span style={{ fontSize: 15, fontWeight: 700, color: COR.texto, whiteSpace: 'nowrap' }}>{fmt(saldo.valor)}</span>
+    </div>
   )
 }

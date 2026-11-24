@@ -1,3 +1,4 @@
+import { saldoAnteriorDe } from './saldoDaFatura'
 import { saldoInformado } from './saldoInformado'
 import type { Conta, Categoria, DadosMes, PlanoAnoData } from '../context/AppContext'
 import type { Memoria } from '../components/novoLancamentoExtrato/NleShared'
@@ -168,7 +169,9 @@ export function totalFatura(
   const dm = faturaData[`${cardId}-${pAno}-${String(pMes + 1).padStart(2, '0')}`]
   if (!dm?.lancamentos) return 0
 
-  let total = 0
+  // O que faltou pagar da fatura anterior (utils/saldoDaFatura): entra no
+  // total e no que sai do banco, nunca numa categoria.
+  let total = saldoAnteriorDe(dm)
   for (const itens of Object.values(dm.lancamentos))
     // entrada = compra, saida = estorno
     for (const l of itens) total += l.tipo === 'entrada' ? l.valor : -l.valor

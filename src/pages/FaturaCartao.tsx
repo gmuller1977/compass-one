@@ -322,7 +322,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     return { totalEntradas:te, totalSaidas:ts }
   }, [mesDados, totalDias])
 
-  const totalFatura  = totalEntradas - totalSaidas
+  // Com o que faltou da fatura anterior (utils/saldoDaFatura), como no motor.
+  const saldoAnteriorFatura = mesDados.saldoAnterior?.valor ?? 0
+  const totalFatura  = totalEntradas - totalSaidas + saldoAnteriorFatura
   const faturaExtNum = parseBRL(mesDados.faturaAtual ?? '')
   const lado = faturaLadoALado(mesDados, totalDias, {
     totalFatura, informado: faturaExtNum > 0 ? faturaExtNum : null, // zero = não informado
