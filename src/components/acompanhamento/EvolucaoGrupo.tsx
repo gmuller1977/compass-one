@@ -134,7 +134,7 @@ export default function EvolucaoGrupo({
             </div>
             {SEM_MOVIMENTO.includes(destaque.principal) && <div style={{ fontSize: 13, color: rotulo }}>{destaque.contexto}</div>}
           </div>
-          <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
+          <AnelGrupo pct={semDados ? null : destaque.pago / destaque.prev} pago={destaque.principal.startsWith('✓')}
             cor={aberto ? '#0891b2' : atencao ? '#b91c1c' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
             corTexto={aberto ? '#fff' : corNumero} />
         </div>

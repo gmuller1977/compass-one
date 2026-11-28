@@ -31,7 +31,7 @@ export default function PartesDoGrupo({ partes, aberto, isEntrada = false }: {
     whiteSpace: 'nowrap' as const, fontVariantNumeric: 'tabular-nums' as const }
   return (
     <div style={{ containerType: 'inline-size', borderTop: `1px solid ${linha}`, paddingTop: 10 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: cols, columnGap: 8, rowGap: 6, alignItems: 'baseline' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: cols, columnGap: 8, rowGap: 6, alignItems: 'start' }}>
         <span />
         <span style={cab}>Planejado</span>
         <span style={cab}>{isEntrada ? 'Recebeu' : 'Gastou'}</span>
@@ -41,7 +41,16 @@ export default function PartesDoGrupo({ partes, aberto, isEntrada = false }: {
           return [
             <span key={p.rotulo + 'r'} style={{ fontSize: 'min(15px, calc(100cqi / 18))', fontWeight: 700, color: numero, whiteSpace: 'nowrap' }}>{p.rotulo}</span>,
             <span key={p.rotulo + 'p'} style={{ ...num, color: aberto ? numero : '#334155', fontWeight: 600 }}>{p.estado === 'neutro' ? 'sem plano' : fmtK(p.prev)}</span>,
-            <span key={p.rotulo + 'g'} style={{ ...num, color: corEstado, fontWeight: 800 }}>{p.estado === 'pago' ? '✓ ' : ''}{fmtK(real)}</span>,
+            <span key={p.rotulo + 'g'} style={{ ...num, color: corEstado, fontWeight: 800 }}>
+              {p.estado === 'pago' ? '✓ ' : ''}{fmtK(real)}
+              {/* A fixa ainda não paga fica embaixo do Gastou, não dentro dele
+                  (28/11/2026, Guilherme: "parece que já está pago"). */}
+              {p.aPagar > 0.005 && (
+                <span style={{ display: 'block', fontSize: 'min(12px, calc(100cqi / 24))', fontWeight: 600, color: rotulo, marginTop: 1, whiteSpace: 'normal' }}>
+                  a pagar {fmtK(p.aPagar)}
+                </span>
+              )}
+            </span>,
           ]
         })}
       </div>

@@ -239,8 +239,12 @@ export function comGastoDaFixa<T extends { prev: number; real: number; fixa: boo
 
 export function destaqueDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
-): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number } {
+): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number; pago: number } {
   const fmt = (v: number) => moedaNaTela(v)
+  // O que de fato saiu nas linhas com plano, sem a fixa a pagar: é o anel
+  // (28/11/2026, Guilherme: com a fixa a pagar no gasto "parece que já está
+  // pago"). O principal e o "passou" seguem a régua de 21/11.
+  const pago = linhas.reduce((s, l) => s + (semPlano(l.prev) || foraDoMes(l) ? 0 : l.real), 0)
   // A fixa ainda não paga já conta como gasta, pelo plano (21/11/2026).
   const pagaAntes = linhas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
   const tinhaPlano = linhas.some(l => !semPlano(l.prev))
@@ -248,14 +252,14 @@ export function destaqueDoGrupo(
   linhas = linhas.map(l => comGastoDaFixa(l, isEntrada))
   const t = totaisJulgados(linhas)
   // Grupo sem nenhuma linha com plano: só o realizado, como a linha.
-  if (semPlano(t.prev) && !soResolvidas) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t }
+  if (semPlano(t.prev) && !soResolvidas) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t, pago }
   // Julga só as linhas com plano; o gasto sem plano aparece ao lado, sem peso.
   const base = destaqueRadar(t.prev, t.real, isEntrada).contexto
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
   // A fixa que não ocorre neste mês está resolvida como a paga: não fica "a
   // pagar" nem vira "resta" (entra pelo realizado, zero).
-  if (soResolvidas) return { principal: '✓ pago', contexto, julgado: true, ...t }
-  return { principal: destaqueRadar(t.prev, t.real, isEntrada).principal, contexto, julgado: true, ...t }
+  if (soResolvidas) return { principal: '✓ pago', contexto, julgado: true, ...t, pago }
+  return { principal: destaqueRadar(t.prev, t.real, isEntrada).principal, contexto, julgado: true, ...t, pago }
 }
 
 /**
@@ -266,8 +270,14 @@ export function destaqueDoGrupo(
  * Estado: 'pago' (todas as fixas planejadas pagas até o previsto), 'passou'
  * (despesa acima do plano), 'neutro' (sem plano na parte) ou 'ok'.
  */
+/*
+ * 28/11/2026 (Guilherme: "as fixas não realizadas já estão entrando como
+ * gastou, parece que já está pago"): o Gastou da tabela é só o que saiu; a
+ * fixa com plano e ainda não paga vai em aPagar, mostrada embaixo. Planejado
+ * − Gastou − a pagar = disponível. O estado segue a régua de 21/11.
+ */
 export type ParteDoGrupo = {
-  rotulo: 'Fixas' | 'Variáveis'; prev: number; real: number; fora: number
+  rotulo: 'Fixas' | 'Variáveis'; prev: number; real: number; fora: number; aPagar: number
   estado: 'ok' | 'passou' | 'pago' | 'neutro'
 }
 export function partesDoGrupo(
@@ -284,6 +294,7 @@ export function partesDoGrupo(
       : semPlano(t.prev) ? 'neutro'
       : !isEntrada && Math.round(t.real / t.prev * 100) / 100 > 1 ? 'passou'
       : 'ok'
-    return [{ rotulo, ...t, estado }]
+    const aPagar = doLado.reduce((s, l, i) => s + (semPlano(l.prev) ? 0 : l.real - doLadoCru[i].real), 0)
+    return [{ rotulo, ...t, real: t.real - aPagar, aPagar, estado }]
   })
 }

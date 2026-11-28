@@ -347,7 +347,8 @@ export default function AcMobileView({
               </span>
               {SEM_MOVIMENTO.includes(dg.principal) && <span style={{ fontSize:13, color:gRotulo }}>{dg.contexto}</span>}
             </div>
-            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
+            {/* O anel é o que já saiu, sem a fixa a pagar (28/11/2026). */}
+            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? dg.pago / gPrev : null}
               pago={dg.principal.startsWith('✓')}
               cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
               corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />

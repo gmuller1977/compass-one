@@ -42,7 +42,17 @@ const dg = destaqueDoGrupo(casa, false)
 conf(perto(dg.real, 2000) && perto(dg.prev, 2000), `card: gastou 2.000 de 2.000 (veio ${dg.real})`)
 const partes = partesDoGrupo([...casa, { prev: 2000, real: 2500, fixa: false }], false)
 const fixas = partes.find(p => p.rotulo === 'Fixas')!
-conf(perto(fixas.real, 2000) && fixas.estado !== 'pago', 'tabela do card: Fixas gastou 2.000, sem ✓ (Luz não paga)')
+// 28/11/2026 (Guilherme: "parece que já está pago"): a tabela do card mostra
+// no Gastou só o que saiu, e a fixa não paga vai em "a pagar".
+conf(perto(fixas.real, 1200) && perto(fixas.aPagar, 800) && fixas.estado !== 'pago', `tabela do card: Fixas gastou 1.200 + a pagar 800, sem ✓ (veio ${fixas.real} / ${fixas.aPagar})`)
+conf(perto(fixas.prev - fixas.real - fixas.aPagar, 0), 'Planejado − Gastou − a pagar = disponível')
+conf(perto(dg.pago, 1200), `anel do grupo: só o que saiu, 1.200 (veio ${dg.pago})`)
+// O caso do Guilherme: Escola 657 a pagar, Faculdade 199 paga, Cursos 216,13 no limite.
+const edu = partesDoGrupo([{ prev: 657, real: 0, fixa: true }, { prev: 199, real: 199, fixa: true }, { prev: 216.13, real: 216.13, fixa: false }], false)
+conf(perto(edu[0].real, 199) && perto(edu[0].aPagar, 657) && perto(edu[1].aPagar, 0), 'Educação: Fixas gastou 199, a pagar 657')
+const dEdu = destaqueDoGrupo([{ prev: 657, real: 0, fixa: true }, { prev: 199, real: 199, fixa: true }, { prev: 216.13, real: 216.13, fixa: false }], false)
+conf(perto(dEdu.pago / dEdu.prev, (199 + 216.13) / 1072.13), 'Educação: anel em 39%, não 100%')
+conf(perto(partesDoGrupo([{ prev: 999999.99, real: 0, fixa: true }], false)[0].aPagar, 999999.99), 'a pagar com R$ 999.999,99')
 const todos = [...casa, { prev: 2000, real: 2500, fixa: false }, { prev: 1000, real: 800, fixa: false }]
 const tg = destaqueDoGrupo(todos, false)
 conf(perto(tg.prev - tg.real, b.diferenca), 'card com todas as linhas = frase')
