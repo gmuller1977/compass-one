@@ -707,8 +707,8 @@ export default function FcMobileView({
                   <span style={{fontFamily:FONTE_TITULO,fontSize:21,fontWeight:700,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
                     {String(g.dc).padStart(2,'0')}/{String(g.mc+1).padStart(2,'0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
                   </span>
-                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1,minWidth:0,
-                    overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>
+                  {/* Quebra a linha em vez de cortar ("domingo · 6 c…"), 28/11/2026. */}
+                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1,minWidth:0,lineHeight:1.25}}>
                     {diaSemanaLongo(g.dc, g.mc, g.ac)}{g.itens.length > 0 ? ` · ${textoQtdCompras(g.itens.length)}` : ''}
                   </span>
                   {ehHoje && (
@@ -746,21 +746,32 @@ export default function FcMobileView({
                       <BolinhaConferido marcado={estaConferido(mesDados, l.id)} tamanho={28}
                         onToggle={() => conferir(l)} />
                       <IconeRedondo icone={catVisual.icone} cor={catVisual.cor} tamanho={40} />
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:M.corpo,fontWeight:600,color:COR.texto,
-                          whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {/* Nome e legenda inteiros, quebrando a linha (28/11/2026,
+                          pedido do Guilherme: "Vest…", "4 de 1…"); o selo
+                          Fixa/Variável desceu para baixo do valor. */}
+                      {/* Valor ao lado do nome; sem espaço (R$ 999.999,99 em 360px),
+                          ele desce para baixo do texto em vez de espremer o nome. */}
+                      <div style={{flex:1,minWidth:0,display:'flex',flexWrap:'wrap',alignItems:'center',columnGap:12,rowGap:4}}>
+                      <div style={{flex:'1 1 110px',minWidth:0}}>
+                        <div style={{fontSize:M.corpo,fontWeight:600,color:COR.texto,lineHeight:1.25,
+                          overflowWrap:'break-word' as const}}>
                           {nomePrimario}
                         </div>
-                        <div style={{fontSize:M.legenda,color:COR.textoSuave,marginTop:2,
-                          whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>
+                        {legenda && (
+                        <div style={{fontSize:M.legenda,color:COR.textoSuave,marginTop:2,lineHeight:1.3,
+                          overflowWrap:'break-word' as const}}>
                           {legenda}
                         </div>
+                        )}
                       </div>
-                      <EtiquetaTipo l={l} categorias={categorias} />
-                      {/* Na fatura, 'entrada' é COMPRA (dívida) e 'saida' é estorno. */}
-                      <div style={{fontSize:M.corpo,fontWeight:700,whiteSpace:'nowrap' as const,flexShrink:0,
-                        fontVariantNumeric:'tabular-nums',color:l.tipo==='entrada'?'#b91c1c':'#15803d'}}>
-                        {l.tipo==='entrada'?'−':'+'}{fmt(l.valor)}
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0,marginLeft:'auto'}}>
+                        {/* Na fatura, 'entrada' é COMPRA (dívida) e 'saida' é estorno. */}
+                        <div style={{fontSize:M.corpo,fontWeight:700,whiteSpace:'nowrap' as const,
+                          fontVariantNumeric:'tabular-nums',color:l.tipo==='entrada'?'#b91c1c':'#15803d'}}>
+                          {l.tipo==='entrada'?'−':'+'}{fmt(l.valor)}
+                        </div>
+                        <EtiquetaTipo l={l} categorias={categorias} />
+                      </div>
                       </div>
                     </div>
                   )
