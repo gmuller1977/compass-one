@@ -45,7 +45,14 @@ t('lançada à mão só marca', pm.soMarcar && lancarFixaNaFatura(mao['nub-2026-
 const deps = (faturaData: any) => ({ extratoData: {}, faturaData, contas, categorias, planos, saldoInicialDinheiro: 0 } as any)
 const real = construirRealizadoMes({ ano: 2026, mes: 11, extratoData: {}, faturaData: fat, contas, categorias, planoAno: planos[2026] })
 const tot = Object.values(real.saidasMap).reduce((a, c: any) => a + c.total, 0)
-t('o realizado de dezembro tem as duas', Math.abs(tot - 77.8) < 1e-9)
+// Desde 28/11/2026 (Guilherme: "realizado é só o que foi pago, lançado e
+// confirmado"), sem a bolinha elas ficam em `programado`, fora do realizado.
+const prog = Object.values(real.saidasMap).reduce((a, c: any) => a + (c.programado ?? 0), 0)
+t('sem bolinha, as duas ficam programadas, fora do realizado', Math.abs(tot) < 1e-9 && Math.abs(prog - 77.8) < 1e-9)
+const conferidas: any = structuredClone(fat)
+for (const v of Object.values(conferidas) as any[]) for (const l of Object.values(v.lancamentos ?? {}).flat() as any[]) if (l.fixaId) v.conferidos = { ...v.conferidos, [l.id]: true }
+const realC = construirRealizadoMes({ ano: 2026, mes: 11, extratoData: {}, faturaData: conferidas, contas, categorias, planoAno: planos[2026] })
+t('conferidas, o realizado de dezembro tem as duas', Math.abs(Object.values(realC.saidasMap).reduce((a, c: any) => a + c.total, 0) - 77.8) < 1e-9)
 for (const m of [10, 11]) {
   const antes = saldoTotalNoFim(2026, m, deps({}), { comoAbertura: true, hoje }).valor
   const depois = saldoTotalNoFim(2026, m, deps(fat), { comoAbertura: true, hoje }).valor

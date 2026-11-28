@@ -686,7 +686,8 @@ export function rateioDoMes(ano: number, mes: number, deps: Deps, hoje: Date = n
     const plano = valorFixaNoMes(cat, planos[ano], mes, categorias)
     if (plano <= 0) continue
     const k = resolverRealKey(saidasMap, cat.nome, cat.descricao, categorias)
-    const falta = plano - (k ? saidasMap[k].total : 0)
+    // O programado (fixa lançada sozinha, sem bolinha) já está na fatura.
+    const falta = plano - (k ? saidasMap[k].total + (saidasMap[k].programado ?? 0) : 0)
     if (falta <= 0) continue
     const conta = refAberta && contaDoCartao ? contaDoCartao : debitoOuPadrao(cat, padrao, contas)
     if (!conta) continue

@@ -16,7 +16,9 @@ export type Lanc = { dia: number; descricao: string; valor: number; sub: string;
    *  o cartão que vence antes de fechar põe no Radar de outubro a fatura de
    *  setembro, e a data tem de dizer 23/09, não 23/10. */
   mesFatura?: number }
-export type CatReal = { total: number; totalBanc: number; totalCart: number; totalDinheiro: number; lancamentos: Lanc[] }
+export type CatReal = { total: number; totalBanc: number; totalCart: number; totalDinheiro: number; lancamentos: Lanc[]
+  /** Fixa lançada sozinha na fatura e ainda sem a bolinha: fora do total (28/11/2026). */
+  programado?: number }
 export type CatSel = {
   uid: string
   nome: string
