@@ -736,6 +736,14 @@ sozinho na fatura (`fixaId`) e ainda sem a bolinha fica em `programado` no
 a soma de volta na fixa de cartão (`plano − total − programado`), porque ela
 já está na fatura. A compra lançada pela pessoa conta sem bolinha, como antes.
 `prova113` (17).
+**No card do grupo, o que falta e o que passou NÃO se compensam** (mesmo
+dia, Guilherme: a Renda dizia "a receber R$ 903,99" com R$ 955,42 do 13º por
+cair e R$ 51,43 recebidos a mais em outras linhas; prévia aprovada). Linha a
+linha: "a receber/a pagar" soma só o que falta, "a mais/passou" só o que
+passou (o gasto sem plano junto); fixa paga abaixo do plano não deixa a
+pagar. O número grande segue o lado do grupo inteiro (o do anel e da borda) e
+o outro lado vai embaixo, em 14px (verde "a mais", vermelho "passou"),
+computador e celular. `destaqueDoGrupo().extra`; `prova126` (25).
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
