@@ -260,8 +260,8 @@ export function destaqueDoGrupo(
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
   const r = { contexto, julgado: true, ...t, real, pago }
   if (soResolvidas) {
-    if (real - t.prev > 0.005) return { principal: isEntrada ? `${fmt(real - t.prev)} a mais` : `passou ${fmt(real - t.prev)}`, ...r }
-    return { principal: '✓ pago', ...r }
+    if (!isEntrada && real - t.prev > 0.005) return { principal: `passou ${fmt(real - t.prev)}`, ...r }
+    return { principal: isEntrada ? '✓ recebido' : '✓ pago', ...r }
   }
   // O que falta e o que passou, linha a linha, sem um compensar o outro
   // (28/11/2026, Guilherme: a Renda dizia "a receber R$ 903,99" com R$ 955,42
@@ -275,14 +275,17 @@ export function destaqueDoGrupo(
     else if (!resolvida[i] && l.prev - l.real > 0.005) falta += l.prev - l.real
   })
   // O número grande segue o lado do grupo inteiro (o anel e a borda dizem o
-  // mesmo); embaixo, o outro lado com o valor dele.
-  const aMais = isEntrada ? `${fmt(passou)} a mais` : `passou ${fmt(passou)}`
-  const aFaltar = `${isEntrada ? 'a receber' : 'a pagar'} ${fmt(falta)}`
-  const temFalta = falta > 0.005, temPassou = passou > 0.005
+  // mesmo); embaixo, o outro lado com o valor dele. Na despesa o que falta é
+  // o "saldo do plano", um termo para fixas e variáveis; na receita o que
+  // entrou a mais não aparece (28/11/2026, Guilherme: "a mais não preciso
+  // mostrar"; escolheu "Saldo do plano" no card).
+  const aFaltar = `${isEntrada ? 'a receber' : 'saldo do plano'} ${fmt(falta)}`
+  const temFalta = falta > 0.005, temPassou = !isEntrada && passou > 0.005
   if (!temFalta && !temPassou) return { principal: isEntrada ? '✓ recebido' : '✓ pago', ...r }
   if (!temPassou) return { principal: aFaltar, ...r }
-  if (!temFalta) return { principal: aMais, ...r }
-  return real - t.prev > 0.005 ? { principal: aMais, ...r, extra: aFaltar } : { principal: aFaltar, ...r, extra: aMais }
+  const aPassou = `passou ${fmt(passou)}`
+  if (!temFalta) return { principal: aPassou, ...r }
+  return real - t.prev > 0.005 ? { principal: aPassou, ...r, extra: aFaltar } : { principal: aFaltar, ...r, extra: aPassou }
 }
 
 /**
