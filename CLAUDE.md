@@ -744,6 +744,14 @@ passou (o gasto sem plano junto); fixa paga abaixo do plano não deixa a
 pagar. O número grande segue o lado do grupo inteiro (o do anel e da borda) e
 o outro lado vai embaixo, em 14px (verde "a mais", vermelho "passou"),
 computador e celular. `destaqueDoGrupo().extra`; `prova126` (25).
+**Na DESPESA, o card do grupo diz só "Saldo do plano" ou "Passou do plano"**
+(mesmo dia, Guilherme: "Não inventa. Só 'Saldo do plano R$ X' = realizado
+menor que planejado; 'Passou do plano R$ X' = realizado maior"). Uma conta
+só, no total do grupo (Planejado − Realizado), nada embaixo; igual é "✓ pago".
+Revê o parágrafo acima só na despesa: fixa paga abaixo do plano entra no
+saldo (199 pago com 190 = "Saldo do plano R$ 9,00"). Na receita fica "a
+receber" linha a linha, e o "a mais" não aparece. Categoria aberta não mudou
+(A pagar / Disponível). `prova126` (26).
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
