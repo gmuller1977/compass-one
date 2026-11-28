@@ -239,7 +239,7 @@ export function comGastoDaFixa<T extends { prev: number; real: number; fixa: boo
 
 export function destaqueDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
-): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number; pago: number } {
+): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number; pago: number; extra?: string } {
   const fmt = (v: number) => moedaNaTela(v)
   // 28/11/2026, Guilherme: "no card do grupo, usar somente o total do
   // planejamento e realizado e mostrar a diferença como a receber ou
@@ -263,15 +263,26 @@ export function destaqueDoGrupo(
     if (real - t.prev > 0.005) return { principal: isEntrada ? `${fmt(real - t.prev)} a mais` : `passou ${fmt(real - t.prev)}`, ...r }
     return { principal: '✓ pago', ...r }
   }
-  const pct = t.prev > 0.005 ? Math.round(real / t.prev * 100) / 100 : 0
-  if (isEntrada) {
-    if (pct >= 1) return { principal: real - t.prev > 0.005 ? `${fmt(real - t.prev)} a mais` : '✓ recebido', ...r }
-    return { principal: `a receber ${fmt(t.prev - real)}`, ...r }
-  }
-  if (pct > 1) return { principal: `passou ${fmt(real - t.prev)}`, ...r }
-  if (pct === 1) return { principal: '✓ pago', ...r }
-  // "a receber na receita, a pagar na despesa" (Guilherme, mesmo dia).
-  return { principal: `a pagar ${fmt(t.prev - real)}`, ...r }
+  // O que falta e o que passou, linha a linha, sem um compensar o outro
+  // (28/11/2026, Guilherme: a Renda dizia "a receber R$ 903,99" com R$ 955,42
+  // do 13º ainda por cair e R$ 51,43 recebidos a mais em outras linhas).
+  // Fixa paga abaixo do plano não deixa "a pagar" (os centavos não são devidos);
+  // o gasto sem plano soma no que passou.
+  let falta = 0, passou = t.fora
+  linhas.forEach((l, i) => {
+    if (foraDoMes(l) || semPlano(l.prev)) return
+    if (l.real - l.prev > 0.005) passou += l.real - l.prev
+    else if (!resolvida[i] && l.prev - l.real > 0.005) falta += l.prev - l.real
+  })
+  // O número grande segue o lado do grupo inteiro (o anel e a borda dizem o
+  // mesmo); embaixo, o outro lado com o valor dele.
+  const aMais = isEntrada ? `${fmt(passou)} a mais` : `passou ${fmt(passou)}`
+  const aFaltar = `${isEntrada ? 'a receber' : 'a pagar'} ${fmt(falta)}`
+  const temFalta = falta > 0.005, temPassou = passou > 0.005
+  if (!temFalta && !temPassou) return { principal: isEntrada ? '✓ recebido' : '✓ pago', ...r }
+  if (!temPassou) return { principal: aFaltar, ...r }
+  if (!temFalta) return { principal: aMais, ...r }
+  return real - t.prev > 0.005 ? { principal: aMais, ...r, extra: aFaltar } : { principal: aFaltar, ...r, extra: aMais }
 }
 
 /**

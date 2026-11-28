@@ -344,6 +344,7 @@ export default function AcMobileView({
               <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
                 {dg.principal}
               </span>
+              {dg.extra && <span style={{ fontSize:14, fontWeight:700, color: aberto ? '#ffffff' : dg.extra.startsWith('passou') ? '#b91c1c' : dg.extra.endsWith('a mais') ? '#15803d' : gRotulo, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{dg.extra}</span>}
               {SEM_MOVIMENTO.includes(dg.principal) && <span style={{ fontSize:13, color:gRotulo }}>{dg.contexto}</span>}
             </div>
             <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}

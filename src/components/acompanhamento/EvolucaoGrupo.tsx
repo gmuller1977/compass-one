@@ -133,6 +133,7 @@ export default function EvolucaoGrupo({
               fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
               {destaque.principal}
             </div>
+            {destaque.extra && <div style={{ fontSize: 14, fontWeight: 700, color: aberto ? '#fff' : destaque.extra.startsWith('passou') ? '#b91c1c' : destaque.extra.endsWith('a mais') ? '#15803d' : rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.extra}</div>}
             {SEM_MOVIMENTO.includes(destaque.principal) && <div style={{ fontSize: 13, color: rotulo }}>{destaque.contexto}</div>}
           </div>
           <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
