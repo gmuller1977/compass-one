@@ -24,17 +24,20 @@ const linhas = [
 ]
 const b = balancoDoPlano(linhas, categorias)!
 conf(perto(b.prev, 5000), `planejado 5.000 (veio ${b.prev})`)
-conf(perto(b.gasto, 5300), `gastou 5.300: fixa não paga pelo plano (veio ${b.gasto})`)
-conf(perto(b.diferenca, -300), `passou 300 (veio ${b.diferenca})`)
+// 28/11/2026: a frase passou à régua das barras: a fixa não paga não conta.
+conf(perto(b.gasto, 4500), `realizado 4.500: fixa não paga não conta (veio ${b.gasto})`)
+conf(perto(b.diferenca, 500), `abaixo 500 (veio ${b.diferenca})`)
 conf(perto(b.prev - b.gasto, b.diferenca), 'Planejado − Gastou = frase')
 
 // Pagar a Luz por 750 deixa 50 a menos no Gastou.
 const b2 = balancoDoPlano(linhas.map(l => l.nome === 'Luz' ? { ...l, real: 750 } : l), categorias)!
 conf(perto(b2.gasto, 5250) && perto(b2.diferenca, -250), 'fixa paga entra pelo valor pago')
+conf(b2.passaram.some(g => g.nome === 'Alimentação') && b2.abaixo.some(g => g.nome === 'Casa'), 'grupos: Alimentação passou, Casa abaixo')
 
 // Sem plano fica fora.
 const b3 = balancoDoPlano([...linhas, { nome: 'Presente', descricao: '', grupo: 'Outras', prev: 0, real: 80 }], categorias)!
-conf(perto(b3.semPlano, 80) && perto(b3.diferenca, -300), 'sem plano fica fora da conta')
+conf(perto(b3.semPlano, 80) && perto(b3.diferenca, 420) && perto(b3.gasto, 4580), 'sem plano soma no realizado (28/11/2026)')
+conf(balancoDoPlano([{ nome: 'Presente', descricao: '', grupo: 'Outras', prev: 0, real: 80 }], categorias) === null, 'sem plano nenhum: sem frase')
 
 // O card do grupo deixou essa régua em 28/11/2026 (Guilherme: "parece que
 // já está pago"): ele mostra só o realizado. A prova126 cobre o card; a frase

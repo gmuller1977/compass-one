@@ -1,5 +1,5 @@
 import type { Categoria } from '../context/AppContext'
-import { cadastroDaLinha, type LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
+import { type LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import { semPlano } from '../components/acompanhamento/radarCores'
 
 /**
@@ -11,12 +11,10 @@ import { semPlano } from '../components/acompanhamento/radarCores'
  * Nenhuma conta nova: as linhas são as de `totaisDoMes`, as do Radar, e o
  * grupo é julgado como o cabeçalho dele (`destaqueDoGrupo`):
  *
- * - só linhas COM plano (sem plano não há julgamento, C2 de 19/10/2026);
- * - fixa ainda não paga conta como GASTA desde o dia 1, pelo valor
- *   planejado (21/11/2026, decisão do Guilherme: a frase do Radar dizia "R$
- *   388 a mais" e o Total "disponível R$ 456", e planejado − gastou tem de
- *   dar o número da frase); paga, conta pelo valor pago. Antes a fixa paga
- *   abaixo do plano não sobrava; hoje a diferença aparece, como na conta.
+ * - desde 28/11/2026, Realizado − Planejado de todas as linhas, a régua das
+ *   barras Receitas/Despesas e do card do grupo: o gasto sem plano soma, e a
+ *   fixa ainda não paga não conta (só o que saiu). A régua de 21/11 (fixa não
+ *   paga pelo plano, sem plano fora) é histórico.
  *
  * Um grupo vai para um lado só, pelo saldo dele: o estouro de uma categoria
  * compensado por outra do MESMO grupo não aparece, como no cabeçalho do Radar.
@@ -32,31 +30,34 @@ export type BalancoDoPlano = {
   falta: number
   /** falta − passou: positivo, economizando; negativo, gastou a mais. */
   diferenca: number
-  /** Totais das linhas com plano, na régua da tela (21/11/2026, Guilherme: "a
-   *  fixa conta como gasta desde o dia 1"): planejado e gastou, com a fixa
-   *  ainda não paga pelo valor planejado. diferenca = prev − gasto. */
+  /** Totais de todas as linhas, os das barras: planejado e realizado (só o
+   *  que saiu). diferenca = prev − gasto. */
   prev: number
   gasto: number
-  /** Gasto em linhas sem plano (fora do julgamento). */
+  /** Parte do gasto que está em linhas sem plano (já somada em gasto). */
   semPlano: number
 }
 
 const MEIO_CENTAVO = 0.005
 
-export function balancoDoPlano(linhas: LinhaDoMes[], categorias: Categoria[]): BalancoDoPlano | null {
+export function balancoDoPlano(linhas: LinhaDoMes[], _categorias?: Categoria[]): BalancoDoPlano | null {
+  // 28/11/2026, Guilherme ("Sim", sobre pôr a frase na régua das barras e dos
+  // cards): Realizado − Planejado de TODAS as linhas, como as barras Receitas /
+  // Despesas e o card do grupo. O gasto sem plano soma no grupo dele, e a fixa
+  // ainda não paga não conta (só o que saiu). Antes (21/11) a fixa não paga
+  // contava pelo plano e o sem plano ficava fora: em nov/2026 a frase dizia
+  // R$ 385,65 e as barras R$ 502.
   const porGrupo = new Map<string, { saldo: number; primeira: string }>()
-  let prevTotal = 0, gastoTotal = 0, foraDoPlano = 0
+  let prevTotal = 0, gastoTotal = 0, foraDoPlano = 0, temPlano = false
   for (const l of linhas) {
-    if (semPlano(l.prev)) { foraDoPlano += l.real; continue }
-    const fixa = !!cadastroDaLinha(l, categorias)?.fixa
-    const gasto = fixa && Math.abs(l.real) <= MEIO_CENTAVO ? l.prev : l.real
-    prevTotal += l.prev; gastoTotal += gasto
-    const saldo = gasto - l.prev
+    if (semPlano(l.prev)) foraDoPlano += l.real
+    else temPlano = true
+    prevTotal += l.prev; gastoTotal += l.real
     const g = porGrupo.get(l.grupo) ?? { saldo: 0, primeira: l.nome }
-    g.saldo += saldo
+    g.saldo += l.real - l.prev
     porGrupo.set(l.grupo, g)
   }
-  if (porGrupo.size === 0) return null
+  if (!temPlano) return null
   const passaram: GrupoNoBalanco[] = []
   const abaixo: GrupoNoBalanco[] = []
   for (const [grupo, g] of porGrupo) {

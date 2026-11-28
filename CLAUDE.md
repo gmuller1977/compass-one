@@ -713,6 +713,13 @@ No mesmo dia (Guilherme: Finanças com 60 de 60 pagos e R$ 40,31 sem plano
 dizia "✓ pago"; "em todos os grupos"): o gasto SEM PLANO entra no Realizado
 do grupo e no anel, em todo grupo com plano; o "+ R$ X sem plano" embaixo
 saiu. Finanças fica "passou R$ 40,31". `prova126` (22).
+Ainda no mesmo dia (Guilherme: a frase dizia R$ 385,65 e as barras R$ 502;
+"Sim" para unificar): a frase do topo do Radar e o "Plano do mês" da Início
+(`balancoDoPlano`) passaram à MESMA régua das barras e do card, Realizado −
+Planejado de todas as linhas: o gasto sem plano soma no grupo dele e a fixa
+não paga não conta. A régua de 21/11 acima é histórico. Consequência aceita:
+no meio do mês a fixa ainda não paga aparece como "abaixo do plano" até sair.
+`prova125` (11).
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
