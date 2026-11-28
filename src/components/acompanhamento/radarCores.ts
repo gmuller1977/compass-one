@@ -259,6 +259,14 @@ export function destaqueDoGrupo(
   const base = `${isEntrada ? 'recebeu' : 'gastou'} ${fmt(real)} de ${fmt(t.prev)}`
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
   const r = { contexto, julgado: true, ...t, real, pago }
+  // Despesa: uma conta só, no total do grupo (28/11/2026, Guilherme: "Só
+  // 'Saldo do plano R$ X' = realizado menor que o planejado; 'Passou do plano
+  // R$ X' = realizado maior"). Nada embaixo, sem separar linha a linha.
+  if (!isEntrada) {
+    if (real - t.prev > 0.005) return { principal: `Passou do plano ${fmt(real - t.prev)}`, ...r }
+    if (t.prev - real > 0.005) return { principal: `Saldo do plano ${fmt(t.prev - real)}`, ...r }
+    return { principal: '✓ pago', ...r }
+  }
   if (soResolvidas) {
     if (!isEntrada && real - t.prev > 0.005) return { principal: `passou ${fmt(real - t.prev)}`, ...r }
     return { principal: isEntrada ? '✓ recebido' : '✓ pago', ...r }

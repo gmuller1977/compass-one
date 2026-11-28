@@ -15,28 +15,29 @@ const tem = (s: string, v: string) => s.replace(/\s/g, ' ').includes(v)
 const edu = [{ prev: 657, real: 0, fixa: true }, { prev: 199, real: 199, fixa: true }, { prev: 216.13, real: 216.13, fixa: false }]
 const d = destaqueDoGrupo(edu, false)
 t('Educação: realizado 415,13, sem a Escola', perto(d.real, 415.13) && perto(d.prev, 1072.13))
-// Desde 28/11/2026 (escolha do Guilherme no card) a despesa diz "saldo do plano".
-t(`Educação: saldo do plano R$ 657,00 (veio ${d.principal})`, d.principal.startsWith('saldo do plano') && tem(d.principal, '657,00'))
+// Desde 28/11/2026 (Guilherme: "Só 'Saldo do plano' = realizado menor que o
+// planejado; 'Passou do plano' = maior"): a despesa é uma conta só, no total.
+t(`Educação: Saldo do plano R$ 657,00 (veio ${d.principal})`, d.principal.startsWith('Saldo do plano') && tem(d.principal, '657,00'))
 t('anel não fica em 100%', Math.round(d.real / d.prev * 100) === 39)
 t('100% é pago', destaqueDoGrupo([{ prev: 300, real: 300, fixa: false }], false).principal === '✓ pago')
 const p = destaqueDoGrupo([{ prev: 300, real: 480, fixa: false }, { prev: 500, real: 0, fixa: true }], false)
 // Desde 28/11/2026 (Guilherme, Renda "a receber 903,99" com 955,42 por cair):
 // o que falta e o que passou aparecem cada um com o seu valor, sem compensar.
-t(`falta e passou separados (veio ${p.principal} · ${p.extra})`, tem(p.principal, 'saldo do plano') && tem(p.principal, '500,00') && tem(p.extra ?? '', 'passou') && tem(p.extra ?? '', '180,00'))
+t(`despesa no total: Saldo do plano 320, nada embaixo (veio ${p.principal})`, p.principal.startsWith('Saldo do plano') && tem(p.principal, '320,00') && p.extra === undefined)
 const q = destaqueDoGrupo([{ prev: 300, real: 480, fixa: false }], false)
-t('passou R$ 180,00', q.principal.startsWith('passou') && tem(q.principal, '180,00'))
+t('Passou do plano R$ 180,00', q.principal.startsWith('Passou do plano') && tem(q.principal, '180,00'))
 t('receita: a receber', destaqueDoGrupo([{ prev: 5000, real: 2000, fixa: true }], true).principal.startsWith('a receber'))
 t('receita 100%: recebido', destaqueDoGrupo([{ prev: 5000, real: 5000, fixa: true }], true).principal === '✓ recebido')
-t('só fixas pagas: ✓ pago', destaqueDoGrupo([{ prev: 199, real: 190, fixa: true }], false).principal === '✓ pago')
+t('fixa paga abaixo do plano: Saldo do plano 9', tem(destaqueDoGrupo([{ prev: 199, real: 190, fixa: true }], false).principal, 'Saldo do plano'))
 t('fixa que não ocorre sai das colunas', perto(destaqueDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }, { prev: 100, real: 50, fixa: false }], false).prev, 100))
 t('R$ 999.999,99', tem(destaqueDoGrupo([{ prev: 999999.99, real: 0, fixa: true }], false).principal, '999.999,99'))
 
 // Gasto sem plano entra no Realizado do grupo, em todos os grupos (28/11/2026, Finanças)
 const fin = destaqueDoGrupo([{ prev: 25, real: 25, fixa: true }, { prev: 35, real: 35, fixa: true }, { prev: 0, real: 40.31, fixa: false }], false)
-t('Finanças: passou R$ 40,31', tem(fin.principal, 'passou') && tem(fin.principal, '40,31'))
+t('Finanças: Passou do plano R$ 40,31', tem(fin.principal, 'Passou do plano') && tem(fin.principal, '40,31'))
 t('Finanças: realizado 100,31', perto(fin.real, 100.31))
 const sobra = destaqueDoGrupo([{ prev: 800, real: 300, fixa: false }, { prev: 0, real: 100, fixa: false }], false)
-t('variável com sem plano: saldo do plano 500 e passou 100', tem(sobra.principal, 'saldo do plano') && tem(sobra.principal, '500,00') && tem(sobra.extra ?? '', '100,00'))
+t('variável com sem plano: Saldo do plano 400', tem(sobra.principal, 'Saldo do plano') && tem(sobra.principal, '400,00'))
 // A Renda de novembro: 13º do Guilherme por cair, Apae e 13º da Pricila a mais.
 const renda = destaqueDoGrupo([{ prev: 955.42, real: 0, fixa: true }, { prev: 1189.70, real: 1189.70, fixa: true },
   { prev: 12000, real: 12051, fixa: true }, { prev: 12051.57, real: 12052, fixa: true }], true)
@@ -46,8 +47,8 @@ t(`Renda: nada a mais embaixo (veio ${renda.extra})`, renda.extra === undefined)
 t('receita toda recebida e a mais: ✓ recebido', destaqueDoGrupo([{ prev: 100, real: 150, fixa: false }], true).principal === '✓ recebido')
 // O lado do número grande segue o grupo inteiro: passou no total, "passou" em cima.
 const sobe = destaqueDoGrupo([{ prev: 100, real: 400, fixa: false }, { prev: 200, real: 100, fixa: false }], false)
-t(`grupo que passou no total: passou 300 em cima, saldo do plano 100 embaixo (veio ${sobe.principal} · ${sobe.extra})`, tem(sobe.principal, 'passou') && tem(sobe.principal, '300,00') && tem(sobe.extra ?? '', 'saldo do plano') && tem(sobe.extra ?? '', '100,00'))
-t('fixa paga abaixo + sem plano que não passa: ✓ pago', destaqueDoGrupo([{ prev: 60, real: 50, fixa: true }, { prev: 0, real: 5, fixa: false }], false).principal === '✓ pago')
+t(`grupo que passou no total: Passou do plano 200 (veio ${sobe.principal})`, tem(sobe.principal, 'Passou do plano') && tem(sobe.principal, '200,00') && sobe.extra === undefined)
+t('fixa paga abaixo + sem plano: Saldo do plano 5', tem(destaqueDoGrupo([{ prev: 60, real: 50, fixa: true }, { prev: 0, real: 5, fixa: false }], false).principal, 'Saldo do plano'))
 
 // Categoria
 t('fixa não paga: A pagar', terceiraColuna(657, 0, false, { fixa: true }).rotulo === 'A pagar')
