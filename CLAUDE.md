@@ -273,6 +273,15 @@ Depósito / Saque. Transferência lista só bancos; Saque e Depósito vão diret
 para a carteira (ou o banco, no dinheiro). Gravam a mesma transferência
 (`formaPagamento: 'transferencia'`); `saque`/`deposito` só existem na tela
 (`ehTransf`, `formasDoLancamento` em `NleShared.tsx`).
+**Na edição da fixa, Dinheiro no lugar do Saque** (28/11/2026, Guilherme:
+"Cuidados Pessoais · Unha" é Pix no Sicredi, mas neste mês foi em dinheiro).
+Saque e Depósito só no lançamento novo (o "+"); editando uma fixa de banco as
+formas são Débito · Pix · Transferência · Dinheiro (`formasDaEdicaoDaFixa`).
+Dinheiro grava `fixasContaOverride[id] = 'dinheiro'` no mês (na conta de
+origem) e leva para a carteira o que já estava gravado da fixa (paga, valor,
+dia, conferido; `moverFixaDeConta`): sai de Banco, aparece em Dinheiro, segue
+despesa da categoria. No Dinheiro, Pix/Débito a devolve. Fixa da carteira e
+automático não mostram formas. `fixaEmOutraConta.ts`; `prova137` (18).
 
 **Conta de INVESTIMENTO fica fora do disponível** (21/10/2026, pedido do
 Guilherme). O tipo `poupanca` aparece como "Investimento" em Configurações
