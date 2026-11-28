@@ -308,7 +308,7 @@ export default function AcMobileView({
       const gAtencao = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) && !isEntrada && gPerc > 1.005
       const gCor  = SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
         : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
-        : aberto ? RADAR_COR_AZUL[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gAtencao ? '#b91c1c' : '#1d4ed8'
+        : aberto ? RADAR_COR_AZUL[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gAtencao ? '#b91c1c' : '#15803d'
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
@@ -350,7 +350,7 @@ export default function AcMobileView({
             </div>
             <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
               pago={dg.principal.startsWith('✓')}
-              cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
+              cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#15803d'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
               corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />
           </div>
           {!SEM_MOVIMENTO.includes(dg.principal) && (

@@ -31,7 +31,7 @@ import { useForaDoMes } from './foraDoMesContexto'
 const TEXTO  = '#0f172a'
 const ROTULO = '#475569'
 const TRILHO = '#e2e8f0' // trilho do anel fechado
-const AZUL_NUMERO = '#1d4ed8'
+const AZUL_NUMERO = '#15803d' // verde desde 28/11/2026 (Guilherme: mesmo padrão da categoria); era #1d4ed8
 // Aberto, o cartão fica AZUL-ESCURO (pedido do Guilherme, 21/10/2026), o
 // gradiente dos cartões do topo, que termina no #1e40af. Ali vale a paleta do
 // azul (RADAR_COR_AZUL): verde 5,0, verde-claro 9,1; o vermelho #f87171 dá
@@ -138,7 +138,7 @@ export default function EvolucaoGrupo({
             {SEM_MOVIMENTO.includes(destaque.principal) && <div style={{ fontSize: 13, color: rotulo }}>{destaque.contexto}</div>}
           </div>
           <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
-            cor={aberto ? '#0891b2' : atencao ? '#b91c1c' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
+            cor={aberto ? '#0891b2' : atencao ? '#b91c1c' : '#15803d'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
             corTexto={aberto ? '#fff' : corNumero} />
         </div>
         {!SEM_MOVIMENTO.includes(destaque.principal) && (
