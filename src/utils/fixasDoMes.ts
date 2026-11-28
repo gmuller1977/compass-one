@@ -102,3 +102,17 @@ export function marcarNaoOcorre<T extends DadosMesFixas>(dm: T, fixaId: string):
 export function desfazerNaoOcorre<T extends DadosMesFixas>(dm: T, fixaId: string): T {
   return { ...dm, fixasNaoOcorre: semChave(dm.fixasNaoOcorre, fixaId) }
 }
+
+/**
+ * Ids das fixas marcadas "Não vai ocorrer" no mês (todas as contas que não são
+ * cartão). Radar e Início tiram essas fixas do planejado do mês por
+ * `totaisDoMes({ naoOcorre })` (28/11/2026, decisão do Guilherme).
+ */
+export function idsQueNaoOcorrem<T extends DadosMesFixas>(
+  extratoData: Record<string, T>, contas: { id: string; tipo: string }[],
+  categorias: { id: string; fixa?: boolean }[], ano: number, mes: number,
+): Set<string> {
+  const dms = dadosBancariosDoMes(extratoData, `-${ano}-${String(mes + 1).padStart(2, '0')}`,
+    k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)))
+  return new Set(categorias.filter(c => c.fixa && fixaNaoOcorre(c.id, dms)).map(c => c.id))
+}

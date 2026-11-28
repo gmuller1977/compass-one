@@ -25,7 +25,7 @@ import { resumoDoMes } from '../utils/resumoRadar'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import { ForaDoMesContexto } from '../components/acompanhamento/foraDoMesContexto'
-import { dadosBancariosDoMes, fixaNaoOcorre } from '../utils/fixasDoMes'
+import { idsQueNaoOcorrem } from '../utils/fixasDoMes'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { balancoDoPlano } from '../utils/balancoDoPlano'
@@ -93,11 +93,19 @@ export default function RadarFinanceiro() {
   // Os totais saem de totaisDoMes, a mesma função que a tela Início usa.
   // As barrinhas dos cartões julgam só as linhas COM plano (totaisJulgados):
   // o gasto sem plano conta no número, não no julgamento (C2, 19/10/2026).
-  const { totalPrevS, totalRealS, totalPrevE, totalRealE, linhasSaida, julgE, julgS } = useMemo(() => {
-    const t = totaisDoMes({ mes, planoAno: dadosAno, categorias, cartaoNomes, entradasMap, saidasMap })
+  // Fixas marcadas "Não vai ocorrer neste mês" em Lançamentos: a linha diz
+  // "não vai ocorrer" com o plano à vista (05/11/2026, foraDoMesContexto), e
+  // saem do planejado do mês no topo, nas barras e na frase (28/11/2026).
+  const foraDoMes = useMemo(
+    () => idsQueNaoOcorrem(extratoData as Record<string, DadosMes>, contas, categorias, ano, mes),
+    [extratoData, contas, categorias, ano, mes],
+  )
+  const { totalPrevS, totalRealS, totalPrevE, totalRealE, linhasSaida, julgE, julgS, naoOcorreS, naoOcorreE } = useMemo(() => {
+    const t = totaisDoMes({ mes, planoAno: dadosAno, categorias, cartaoNomes, entradasMap, saidasMap, naoOcorre: foraDoMes })
     return { totalPrevE: t.entrada.prev, totalRealE: t.entrada.real, totalPrevS: t.saida.prev, totalRealS: t.saida.real,
-      linhasSaida: t.saida.linhas, julgE: totaisJulgados(t.entrada.linhas), julgS: totaisJulgados(t.saida.linhas) }
-  }, [dadosAno, mes, entradasMap, saidasMap, categorias, cartaoNomes])
+      linhasSaida: t.saida.linhas, julgE: totaisJulgados(t.entrada.linhas), julgS: totaisJulgados(t.saida.linhas),
+      naoOcorreS: t.saida.naoOcorre, naoOcorreE: t.entrada.naoOcorre }
+  }, [dadosAno, mes, entradasMap, saidasMap, categorias, cartaoNomes, foraDoMes])
 
   // A resposta prática do mês, antes dos números: quanto ainda dá para gastar
   // na variável, por dia, e quais grupos passaram. Mesmo número do "Ritmo do
@@ -181,8 +189,9 @@ export default function RadarFinanceiro() {
       depsSaldo,
     })
     if (p.totalEntradas[mes] === 0 && p.totalSaidas[mes] === 0) return null
-    return p.saldoFinal[mes]
-  }, [ano, mes, planos, categorias, contas, faturaData, depsSaldo])
+    // A fixa que não vai ocorrer sai do planejado do mês (28/11/2026).
+    return p.saldoFinal[mes] + naoOcorreS - naoOcorreE
+  }, [ano, mes, planos, categorias, contas, faturaData, depsSaldo, naoOcorreS, naoOcorreE])
 
   // Embaixo do realizado: no mês fechado, a distância até o planejado; nos
   // outros, a frase do resumo (a "Ainda dá para gastar" saiu em 24/10/2026).
@@ -241,11 +250,6 @@ export default function RadarFinanceiro() {
   // ── Mobile: early return ───────────────────────────────────────────────
   // Fixas marcadas "Não vai ocorrer neste mês" em Lançamentos: a linha diz
   // "não gastou" com o plano à vista (05/11/2026, foraDoMesContexto).
-  const foraDoMes = (() => {
-    const dms = dadosBancariosDoMes(extratoData as Record<string, DadosMes>, `-${ano}-${String(mes + 1).padStart(2, '0')}`,
-      k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)))
-    return new Set(categorias.filter(c => c.fixa && fixaNaoOcorre(c.id, dms)).map(c => c.id))
-  })()
 
   if (isMobile) {
     // O mesmo ajuste do plano e a mesma revisão do computador: a linha da

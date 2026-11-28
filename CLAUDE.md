@@ -720,6 +720,14 @@ Planejado de todas as linhas: o gasto sem plano soma no grupo dele e a fixa
 não paga não conta. A régua de 21/11 acima é histórico. Consequência aceita:
 no meio do mês a fixa ainda não paga aparece como "abaixo do plano" até sair.
 `prova125` (11).
+**A fixa "Não vai ocorrer" sai do PLANEJADO do mês** (mesmo dia, escolha do
+Guilherme no card: o card do grupo já a tirava e o topo seguia contando, R$
+169,00 de diferença em novembro). Sem nada lançado nela, `totaisDoMes({
+naoOcorre })` zera o plano da linha: topo, barras, frase do Radar, "Plano do
+mês" e "Resumo do mês" da Início; o saldo final planejado do Radar soma o que
+saiu de volta. O Planejamento segue com o plano ("o plano segue"), então em
+mês com fixa marcada o "termina com" de lá fica diferente do Radar por esse
+valor. `idsQueNaoOcorrem` em `fixasDoMes.ts`; `prova138` (11).
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",

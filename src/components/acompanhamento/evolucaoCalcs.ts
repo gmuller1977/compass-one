@@ -305,7 +305,7 @@ export function fixasEVariaveis<T extends { nome: string; descricao?: string }>(
     .filter(([, l]) => l.length > 0)
     .map(([rotulo, l]) => ({ rotulo, cats: l }))
 }
-type LadoDoMes = { prev: number; real: number; linhas: LinhaDoMes[] }
+type LadoDoMes = { prev: number; real: number; linhas: LinhaDoMes[]; naoOcorre: number }
 
 /**
  * Receitas e despesas do mês — previsto e realizado —, somadas grupo a grupo
@@ -324,18 +324,30 @@ export function totaisDoMes(p: {
   cartaoNomes: Set<string>
   entradasMap: Record<string, CatReal>
   saidasMap: Record<string, CatReal>
+  /** Ids das fixas marcadas "Não vai ocorrer neste mês" (`idsQueNaoOcorrem`). */
+  naoOcorre?: Set<string>
 }): { entrada: LadoDoMes; saida: LadoDoMes } {
   const { mes, categorias, cartaoNomes } = p
+  // Fixa marcada "não vai ocorrer" e sem nada lançado sai do planejado do mês
+  // (28/11/2026, decisão do Guilherme: o card do grupo já a tirava, e o topo,
+  // as barras e a frase do Radar seguiam contando — R$ 169 de diferença em
+  // novembro). O plano do Planejamento não muda.
+  const foraDoMes = (nome: string, descricao: string | undefined, real: number) =>
+    !!p.naoOcorre?.size && Math.abs(real) <= 0.005 && p.naoOcorre.has(cadastroDaLinha({ nome, descricao }, categorias)?.id ?? '')
   const lado = (tipo: 'saida' | 'entrada', planCats: PlanCat[], realMap: Record<string, CatReal>): LadoDoMes => {
     const linhas: LinhaDoMes[] = []
     const tot = gruposDoRadar(tipo, categorias, cartaoNomes).reduce((acc, grupo) => {
       const cats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
+      let fora = 0
       for (const c of cats) {
-        linhas.push({ nome: c.nome, descricao: c.descricao, grupo, prev: c.v[mes] ?? 0,
-          real: pickReal(realMap, c.nome, c.descricao, categorias)?.total ?? 0 })
+        const real = pickReal(realMap, c.nome, c.descricao, categorias)?.total ?? 0
+        const prev = c.v[mes] ?? 0
+        const sai = foraDoMes(c.nome, c.descricao, real)
+        if (sai) fora += prev
+        linhas.push({ nome: c.nome, descricao: c.descricao, grupo, prev: sai ? 0 : prev, real })
       }
-      return { prev: acc.prev + calcGrupoPrev(cats, mes), real: acc.real + calcGrupoReal(cats, realMap, categorias) }
-    }, { prev: 0, real: 0 })
+      return { prev: acc.prev + calcGrupoPrev(cats, mes) - fora, real: acc.real + calcGrupoReal(cats, realMap, categorias), naoOcorre: acc.naoOcorre + fora }
+    }, { prev: 0, real: 0, naoOcorre: 0 })
     return { ...tot, linhas }
   }
   return {

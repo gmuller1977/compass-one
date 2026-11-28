@@ -5,6 +5,7 @@ import { construirRealizadoMes } from '../../utils/realizadoMes'
 import type { Deps } from '../../utils/saldoConta'
 import { nomesDeCartao, totaisDoMes } from '../acompanhamento/evolucaoCalcs'
 import { mesDaChegada } from '../../utils/primeiroPlano'
+import { idsQueNaoOcorrem } from '../../utils/fixasDoMes'
 
 /**
  * Os números de um mês que a Início e Análises leem — a mesma passagem para as
@@ -26,7 +27,8 @@ export function useMesDaInicio(ano: number, mes: number) {
       ano, mes, extratoData: extratoData as Record<string, DadosMes>,
       faturaData, contas, categorias, planoAno,
     })
-    const t = totaisDoMes({ mes, planoAno, categorias, cartaoNomes: nomesDeCartao(contas), entradasMap, saidasMap })
+    const naoOcorre = idsQueNaoOcorrem(extratoData as Record<string, DadosMes>, contas, categorias, ano, mes)
+    const t = totaisDoMes({ mes, planoAno, categorias, cartaoNomes: nomesDeCartao(contas), entradasMap, saidasMap, naoOcorre })
 
     return {
       totalEntradas: t.entrada.real, totalSaidas: t.saida.real,
