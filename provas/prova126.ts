@@ -28,6 +28,14 @@ t('só fixas pagas: ✓ pago', destaqueDoGrupo([{ prev: 199, real: 190, fixa: tr
 t('fixa que não ocorre sai das colunas', perto(destaqueDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }, { prev: 100, real: 50, fixa: false }], false).prev, 100))
 t('R$ 999.999,99', tem(destaqueDoGrupo([{ prev: 999999.99, real: 0, fixa: true }], false).principal, '999.999,99'))
 
+// Gasto sem plano entra no Realizado do grupo, em todos os grupos (28/11/2026, Finanças)
+const fin = destaqueDoGrupo([{ prev: 25, real: 25, fixa: true }, { prev: 35, real: 35, fixa: true }, { prev: 0, real: 40.31, fixa: false }], false)
+t('Finanças: passou R$ 40,31', tem(fin.principal, 'passou') && tem(fin.principal, '40,31'))
+t('Finanças: realizado 100,31', perto(fin.real, 100.31))
+const sobra = destaqueDoGrupo([{ prev: 800, real: 300, fixa: false }, { prev: 0, real: 100, fixa: false }], false)
+t('variável com sem plano: a pagar 400', tem(sobra.principal, 'a pagar') && tem(sobra.principal, '400,00'))
+t('fixa paga abaixo + sem plano que não passa: ✓ pago', destaqueDoGrupo([{ prev: 60, real: 50, fixa: true }, { prev: 0, real: 5, fixa: false }], false).principal === '✓ pago')
+
 // Categoria
 t('fixa não paga: A pagar', terceiraColuna(657, 0, false, { fixa: true }).rotulo === 'A pagar')
 t('fixa paga: ✓ pago', terceiraColuna(199, 199, false, { fixa: true, fixaPaga: true }).valor === '✓ pago')

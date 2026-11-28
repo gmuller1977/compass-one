@@ -3,7 +3,6 @@ import { type CatReal } from './AcShared'
 import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo, SEM_MOVIMENTO } from './radarCores'
 import TabelaPlano from './TabelaPlano'
 import { colunasBase } from './radarCores'
-import { moedaNaTela as fmtTela } from '../../utils/valoresOcultos'
 import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 import { useForaDoMes } from './foraDoMesContexto'
@@ -143,9 +142,6 @@ export default function EvolucaoGrupo({
         {!SEM_MOVIMENTO.includes(destaque.principal) && (
           <div style={{ borderTop: `1px solid ${aberto ? 'rgba(255,255,255,0.18)' : '#e2e8f0'}`, paddingTop: 10 }}>
             <TabelaPlano azul={aberto} colunas={colunasBase(destaque.prev, semDados ? destaque.fora : destaque.real, isEntrada, semDados)} />
-            {!semDados && Math.abs(destaque.fora) > 0.005 && (
-              <div style={{ fontSize: 12, color: rotulo, marginTop: 6 }}>+ {fmtTela(destaque.fora)} sem plano</div>
-            )}
           </div>
         )}
       </div>

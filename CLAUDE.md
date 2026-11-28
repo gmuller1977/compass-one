@@ -700,6 +700,10 @@ segue o realizado. A tabela Fixas/Variáveis do card fechado (`PartesDoGrupo`)
 saiu. Aberto, cada categoria mostra Planejado · Realizado · A pagar (fixa, ou
 "✓ pago") ou Disponível (variável, ou "Passou"), `terceiraColuna`. A frase
 do topo e o "Plano do mês" da Início seguem a régua acima. `prova126` (18).
+No mesmo dia (Guilherme: Finanças com 60 de 60 pagos e R$ 40,31 sem plano
+dizia "✓ pago"; "em todos os grupos"): o gasto SEM PLANO entra no Realizado
+do grupo e no anel, em todo grupo com plano; o "+ R$ X sem plano" embaixo
+saiu. Finanças fica "passou R$ 40,31". `prova126` (22).
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",

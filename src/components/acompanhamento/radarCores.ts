@@ -251,21 +251,27 @@ export function destaqueDoGrupo(
   const tinhaPlano = linhas.some(l => !semPlano(l.prev))
   const soResolvidas = tinhaPlano && linhas.every((l, i) => semPlano(l.prev) || resolvida[i])
   const t = totaisJulgados(linhas.map(l => foraDoMes(l) ? { prev: 0, real: 0 } : l))
-  const pago = t.real
-  if (semPlano(t.prev) && !soResolvidas) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t, pago }
-  const base = `${isEntrada ? 'recebeu' : 'gastou'} ${fmt(t.real)} de ${fmt(t.prev)}`
+  if (semPlano(t.prev) && !soResolvidas) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t, pago: t.real }
+  // O gasto sem plano entra no Realizado do grupo (28/11/2026, Guilherme:
+  // Finanças com 60 de 60 pagos e 40,31 sem plano dizia "✓ pago"; "passou").
+  const real = t.real + t.fora
+  const pago = real
+  const base = `${isEntrada ? 'recebeu' : 'gastou'} ${fmt(real)} de ${fmt(t.prev)}`
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
-  const r = { contexto, julgado: true, ...t, pago }
-  if (soResolvidas) return { principal: '✓ pago', ...r }
-  const pct = t.prev > 0.005 ? Math.round(t.real / t.prev * 100) / 100 : 0
-  if (isEntrada) {
-    if (pct >= 1) return { principal: t.real - t.prev > 0.005 ? `${fmt(t.real - t.prev)} a mais` : '✓ recebido', ...r }
-    return { principal: `a receber ${fmt(t.prev - t.real)}`, ...r }
+  const r = { contexto, julgado: true, ...t, real, pago }
+  if (soResolvidas) {
+    if (real - t.prev > 0.005) return { principal: isEntrada ? `${fmt(real - t.prev)} a mais` : `passou ${fmt(real - t.prev)}`, ...r }
+    return { principal: '✓ pago', ...r }
   }
-  if (pct > 1) return { principal: `passou ${fmt(t.real - t.prev)}`, ...r }
+  const pct = t.prev > 0.005 ? Math.round(real / t.prev * 100) / 100 : 0
+  if (isEntrada) {
+    if (pct >= 1) return { principal: real - t.prev > 0.005 ? `${fmt(real - t.prev)} a mais` : '✓ recebido', ...r }
+    return { principal: `a receber ${fmt(t.prev - real)}`, ...r }
+  }
+  if (pct > 1) return { principal: `passou ${fmt(real - t.prev)}`, ...r }
   if (pct === 1) return { principal: '✓ pago', ...r }
   // "a receber na receita, a pagar na despesa" (Guilherme, mesmo dia).
-  return { principal: `a pagar ${fmt(t.prev - t.real)}`, ...r }
+  return { principal: `a pagar ${fmt(t.prev - real)}`, ...r }
 }
 
 /**

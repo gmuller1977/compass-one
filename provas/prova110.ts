@@ -16,7 +16,7 @@ t('fixa paga é pago', p[0].estado === 'pago')
 t('variáveis somam só o planejado', p[1].prev === 2800 && p[1].real === 2250)
 t('sem plano vai ao lado', p[1].fora === 80)
 const g = destaqueDoGrupo(linhas, false)
-t('as partes somam o grupo', Math.abs(p[0].prev + p[1].prev - g.prev) < 1e-9 && Math.abs(p[0].real + p[1].real - g.real) < 1e-9 && p[1].fora === g.fora)
+t('as partes somam o grupo', Math.abs(p[0].prev + p[1].prev - g.prev) < 1e-9 && Math.abs(p[0].real + p[1].real + p[1].fora - g.real) < 1e-9 && p[1].fora === g.fora) // 28/11/2026: o sem plano entra no realizado do grupo
 t('passou na variável', partesDoGrupo([{ prev: 300, real: 480, fixa: false }], false)[0].estado === 'passou')
 t('100% arredondado não passou', partesDoGrupo([{ prev: 1000, real: 1004, fixa: false }], false)[0].estado === 'ok')
 t('fixa a pagar não é paga', partesDoGrupo([{ prev: 650, real: 0, fixa: true }], false)[0].estado === 'ok')
