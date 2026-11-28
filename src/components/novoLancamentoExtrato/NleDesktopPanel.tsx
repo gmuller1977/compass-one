@@ -36,6 +36,8 @@ type Props = {
   fValor: string
   fPag: FormaPag
   fContaFixa: string
+  /** Formas na edição da fixa (formasDaEdicaoDaFixa); vazio esconde. */
+  formasDaFixa: { id: FormaPag; label: string }[]
   fContaDestino: string
 
   // Context
@@ -75,8 +77,8 @@ type Props = {
 
 export default function NleDesktopPanel({
   isMobile, mes, ano, diaSel, totalDias, setDiaSel,
-  editandoId, editandoFixaId, fixaEhAutomatica,
-  fTipo, fCat, fSubDesc, fDesc, fValor, fPag, fContaFixa, fContaDestino,
+  editandoId, editandoFixaId,
+  fTipo, fCat, fSubDesc, fDesc, fValor, fPag, formasDaFixa, fContaFixa, fContaDestino,
   isDinheiro, contaInfo,
   categoriasSelect, onNovaCategoria, subDescsDisponiveis, contasExtrato, destinosTransf, categorias,
   fixas, mesDados, totalSaidas,
@@ -242,14 +244,14 @@ export default function NleDesktopPanel({
           )}
 
           {/* Forma de pagamento */}
-          {(isDinheiro ? !editandoFixaId : (!editandoFixaId || (editandoFixaId && !fixaEhAutomatica))) && (
+          {(!editandoFixaId || formasDaFixa.length > 0) && (
             <div style={{marginBottom:14}}>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5,marginBottom:5}}>
                 {fTipo === 'entrada' ? 'Forma de recebimento' : 'Forma de pagamento'}
               </div>
               <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                {formasDoLancamento(fTipo, isDinheiro).map(p => (
+                {(editandoFixaId ? formasDaFixa : formasDoLancamento(fTipo, isDinheiro)).map(p => (
                   <button key={p.id} onClick={() => { setFPag(p.id); setFContaDestino(p.id==='transferencia'||isDinheiro?'':ehTransf(p.id)?'dinheiro':'') }} style={{
                     padding:'6px 12px',borderRadius:8,
                     border:`1.5px solid ${fPag===p.id?COR.azul:'#e2e8f0'}`,
@@ -390,7 +392,7 @@ export default function NleDesktopPanel({
           {/* Debitar na conta — so ao editar fixa de banco.
               A conta do cadastro manda, mas o mes pode discordar: essa fixa sai
               do Sicredi e neste mes voce pagou pelo Caixa. Muda so o mes. */}
-          {fContaFixa && (
+          {fContaFixa && !isDinheiro && fPag !== 'dinheiro' && (
             <div style={{marginBottom:14}}>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5,marginBottom:5}}>

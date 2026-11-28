@@ -21,7 +21,7 @@ import {
   contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey, type Memoria,
   formaPagCategoria, useIsMobile,
   type TipoLanc, type FormaPag, type CatFixa, type Lancamento, type DadosMes,
-  ehTransf,
+  ehTransf, formasDaEdicaoDaFixa,
 } from '../components/novoLancamentoExtrato/NleShared'
 import NleHeader          from '../components/novoLancamentoExtrato/NleHeader'
 import NleMobileWizard   from '../components/novoLancamentoExtrato/NleMobileWizard'
@@ -39,6 +39,7 @@ import { CARTEIRA_ID, descricoesDaTransferencia, destinosDaTransferencia } from 
 import { ehContaDisponivel } from '../utils/saldoConta'
 import { fixaNaoOcorre, marcarNaoOcorre, desfazerNaoOcorre } from '../utils/fixasDoMes'
 import { comValorDigitado } from '../utils/valorDigitadoFixa'
+import { moverFixaDeConta } from '../utils/fixaEmOutraConta'
 
 export default function NovoLancamentoExtrato() {
   // O olho da Início vale aqui: redesenha quando ele muda (valoresOcultos.ts).
@@ -167,6 +168,13 @@ export default function NovoLancamentoExtrato() {
     cenarioPrevisao,
   }) as unknown as DepsSaldo,
   [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
+  /** Fixa de BANCO paga em dinheiro naquele mês (utils/fixaEmOutraConta). */
+  function fixaDeBancoNaCarteira(c: { id: string; tipoMovimento?: string; contaDebitoId?: string }, a: number, m: number): boolean {
+    if (c.tipoMovimento !== 'banco') return false
+    if (dados[mesKey(CARTEIRA_ID, a, m)]?.fixasConsolidadas?.[c.id] === true) return true
+    return contaDaFixaNoMes(c, a, m, dados, contaPadraoFixas, contasExtrato) === CARTEIRA_ID
+  }
+
   const fixasCategoria = categorias
     .filter(c => {
       if (!c.fixa) return false
@@ -176,13 +184,13 @@ export default function NovoLancamentoExtrato() {
       // realizadoMes ja seguia, e que aqui era aplicada tarde demais.
       const confirmadaAqui = dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[c.id] === true
       if (!c.ativa && !confirmadaAqui) return false
-      if (isDinheiro) return c.tipoMovimento === 'dinheiro'
+      if (isDinheiro) return c.tipoMovimento === 'dinheiro' || fixaDeBancoNaCarteira(c, ano, mes)
       if (c.tipoMovimento === 'cartao') return false
       if (c.tipoMovimento === 'dinheiro') return false
       // Confirmada em outra conta vence tudo: quem pagou, pagou. Vale tambem
       // para fixa com conta de debito — se saiu de outro banco, nao segue
-      // pendente no de origem.
-      const confirmadaFora = contasExtrato
+      // pendente no de origem. A carteira conta (fixa paga em dinheiro).
+      const confirmadaFora = [...contasExtrato, { id: CARTEIRA_ID }]
         .filter(ct => ct.id !== contaIdEfetivo)
         .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[c.id] === true)
       if (confirmadaFora) return false
@@ -199,7 +207,7 @@ export default function NovoLancamentoExtrato() {
       naoOcorre: naoOcorreNoMes(c.id, ano, mes) || undefined,
       valorDoPlano: naoOcorreNoMes(c.id, ano, mes) ? valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc) : undefined,
       tipo: c.tipo as TipoLanc,
-      formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
+      formaPagamento: isDinheiro && fixaDeBancoNaCarteira(c, ano, mes) ? 'dinheiro' : formaPagCategoria(c.formaPagamento, c.tipoMovimento),
       diaVencimento: c.diaVencimento ?? 1,
     }))
     .filter(f => f.naoOcorre || semPlanoEIntocada(f, ano, mes) === false)
@@ -523,15 +531,28 @@ export default function NovoLancamentoExtrato() {
    * ORIGEM, mesmo quando a fixa ja se mudou e esta sendo editada no destino —
    * senao a proxima leitura procuraria no lugar errado.
    */
-  function gravarContaDaFixa(fixaId: string) {
+  function origemDaFixa(cat: { contaDebitoId?: string }): string | undefined {
+    const debito = cat.contaDebitoId
+    return debito && contasExtrato.some(c => c.id === debito) ? debito : contaPadraoFixas
+  }
+  /** A conta em que a fixa em edição cai neste mês, pela forma escolhida:
+   *  Dinheiro leva para a carteira; na carteira, outra forma volta ao banco. */
+  function destinoDaFixa(fixaId: string): string | undefined {
+    const cat = categorias.find(c => c.id === fixaId)
+    if (!cat || cat.tipoMovimento !== 'banco') return undefined
+    if (fPag === 'dinheiro') return CARTEIRA_ID
+    if (isDinheiro) return origemDaFixa(cat)
+    return fContaFixa || undefined
+  }
+  function gravarContaDaFixa(fixaId: string, destino: string | undefined) {
     const cat = categorias.find(c => c.id === fixaId)
     if (!cat || cat.tipoMovimento !== 'banco') return
-    const origem = cat.contaDebitoId ?? contaPadraoFixas
-    if (!origem || !fContaFixa) return
+    const origem = origemDaFixa(cat)
+    if (!origem || !destino) return
     updateMesPorKey(mesKey(origem, ano, mes), prev => {
       const mapa = { ...prev.fixasContaOverride }
-      if (fContaFixa === origem) delete mapa[fixaId]
-      else mapa[fixaId] = fContaFixa
+      if (destino === origem) delete mapa[fixaId]
+      else mapa[fixaId] = destino
       return { ...prev, fixasContaOverride: mapa }
     })
   }
@@ -687,11 +708,11 @@ export default function NovoLancamentoExtrato() {
         // Mesma regra do fixasCategoria: confirmada vence inativa.
         const confirmadaNoMes = dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true
         if (!c.ativa && !confirmadaNoMes) return false
-        if (isDinheiro) return c.tipoMovimento === 'dinheiro'
+        if (isDinheiro) return c.tipoMovimento === 'dinheiro' || fixaDeBancoNaCarteira(c, a, m)
         if (c.tipoMovimento === 'cartao') return false
         if (c.tipoMovimento === 'dinheiro') return false
         // Mesma regra do mes exibido, so que para (a, m).
-        const confirmadaFora = contasExtrato
+        const confirmadaFora = [...contasExtrato, { id: CARTEIRA_ID }]
           .filter(ct => ct.id !== contaIdEfetivo)
           .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[c.id] === true)
         if (confirmadaFora) return false
@@ -706,7 +727,7 @@ export default function NovoLancamentoExtrato() {
         valor: naoOcorreNoMes(c.id, a, m) ? 0 : valorFixaNoMes(c, planos[a], m, categorias),
         naoOcorre: naoOcorreNoMes(c.id, a, m) || undefined,
         tipo: c.tipo as TipoLanc,
-        formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
+        formaPagamento: isDinheiro && fixaDeBancoNaCarteira(c, a, m) ? 'dinheiro' : formaPagCategoria(c.formaPagamento, c.tipoMovimento),
         diaVencimento: c.diaVencimento ?? 1,
       }))
       // Mesmo filtro do fixasCategoria, so que para (a, m). As duas listas tem
@@ -952,6 +973,13 @@ export default function NovoLancamentoExtrato() {
 
   const catEditandoFixa = editandoFixaId ? categorias.find(c => c.id === editandoFixaId) : null
   const fixaEhAutomatica = catEditandoFixa?.tipoMovimento === 'banco' && catEditandoFixa?.formaPagamento === 'automatico'
+  // Formas na edição da fixa: sem Saque/Depósito; na fixa de banco, Dinheiro
+  // a leva para a carteira neste mês (formasDaEdicaoDaFixa). A fatura troca
+  // só entre as formas do banco; automático e fixa da carteira, nenhuma.
+  const formasDaFixa = !editandoFixaId || fixaEhAutomatica ? []
+    : editandoFixaId.startsWith('cartao-')
+      ? (isDinheiro ? [] : formasDaEdicaoDaFixa(fTipo, true).filter(p => p.id !== 'dinheiro'))
+      : formasDaEdicaoDaFixa(fTipo, catEditandoFixa?.tipoMovimento === 'banco')
 
   function lancar() {
     const valor = parseBRL(fValor)
@@ -971,17 +999,27 @@ export default function NovoLancamentoExtrato() {
       const comValor = (dm: DadosMes): DadosMes => id.startsWith('cartao-') || !fixaEditada
         ? { ...dm, fixasValorOverride: { ...dm.fixasValorOverride, [id]: valor } }
         : comValorDigitado(dm, id, valor, fixaEditada.valorDoPlano ?? fixaEditada.valor)
-      updateMes(prev => ({
+      const campos = (prev: DadosMes): DadosMes => ({
         ...comValor(prev),
         ...(reagendar && prev.fixasConsolidadas?.[id] === true ? {
           fixasConsolidadas: Object.fromEntries(Object.entries(prev.fixasConsolidadas).filter(([k]) => k !== id)),
           debitosConferidos: Object.fromEntries(Object.entries((prev as { debitosConferidos?: Record<string, boolean> }).debitosConferidos ?? {}).filter(([k]) => k !== id)),
         } : {}),
-        fixasMovidas:       { ...prev.fixasMovidas,       [editandoFixaId]: diaAlvo },
-        fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
-        fixasPagOverride:   { ...prev.fixasPagOverride,   [editandoFixaId]: fPag },
-      }))
-      gravarContaDaFixa(editandoFixaId)
+        fixasMovidas:       { ...prev.fixasMovidas,       [id]: diaAlvo },
+        fixasDescOverride:  { ...prev.fixasDescOverride,  [id]: fDesc.trim() },
+        fixasPagOverride:   { ...prev.fixasPagOverride,   [id]: fPag },
+      })
+      // Mudou de conta neste mês (Dinheiro, ou de volta ao banco): o que já
+      // estava gravado para a fixa vai junto (utils/fixaEmOutraConta).
+      const destino = destinoDaFixa(id)
+      if (destino && destino !== contaIdEfetivo) {
+        const destinoKey = mesKey(destino, ano, mes)
+        updateMesPorKey(destinoKey, prev => campos(moverFixaDeConta(mesDados, prev, id)[1]))
+        updateMes(prev => moverFixaDeConta(prev, {}, id)[0])
+      } else {
+        updateMes(campos)
+      }
+      gravarContaDaFixa(id, destino)
       setEditandoFixaId(null)
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
       // Sem pular para a categoria: editar uma fixa nao e comecar um lancamento
@@ -1380,6 +1418,7 @@ export default function NovoLancamentoExtrato() {
               fDesc={fDesc}
               fValor={fValor}
               fPag={fPag}
+              formasDaFixa={formasDaFixa}
               fContaDestino={fContaDestino}
               setFContaDestino={setFContaDestino}
               destinosTransf={destinosTransf}
@@ -1428,6 +1467,7 @@ export default function NovoLancamentoExtrato() {
               fDesc={fDesc}
               fValor={fValor}
               fPag={fPag}
+              formasDaFixa={formasDaFixa}
               fContaFixa={fContaFixa}
               fContaDestino={fContaDestino}
               isDinheiro={isDinheiro}

@@ -68,7 +68,7 @@ export default function NleExtratoMobile({
   isDinheiro, mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
   fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes, memoria,
   cenarioPrevisao, setCenarioPrevisao, totalEntradas, totalSaidas, contas,
-  diaSel, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
+  diaSel, highlightDia, editandoId, editandoFixaId, mobileDiaForm, formasDaFixa,
   fTipo, fCat, fSubDesc, fDesc, fValor, fPag, fContaDestino, setFContaDestino, destinosTransf,
   categoriasSelect, onNovaCategoria, subDescsDisponiveis,
   valorInputRef, categoriaSelectRef, hojeRef,
@@ -366,10 +366,10 @@ export default function NleExtratoMobile({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {/* Mesma ordem do computador: tipo, forma de pagamento, categoria. */}
-              <div>
+              {(!editandoFixaId || formasDaFixa.length > 0) && <div>
                 <span style={rotuloCampo}>{fTipo === 'entrada' ? 'Como recebeu' : 'Como pagou'}</span>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {formasDoLancamento(fTipo, isDinheiro).map(p => {
+                  {(editandoFixaId ? formasDaFixa : formasDoLancamento(fTipo, isDinheiro)).map(p => {
                     const on = fPag === p.id
                     return (
                       <button key={p.id} onClick={() => { setFPag(p.id as FormaPag); setFContaDestino(p.id === 'transferencia' || isDinheiro ? '' : ehTransf(p.id) ? 'dinheiro' : '') }} aria-pressed={on} style={{
@@ -380,10 +380,11 @@ export default function NleExtratoMobile({
                     )
                   })}
                 </div>
-              </div>
+              </div>}
 
-              {/* Transferência não pede categoria: só a outra conta. */}
-              {ehTransf(fPag) ? (
+              {/* Transferência não pede categoria: só a outra conta. A fixa
+                  em edição nunca é transferência: segue com a categoria. */}
+              {ehTransf(fPag) && !editandoFixaId ? (
                 <label>
                   <span style={rotuloCampo}>{rotuloDaOutraConta(fPag, fTipo, isDinheiro)}</span>
                   <select ref={categoriaSelectRef} value={fContaDestino} aria-label="Conta da transferência"
@@ -426,7 +427,7 @@ export default function NleExtratoMobile({
                 </select>
               </div>}
 
-              {!ehTransf(fPag) && subDescsDisponiveis.length > 0 && (
+              {(!ehTransf(fPag) || !!editandoFixaId) && subDescsDisponiveis.length > 0 && (
                 <label>
                   <span style={rotuloCampo}>Variante</span>
                   <select value={fSubDesc} onChange={e => setFSubDesc(e.target.value)} style={campo}>
