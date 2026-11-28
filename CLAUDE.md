@@ -752,6 +752,9 @@ Revê o parágrafo acima só na despesa: fixa paga abaixo do plano entra no
 saldo (199 pago com 190 = "Saldo do plano R$ 9,00"). Na receita fica "a
 receber" linha a linha, e o "a mais" não aparece. Categoria aberta não mudou
 (A pagar / Disponível). `prova126` (26).
+No card, a frase fica numa linha e o VALOR embaixo, maior (mesmo dia, pedido
+dele: no celular "Passou do plano R$ 231,79" corria embaixo do anel),
+computador e celular; `partesDoDestaque` em `radarCores.ts` separa no "R$".
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
