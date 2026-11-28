@@ -1,3 +1,4 @@
+import { ehFixaProgramada } from './fixaNoCartao'
 import type { Conta, Categoria, PlanoAnoData } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { mkCatReal, type CatReal, type Lanc } from '../components/acompanhamento/AcShared'
@@ -133,7 +134,7 @@ export function construirRealizadoMes(params: {
       alvo.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
     }
 
-    const fat = faturaData as Record<string, { lancamentos: Record<number, { id?: string; tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number; diaCompra?: number; mesCompra?: number }[]> }>
+    const fat = faturaData as Record<string, { conferidos?: Record<string, boolean>; lancamentos: Record<number, { id?: string; fixaId?: string; tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number; diaCompra?: number; mesCompra?: number }[]> }>
     for (const card of contas.filter(c => c.tipo === 'cartao')) {
       const billingOff = (card.diaVencimento ?? 1) < (card.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - billingOff, pAno = ano
@@ -161,6 +162,16 @@ export function construirRealizadoMes(params: {
           const diaMostrado = l.diaCompra ?? d
           const mesMostrado = l.mesCompra ?? pMes
           const daVariante = { ...(variante ? { variante } : {}), ...(mesMostrado !== mes ? { mesFatura: mesMostrado } : {}) }
+          // A fixa que o app lança sozinho na fatura só é realizado depois de
+          // conferida (a bolinha), a regra de 05/11/2026 que só a tela da
+          // fatura seguia (28/11/2026, Guilherme: "realizado é somente o que
+          // já foi pago, lançado e confirmado"). Fica em `programado`, que a
+          // previsão soma de volta: ela já está na fatura (`totalFatura`).
+          if (l.tipo === 'entrada' && ehFixaProgramada({ id: l.id ?? '', fixaId: l.fixaId }, dm.conferidos)) {
+            const c = getSaida(k)
+            c.programado = (c.programado ?? 0) + l.valor
+            continue
+          }
           if (l.tipo === 'entrada') {
             const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor

@@ -728,6 +728,14 @@ mês" e "Resumo do mês" da Início; o saldo final planejado do Radar soma o que
 saiu de volta. O Planejamento segue com o plano ("o plano segue"), então em
 mês com fixa marcada o "termina com" de lá fica diferente do Radar por esse
 valor. `idsQueNaoOcorrem` em `fixasDoMes.ts`; `prova138` (11).
+**A fixa programada no cartão só é Realizado depois de CONFERIDA** (mesmo
+dia, Guilherme: "realizado é somente o que já foi pago, lançado e
+confirmado"; escolheu no card "só a fixa programada"). A fixa que o app lança
+sozinho na fatura (`fixaId`) e ainda sem a bolinha fica em `programado` no
+`CatReal`, fora do `total`: Radar, Início e alertas não a contam. A previsão
+a soma de volta na fixa de cartão (`plano − total − programado`), porque ela
+já está na fatura. A compra lançada pela pessoa conta sem bolinha, como antes.
+`prova113` (17).
 
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
