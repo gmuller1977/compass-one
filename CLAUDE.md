@@ -691,6 +691,16 @@ Disponível/Passou, com a nota de que as fixas não pagas já contam. Revê o
 agora aparece como disponível. Uma versão com duas linhas e "a pagar" foi
 mostrada e trocada no mesmo dia. `prova125` (12).
 
+**No CARD do grupo, o realizado é só o que saiu** (28/11/2026, Guilherme:
+"as fixas não realizadas já estão entrando como gastou, parece que já está
+pago"). Revê o parágrafo acima SÓ no card: ele mostra o total Planejado ·
+Realizado (`TabelaPlano`) e a diferença, "a pagar R$ X" na despesa e "a
+receber R$ X" na receita; 100% é "✓ pago" e acima, "passou R$ X"; o anel
+segue o realizado. A tabela Fixas/Variáveis do card fechado (`PartesDoGrupo`)
+saiu. Aberto, cada categoria mostra Planejado · Realizado · A pagar (fixa, ou
+"✓ pago") ou Disponível (variável, ou "Passou"), `terceiraColuna`. A frase
+do topo e o "Plano do mês" da Início seguem a régua acima. `prova126` (18).
+
 **No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
 do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
 cada parte na sua caixa branca, na ordem de sempre. Fixa pelo cadastro
