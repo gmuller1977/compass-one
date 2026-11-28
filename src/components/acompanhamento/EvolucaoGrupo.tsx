@@ -2,7 +2,7 @@ import type { Categoria } from '../../context/AppContext'
 import { type CatReal } from './AcShared'
 import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo, SEM_MOVIMENTO } from './radarCores'
 import TabelaPlano from './TabelaPlano'
-import { colunasBase } from './radarCores'
+import { colunasBase, partesDoDestaque } from './radarCores'
 import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 import { useForaDoMes } from './foraDoMesContexto'
@@ -129,10 +129,11 @@ export default function EvolucaoGrupo({
               <span aria-hidden="true" style={{ fontSize: 14, color: rotulo,
                 transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none' }}>▾</span>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
-              fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
-              {destaque.principal}
-            </div>
+            {(() => { const pd = partesDoDestaque(destaque.principal); return <>
+              <div style={{ fontSize: pd.valor ? 15 : 18, fontWeight: pd.valor ? 700 : 800, color: corNumero, lineHeight: 1.2 }}>{pd.frase}</div>
+              {pd.valor && <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
+                fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>{pd.valor}</div>}
+            </> })()}
             {destaque.extra && <div style={{ fontSize: 14, fontWeight: 700, color: aberto ? '#fff' : destaque.extra.startsWith('passou') ? '#b91c1c' : destaque.extra.endsWith('a mais') ? '#15803d' : rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.extra}</div>}
             {SEM_MOVIMENTO.includes(destaque.principal) && <div style={{ fontSize: 13, color: rotulo }}>{destaque.contexto}</div>}
           </div>

@@ -363,3 +363,13 @@ export const colunasBase = (prev: number, real: number, isEntrada: boolean, semP
   { rotulo: 'Planejado', valor: semPlanoNoMes ? 'sem plano' : moedaNaTela(prev) },
   { rotulo: isEntrada ? 'Recebido' : 'Realizado', valor: moedaNaTela(real) },
 ]
+
+/**
+ * O número grande do card do grupo em duas linhas: a frase em cima e o valor
+ * embaixo (28/11/2026, Guilherme: "Passou do plano R$ 231,79" passava por
+ * baixo do anel no celular; "coloque o valor embaixo"). Sem valor, só a frase.
+ */
+export function partesDoDestaque(principal: string): { frase: string; valor: string | null } {
+  const i = principal.indexOf('R$')
+  return i > 0 ? { frase: principal.slice(0, i).trim(), valor: principal.slice(i) } : { frase: principal, valor: null }
+}

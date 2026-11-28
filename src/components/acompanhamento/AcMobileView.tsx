@@ -12,7 +12,7 @@ import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
 import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, terceiraColuna, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import TabelaPlano from './TabelaPlano'
-import { colunasBase } from './radarCores'
+import { colunasBase, partesDoDestaque } from './radarCores'
 import { useForaDoMes } from './foraDoMesContexto'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
@@ -341,9 +341,10 @@ export default function AcMobileView({
                 <span aria-hidden style={{ color:gRotulo, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
                   transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
               </div>
-              <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
-                {dg.principal}
-              </span>
+              {(() => { const pd = partesDoDestaque(dg.principal); return <>
+                <span style={{ fontSize: pd.valor ? 15 : 19, fontWeight: pd.valor ? 700 : 800, color:gCor }}>{pd.frase}</span>
+                {pd.valor && <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', lineHeight:1.15 }}>{pd.valor}</span>}
+              </> })()}
               {dg.extra && <span style={{ fontSize:14, fontWeight:700, color: aberto ? '#ffffff' : dg.extra.startsWith('passou') ? '#b91c1c' : dg.extra.endsWith('a mais') ? '#15803d' : gRotulo, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>{dg.extra}</span>}
               {SEM_MOVIMENTO.includes(dg.principal) && <span style={{ fontSize:13, color:gRotulo }}>{dg.contexto}</span>}
             </div>
