@@ -148,6 +148,9 @@ export function formasDoLancamento(tipo: 'saida' | 'entrada', isDinheiro: boolea
     tipo === 'saida' ? { id:'saque', label:'Saque' } : { id:'deposito', label:'Depósito' }]
 }
 
+// Formas na edição da fixa já prevista: utils/fixaEmOutraConta.
+export { formasDaEdicaoDaFixa } from '../../utils/fixaEmOutraConta'
+
 /** Saque, depósito e transferência: o lançamento vai para outra conta, sem categoria. */
 export function ehTransf(fp: FormaPag | string): boolean {
   return fp === 'transferencia' || fp === 'saque' || fp === 'deposito'

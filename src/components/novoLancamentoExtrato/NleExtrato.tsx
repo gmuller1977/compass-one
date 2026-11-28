@@ -45,6 +45,8 @@ export type Props = {
   fDesc: string
   fValor: string
   fPag: FormaPag
+  /** Formas na edição da fixa (formasDaEdicaoDaFixa); vazio esconde. */
+  formasDaFixa: { id: FormaPag; label: string }[]
   /** Transferência: a outra conta (banco ou 'dinheiro'). */
   fContaDestino: string
   setFContaDestino: (v: string) => void
