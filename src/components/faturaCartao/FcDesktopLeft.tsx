@@ -143,8 +143,7 @@ export default function FcDesktopLeft({
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, whiteSpace: 'nowrap',
-                      overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, overflowWrap: 'break-word' }}>
                       {/* Grupo antes do nome, em cinza: "Casa · Mercado". */}
                       {grupoDoLanc(l, categorias) && (
                         <span style={{ fontWeight: 500, color: COR.textoSuave }}>{grupoDoLanc(l, categorias)} · </span>
@@ -152,8 +151,7 @@ export default function FcDesktopLeft({
                       {lancLabel(l)}
                     </div>
                     {l.descricao && l.descricao !== l.categoria && (
-                      <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1, whiteSpace: 'nowrap',
-                        overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.descricao}</div>
+                      <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1, overflowWrap: 'break-word' }}>{l.descricao}</div>
                     )}
                   </div>
 
