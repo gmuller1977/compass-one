@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_TEXTO_CLARO as COR, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga, semPlano, RADAR_COR_NEUTRA } from './radarCores'
+import TabelaPlano from './TabelaPlano'
+import { colunasBase } from './radarCores'
+import { RADAR_TEXTO_CLARO as COR, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, terceiraColuna, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { useForaDoMes } from './foraDoMesContexto'
 import { IconeCat } from '../IconeCat'
@@ -164,13 +166,12 @@ export default function EvolucaoLinha({
   const naoOcorre = !!cadastro && foraDoMesIds.has(cadastro.id)
 
   const faixa = noValorExato || fixaPaga || naoOcorre ? 'bom' : faixaRadar(percArred, isEntrada)
-  const cor = semDados ? (Math.abs(real) > 0.005 ? RADAR_COR_NEUTRA : '#94a3b8') : COR[faixa]
   // O número grande é o que importa agora — resta, passou, a pagar, ✓ pago —,
   // e o "gastou X de Y" desce para a linha de baixo. O percentual saiu: a
   // barra já mostra a proporção. Mesma regra do grupo (destaqueRadar), pedido
   // do Guilherme em 06/10/2026. Fixa paga continua sem "disponível": o saldo
   // previsto já não conta nada dela.
-  const destaque = destaqueRadar(prev, real, isEntrada, { fixa: !!cadastro?.fixa, fixaPaga, naoOcorre })
+  const terceira = terceiraColuna(prev, real, isEntrada, { fixa: !!cadastro?.fixa, fixaPaga, naoOcorre })
   const alternar = () => temLancamentos && setAberto(v => !v)
 
   return (
@@ -210,9 +211,10 @@ export default function EvolucaoLinha({
               </span>
             )}
           </div>
-          <div style={{ fontSize: 10.5, marginTop: 2, color: '#475569',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {destaque.contexto}
+          {/* Planejado · Realizado · A pagar / Disponível (28/11/2026, Guilherme). */}
+          <div style={{ marginTop: 4, maxWidth: 420 }}>
+            <TabelaPlano tamanho={13} colunas={[...colunasBase(prev, real, isEntrada, semPlano(prev)),
+              { rotulo: terceira.rotulo, valor: terceira.valor, cor: terceira.estado === 'neutro' ? '#334155' : COR[terceira.estado] }]} />
           </div>
         </div>
         {/* Ajustar o plano daqui mesmo (ajustePlanoContexto). stopPropagation:
@@ -227,10 +229,6 @@ export default function EvolucaoLinha({
             ✎ ajustar plano
           </button>
         )}
-        <div title={percLabel} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end',
-          whiteSpace: 'nowrap', minWidth: 150, fontVariantNumeric: 'tabular-nums' }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: cor }}>{destaque.principal}</span>
-        </div>
         <div style={{ width: 200, flexShrink: 0, height: 16, borderRadius: 8, background: TRILHO, overflow: 'hidden',
           boxSizing: 'border-box', border: `2px solid ${semDados ? '#cbd5e1' : RADAR_BORDA_CLARO}` }}>
           {!semDados && (

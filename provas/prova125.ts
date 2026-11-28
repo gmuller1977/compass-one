@@ -36,28 +36,13 @@ conf(perto(b2.gasto, 5250) && perto(b2.diferenca, -250), 'fixa paga entra pelo v
 const b3 = balancoDoPlano([...linhas, { nome: 'Presente', descricao: '', grupo: 'Outras', prev: 0, real: 80 }], categorias)!
 conf(perto(b3.semPlano, 80) && perto(b3.diferenca, -300), 'sem plano fica fora da conta')
 
-// O card do grupo usa a mesma régua.
+// O card do grupo deixou essa régua em 28/11/2026 (Guilherme: "parece que
+// já está pago"): ele mostra só o realizado. A prova126 cobre o card; a frase
+// do topo segue a régua acima.
 const casa = [{ prev: 1200, real: 1200, fixa: true }, { prev: 800, real: 0, fixa: true }]
-const dg = destaqueDoGrupo(casa, false)
-conf(perto(dg.real, 2000) && perto(dg.prev, 2000), `card: gastou 2.000 de 2.000 (veio ${dg.real})`)
 const partes = partesDoGrupo([...casa, { prev: 2000, real: 2500, fixa: false }], false)
 const fixas = partes.find(p => p.rotulo === 'Fixas')!
-// 28/11/2026 (Guilherme: "parece que já está pago"): a tabela do card mostra
-// no Gastou só o que saiu, e a fixa não paga vai em "a pagar".
-conf(perto(fixas.real, 1200) && perto(fixas.aPagar, 800) && fixas.estado !== 'pago', `tabela do card: Fixas gastou 1.200 + a pagar 800, sem ✓ (veio ${fixas.real} / ${fixas.aPagar})`)
-conf(perto(fixas.prev - fixas.real - fixas.aPagar, 0), 'Planejado − Gastou − a pagar = disponível')
-conf(perto(dg.pago, 1200), `anel do grupo: só o que saiu, 1.200 (veio ${dg.pago})`)
-// O caso do Guilherme: Escola 657 a pagar, Faculdade 199 paga, Cursos 216,13 no limite.
-const edu = partesDoGrupo([{ prev: 657, real: 0, fixa: true }, { prev: 199, real: 199, fixa: true }, { prev: 216.13, real: 216.13, fixa: false }], false)
-conf(perto(edu[0].real, 199) && perto(edu[0].aPagar, 657) && perto(edu[1].aPagar, 0), 'Educação: Fixas gastou 199, a pagar 657')
-const dEdu = destaqueDoGrupo([{ prev: 657, real: 0, fixa: true }, { prev: 199, real: 199, fixa: true }, { prev: 216.13, real: 216.13, fixa: false }], false)
-conf(perto(dEdu.pago / dEdu.prev, (199 + 216.13) / 1072.13), 'Educação: anel em 39%, não 100%')
-conf(perto(partesDoGrupo([{ prev: 999999.99, real: 0, fixa: true }], false)[0].aPagar, 999999.99), 'a pagar com R$ 999.999,99')
-const todos = [...casa, { prev: 2000, real: 2500, fixa: false }, { prev: 1000, real: 800, fixa: false }]
-const tg = destaqueDoGrupo(todos, false)
-conf(perto(tg.prev - tg.real, b.diferenca), 'card com todas as linhas = frase')
-conf(tg.principal.startsWith('passou') && tg.principal.includes('300,00'), `card diz passou R$ 300,00 (veio ${tg.principal})`)
-
+conf(perto(fixas.real, 1200) && perto(fixas.aPagar, 800) && fixas.estado !== 'pago', 'partes: Fixas gastou 1.200 + a pagar 800')
 // Fixa paga e "não vai ocorrer": resolvidas.
 conf(destaqueDoGrupo([{ prev: 1200, real: 1200, fixa: true }], false).principal === '✓ pago', 'grupo só de fixa paga: ✓ pago')
 conf(destaqueDoGrupo([{ prev: 500, real: 0, fixa: true, naoOcorre: true }], false).principal === '✓ pago', 'fixa que não ocorre: resolvida')

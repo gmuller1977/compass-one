@@ -241,25 +241,53 @@ export function destaqueDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
 ): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number; pago: number } {
   const fmt = (v: number) => moedaNaTela(v)
-  // O que de fato saiu nas linhas com plano, sem a fixa a pagar: é o anel
-  // (28/11/2026, Guilherme: com a fixa a pagar no gasto "parece que já está
-  // pago"). O principal e o "passou" seguem a régua de 21/11.
-  const pago = linhas.reduce((s, l) => s + (semPlano(l.prev) || foraDoMes(l) ? 0 : l.real), 0)
-  // A fixa ainda não paga já conta como gasta, pelo plano (21/11/2026).
-  const pagaAntes = linhas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
+  // 28/11/2026, Guilherme: "no card do grupo, usar somente o total do
+  // planejamento e realizado e mostrar a diferença como a receber ou
+  // disponível. Se for 100%, pago; se passou, passou R$". O realizado é só o
+  // que saiu: a fixa ainda não paga não conta (antes contava pelo plano desde
+  // 21/11, e "parece que já está pago"). Fixa que não ocorre no mês sai das
+  // duas colunas. Grupo só de fixas pagas (ou que não ocorrem) é "✓ pago".
+  const resolvida = linhas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
   const tinhaPlano = linhas.some(l => !semPlano(l.prev))
-  const soResolvidas = tinhaPlano && linhas.every((l, i) => semPlano(l.prev) || pagaAntes[i])
-  linhas = linhas.map(l => comGastoDaFixa(l, isEntrada))
-  const t = totaisJulgados(linhas)
-  // Grupo sem nenhuma linha com plano: só o realizado, como a linha.
+  const soResolvidas = tinhaPlano && linhas.every((l, i) => semPlano(l.prev) || resolvida[i])
+  const t = totaisJulgados(linhas.map(l => foraDoMes(l) ? { prev: 0, real: 0 } : l))
+  const pago = t.real
   if (semPlano(t.prev) && !soResolvidas) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t, pago }
-  // Julga só as linhas com plano; o gasto sem plano aparece ao lado, sem peso.
-  const base = destaqueRadar(t.prev, t.real, isEntrada).contexto
+  const base = `${isEntrada ? 'recebeu' : 'gastou'} ${fmt(t.real)} de ${fmt(t.prev)}`
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
-  // A fixa que não ocorre neste mês está resolvida como a paga: não fica "a
-  // pagar" nem vira "resta" (entra pelo realizado, zero).
-  if (soResolvidas) return { principal: '✓ pago', contexto, julgado: true, ...t, pago }
-  return { principal: destaqueRadar(t.prev, t.real, isEntrada).principal, contexto, julgado: true, ...t, pago }
+  const r = { contexto, julgado: true, ...t, pago }
+  if (soResolvidas) return { principal: '✓ pago', ...r }
+  const pct = t.prev > 0.005 ? Math.round(t.real / t.prev * 100) / 100 : 0
+  if (isEntrada) {
+    if (pct >= 1) return { principal: t.real - t.prev > 0.005 ? `${fmt(t.real - t.prev)} a mais` : '✓ recebido', ...r }
+    return { principal: `a receber ${fmt(t.prev - t.real)}`, ...r }
+  }
+  if (pct > 1) return { principal: `passou ${fmt(t.real - t.prev)}`, ...r }
+  if (pct === 1) return { principal: '✓ pago', ...r }
+  // "a receber na receita, a pagar na despesa" (Guilherme, mesmo dia).
+  return { principal: `a pagar ${fmt(t.prev - t.real)}`, ...r }
+}
+
+/**
+ * A terceira coluna da linha da categoria no Radar (28/11/2026, Guilherme:
+ * "em cada uma delas, planejado, realizado e a pagar (fixa) ou disponível
+ * (variável)"). O rótulo diz o que o número é; estado escolhe a cor.
+ */
+export function terceiraColuna(prev: number, real: number, isEntrada: boolean,
+  opts: { fixa?: boolean; fixaPaga?: boolean; naoOcorre?: boolean } = {}):
+  { rotulo: string; valor: string; estado: 'bom' | 'ruim' | 'neutro' } {
+  const fmt = (v: number) => moedaNaTela(v)
+  if (opts.naoOcorre && prev > 0.005 && Math.abs(real) <= 0.005) return { rotulo: 'Neste mês', valor: 'não vai ocorrer', estado: 'neutro' }
+  if (semPlano(prev)) return { rotulo: 'Situação', valor: 'sem plano', estado: 'neutro' }
+  if (isEntrada) {
+    if (real - prev > 0.005) return { rotulo: 'A mais', valor: fmt(real - prev), estado: 'bom' }
+    if (prev - real > 0.005) return { rotulo: 'A receber', valor: fmt(prev - real), estado: 'neutro' }
+    return { rotulo: 'A receber', valor: '✓ recebido', estado: 'bom' }
+  }
+  if (opts.fixaPaga) return { rotulo: 'A pagar', valor: '✓ pago', estado: 'bom' }
+  if (real - prev > 0.005) return { rotulo: 'Passou', valor: fmt(real - prev), estado: 'ruim' }
+  if (opts.fixa) return { rotulo: 'A pagar', valor: fmt(prev - real), estado: 'neutro' }
+  return { rotulo: 'Disponível', valor: fmt(Math.max(0, prev - real)), estado: 'bom' }
 }
 
 /**
@@ -298,3 +326,12 @@ export function partesDoGrupo(
     return [{ rotulo, ...t, real: t.real - aPagar, aPagar, estado }]
   })
 }
+
+/** Uma coluna da TabelaPlano (rótulo em cima, número embaixo). */
+export type ColunaPlano = { rotulo: string; valor: string; cor?: string }
+
+/** Planejado e realizado, com o rótulo de cada número (28/11/2026). */
+export const colunasBase = (prev: number, real: number, isEntrada: boolean, semPlanoNoMes = false): ColunaPlano[] => [
+  { rotulo: 'Planejado', valor: semPlanoNoMes ? 'sem plano' : moedaNaTela(prev) },
+  { rotulo: isEntrada ? 'Recebido' : 'Realizado', valor: moedaNaTela(real) },
+]

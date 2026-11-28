@@ -10,8 +10,10 @@ import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, partesDoGrupo, ehFixaPaga, semPlano } from './radarCores'
-import PartesDoGrupo from './PartesDoGrupo'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, terceiraColuna, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import TabelaPlano from './TabelaPlano'
+import { colunasBase } from './radarCores'
+import { moedaNaTela as fmtTela } from '../../utils/valoresOcultos'
 import { useForaDoMes } from './foraDoMesContexto'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
@@ -112,14 +114,10 @@ export default function AcMobileView({
     const fixa      = !!cadastroDaLinha({ nome, descricao }, categorias)?.fixa
     const fixaPaga  = ehFixaPaga(prev, lancAbs, isEntrada, fixa)
     const naoOcorre = foraDoMesIds.has(cadastroDaLinha({ nome, descricao }, categorias)?.id ?? '')
-    const destaque  = destaqueRadar(prev, lancAbs, isEntrada, { fixa, fixaPaga, naoOcorre })
+    const terceira  = terceiraColuna(prev, lancAbs, isEntrada, { fixa, fixaPaga, naoOcorre })
     // Sem plano no mês não há julgamento: só o realizado, em cor neutra e
     // sem barra (C2, decisão do Guilherme em 19/10/2026).
     const naoJulga  = semPlano(prev)
-    const dispColor = (prev === 0 && lancAbs === 0) ? COR.textoSuave
-      : naoJulga ? RADAR_COR_NEUTRA
-      : fixaPaga ? RADAR_COR_CLARO.bom
-      : RADAR_COR_CLARO[faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
 
     // A barra é a do computador: faixa do Radar em tom claro sobre trilho
     // azul-escuro (antes tinha amarelo e vermelho próprios, 23/10/2026).
@@ -183,9 +181,11 @@ export default function AcMobileView({
                 {catInfo?.fixa ? 'Fixa' : 'Variável'}
               </span>
             </div>
-            <div style={{ fontSize:16, fontWeight:800, color:dispColor, marginTop:4,
-              fontVariantNumeric:'tabular-nums' }}>{destaque.principal}</div>
-            <div style={{ fontSize:13, color:COR.textoSuave, marginTop:3, fontVariantNumeric:'tabular-nums' }}>{destaque.contexto}</div>
+            {/* Planejado · Realizado · A pagar / Disponível (28/11/2026, Guilherme), como no computador. */}
+            <div style={{ marginTop:6 }}>
+              <TabelaPlano tamanho={15} colunas={[...colunasBase(prev, lancAbs, isEntrada, naoJulga),
+                { rotulo: terceira.rotulo, valor: terceira.valor, cor: terceira.estado === 'neutro' ? '#334155' : RADAR_COR_CLARO[terceira.estado] }]} />
+            </div>
           </div>
         </div>
         {/* PROGRESS BAR */}
@@ -347,15 +347,20 @@ export default function AcMobileView({
               </span>
               {SEM_MOVIMENTO.includes(dg.principal) && <span style={{ fontSize:13, color:gRotulo }}>{dg.contexto}</span>}
             </div>
-            {/* O anel é o que já saiu, sem a fixa a pagar (28/11/2026). */}
-            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? dg.pago / gPrev : null}
+            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
               pago={dg.principal.startsWith('✓')}
               cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
               corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />
           </div>
           {!SEM_MOVIMENTO.includes(dg.principal) && (
             <div style={{ marginTop:12 }}>
-              <PartesDoGrupo partes={partesDoGrupo(linhasGrupo, isEntrada)} aberto={aberto} isEntrada={isEntrada} />
+              {/* Só o total: Planejado · Realizado (28/11/2026, Guilherme). */}
+              <div style={{ borderTop:`1px solid ${aberto ? 'rgba(255,255,255,0.18)' : '#e2e8f0'}`, paddingTop:10 }}>
+                <TabelaPlano azul={aberto} colunas={colunasBase(dg.prev, dg.julgado ? dg.real : dg.fora, isEntrada, !dg.julgado)} />
+                {dg.julgado && Math.abs(dg.fora) > 0.005 && (
+                  <div style={{ fontSize:12, color:gRotulo, marginTop:6 }}>+ {fmtTela(dg.fora)} sem plano</div>
+                )}
+              </div>
             </div>
           )}
         </button>
